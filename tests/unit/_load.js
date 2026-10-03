@@ -4,6 +4,7 @@ const path = require('node:path');
 
 const FILES = [
   'config.js',
+  'strings.en.js',
   'sheet/template.js',
   'sheet/code.js',
   'image/homography.js',
@@ -23,12 +24,6 @@ const FILES = [
 ];
 
 const JS = path.join(__dirname, '..', '..', 'js');
-for (const f of FILES) {
-  try {
-    require(path.join(JS, f));
-  } catch (e) {
-    if (e.code !== 'MODULE_NOT_FOUND' || !String(e.message).includes(f)) throw e;
-  }
-}
+for (const f of FILES) require(path.join(JS, f));
 
 module.exports = globalThis.HUSS;
