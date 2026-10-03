@@ -12,12 +12,17 @@
   }
 
   /**
-   * Foot rule (rule 3): if the lowest red point lies within `toleranceMm` of the floor
-   * line centre, the foot is the floor line; otherwise it is the lowest red point.
+   * Foot rule (rule 3, rules_version 1.1):
+   * - lowest red point within `toleranceMm` of the floor line centre: foot = floor line;
+   * - more than `toleranceMm` above the line (figure floating): foot = lowest red point, flagged;
+   * - more than `toleranceMm` below the line (feet drawn through it): foot = floor line, flagged.
+   * `side` is 'above', 'below' or null.
    */
   function footRule(rawFootY, floorY, toleranceMm) {
-    var offFloor = Math.abs(rawFootY - floorY) > toleranceMm;
-    return { foot_y: offFloor ? rawFootY : floorY, off_floor: offFloor };
+    var gap = floorY - rawFootY; // positive: red ends above the line (y grows downward)
+    if (gap > toleranceMm) return { foot_y: rawFootY, off_floor: true, side: 'above' };
+    if (gap < -toleranceMm) return { foot_y: floorY, off_floor: true, side: 'below' };
+    return { foot_y: floorY, off_floor: false, side: null };
   }
 
   /** est_m = length_mm / (figure_mm / ref_height_m); null when the scale is unusable. */

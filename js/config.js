@@ -9,7 +9,8 @@
 
   var config = {
     TOOL_VERSION: '0.1.0',
-    RULES_VERSION: '1.0',
+    // 1.1: rule 3 — red drawn below the floor line counts as standing on the line (flagged).
+    RULES_VERSION: '1.1',
 
     // Project-level defaults (spec 5.1). Phase 2 reads these from the project file.
     DEFAULTS: {
@@ -86,7 +87,7 @@
       MULTIPLE_RATIO: 0.5,         // second cluster >= this share of the largest: flag_multiple_red
       HEAD_MIN_PIXELS: 2,
       FAST_REJECT_RG: 8,           // R - G below this cannot reach a* >= T_A_MIN
-      DARKNESS_DILATE_PX: 1        // red mask grown by this before it is removed from darkness
+      DARKNESS_DILATE_PX: 2        // red mask grown by this before it is removed from darkness (JPEG pink rim)
     },
 
     // Rule 6

@@ -41,6 +41,33 @@ test('foot rule: 1.2 mm gap -> foot at red bottom, flag', () => {
   const r = footRule(180 - 1.2, 180, 0.5);
   near(r.foot_y, 178.8, 1e-12, 'foot_y');
   assert.equal(r.off_floor, true);
+  assert.equal(r.side, 'above');
+});
+
+test('foot rule 1.1: red drawn 1.2 mm below the line -> foot on floor, flag', () => {
+  const r = footRule(180 + 1.2, 180, 0.5);
+  assert.equal(r.foot_y, 180);
+  assert.equal(r.off_floor, true);
+  assert.equal(r.side, 'below');
+  const inside = footRule(180 + 0.3, 180, 0.5);
+  assert.equal(inside.foot_y, 180);
+  assert.equal(inside.off_floor, false);
+});
+
+test('flag_foot_off_floor follows the red trace and the final foot handle', () => {
+  const toolFlags = HUSS.measure.flags.toolFlags;
+  const p = HUSS.config.DEFAULTS;
+  const analysis = (rawFoot) => ({
+    template: HUSS.sheet.template.get('A4L'),
+    floor: { a: 180, b: 0 },
+    red: { found: true, raw_foot_y: rawFoot, multiple: false },
+    align: { method: 'auto', warning: false }
+  });
+  const s = { axis_x: 40, axis_placement: 'auto', foot_y: 180, figure_mm: 20 };
+  assert.equal(toolFlags(analysis(180.2), s, p, HUSS.config).flag_foot_off_floor, false);
+  assert.equal(toolFlags(analysis(181.3), s, p, HUSS.config).flag_foot_off_floor, true, 'drawn through the line');
+  assert.equal(toolFlags(analysis(178.5), s, p, HUSS.config).flag_foot_off_floor, true, 'floating, moved to floor by rater');
+  assert.equal(toolFlags(analysis(180.0), { ...s, foot_y: 178.0 }, p, HUSS.config).flag_foot_off_floor, true, 'handle moved off');
 });
 
 test('alt values use the figure measured from the floor line', () => {
