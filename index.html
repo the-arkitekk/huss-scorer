@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HuSS Scorer</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span data-s="app_title"></span>
+      <span class="badge" data-s="phase_badge"></span>
+      <span class="version" id="version"></span>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="btn" id="btn-open" data-s="open_image"></button>
+      <input type="file" id="file-input" accept="image/jpeg,image/png" hidden>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="stage" id="stage" tabindex="-1">
+      <canvas id="view"></canvas>
+      <canvas id="magnifier" class="magnifier" hidden></canvas>
+
+      <div class="dropzone" id="dropzone">
+        <div class="dropzone-inner">
+          <p class="dropzone-title" data-s="drop_title"></p>
+          <p class="dropzone-sub" data-s="drop_sub"></p>
+          <button type="button" class="btn btn-primary" id="btn-choose" data-s="drop_button"></button>
+          <p class="dropzone-error" id="drop-error" hidden></p>
+        </div>
+      </div>
+      <div class="busy" id="busy" hidden><span data-s="busy"></span></div>
+
+      <div class="stage-tools" id="stage-tools" hidden>
+        <button type="button" class="btn btn-small" id="btn-zoom-out" data-s-title="zoom_out">−</button>
+        <button type="button" class="btn btn-small" id="btn-fit" data-s="fit"></button>
+        <button type="button" class="btn btn-small" id="btn-zoom-in" data-s-title="zoom_in">+</button>
+      </div>
+      <div class="hint" id="hint" hidden></div>
+    </section>
+
+    <aside class="panel" id="panel">
+      <section class="card">
+        <h2 data-s="sec_session"></h2>
+        <label class="field"><span data-s="project_code"></span><input type="text" id="in-project" autocomplete="off" spellcheck="false"></label>
+        <label class="field"><span data-s="rater_code"></span><input type="text" id="in-rater" autocomplete="off" spellcheck="false" required></label>
+        <label class="field"><span data-s="sheet_code"></span><input type="text" id="in-sheet" autocomplete="off" spellcheck="false" maxlength="5"></label>
+        <p class="small" id="sheet-status" data-s="sheet_code_hint"></p>
+      </section>
+
+      <section class="card">
+        <h2 data-s="sec_image"></h2>
+        <p class="small" id="image-info" data-s="no_image"></p>
+        <p class="small muted" id="image-align"></p>
+      </section>
+
+      <section class="card" id="card-handles" hidden>
+        <h2 data-s="sec_handles"></h2>
+        <table class="handles" id="handle-table"></table>
+      </section>
+
+      <section class="card" id="card-values" hidden>
+        <h2 data-s="sec_values"></h2>
+        <table class="values" id="value-table"></table>
+      </section>
+
+      <section class="card" id="card-flags" hidden>
+        <h2 data-s="sec_flags"></h2>
+        <ul class="flags" id="flag-list"></ul>
+        <label class="check"><input type="checkbox" id="chk-color"><span data-s="flag_color_noncompliant"></span></label>
+      </section>
+
+      <section class="card" id="card-view" hidden>
+        <h2 data-s="sec_view"></h2>
+        <label class="check"><input type="checkbox" id="chk-contrast"><span data-s="view_contrast"></span></label>
+        <label class="check"><input type="checkbox" id="chk-mask"><span data-s="view_mask"></span></label>
+        <label class="check"><input type="checkbox" id="chk-guides" checked><span data-s="view_guides"></span></label>
+        <label class="check"><input type="checkbox" id="chk-snap" checked><span data-s="view_snap"></span></label>
+      </section>
+
+      <section class="card card-actions" id="card-actions" hidden>
+        <button type="button" class="btn btn-primary btn-block" id="btn-confirm" data-s="confirm"></button>
+        <button type="button" class="btn btn-block" id="btn-download" data-s="download_again" hidden></button>
+        <p class="small" id="confirm-status"></p>
+      </section>
+    </aside>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/strings.en.js"></script>
+  <script src="js/sheet/template.js"></script>
+  <script src="js/sheet/code.js"></script>
+  <script src="js/image/homography.js"></script>
+  <script src="js/image/lab.js"></script>
+  <script src="js/image/components.js"></script>
+  <script src="js/image/rectify.js"></script>
+  <script src="js/image/decode.js"></script>
+  <script src="js/measure/compute.js"></script>
+  <script src="js/measure/flags.js"></script>
+  <script src="js/measure/record.js"></script>
+  <script src="js/io/csv.js"></script>
+  <script src="js/io/files.js"></script>
+  <script src="js/detect/corners.js"></script>
+  <script src="js/detect/floorline.js"></script>
+  <script src="js/detect/redfigure.js"></script>
+  <script src="js/detect/profile.js"></script>
+  <script src="js/detect/snap.js"></script>
+  <script src="js/detect/pipeline.js"></script>
+  <script src="js/ui/canvasView.js"></script>
+  <script src="js/ui/handles.js"></script>
+  <script src="js/ui/scorer.js"></script>
+  <script src="js/ui/start.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
