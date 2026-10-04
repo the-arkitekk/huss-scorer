@@ -29,8 +29,9 @@ const BASE = {
   quarterTurns: 0,          // clockwise quarter turns applied to the finished scan
   pencil: 60,               // grey level of the pencil section lines
   figure: { dx: 0, height: 20, lift: 0, color: 'red' },
-  ceilingY: 120,
-  wallX: 160
+  ceilingRel: 60,           // ceiling line, mm above the floor line
+  wallRel: 120,             // opposite wall, mm right of the start mark
+  tieDecoy: false           // draw a mirrored floor line and start mark (orientation tie, QR decides)
 };
 
 const SCENES = {
@@ -41,13 +42,24 @@ const SCENES = {
   S5: { description: 'Faint pencil (grey 180)', pencil: 180 },
   S6: { description: 'No red: figure drawn in grey', figure: { color: 'grey' } },
   S7: { description: 'Figure 8 mm off the start mark', figure: { dx: 8 } },
-  S8: { description: 'Figure floating 1.5 mm above the floor', figure: { lift: 1.5 } }
+  S8: { description: 'Figure floating 1.5 mm above the floor', figure: { lift: 1.5 } },
+  S12: { description: '600 dpi', dpi: 600 },
+  S13: { description: 'Figure 6 mm tall', figure: { height: 6 } },
+  S15: { description: 'A3L template', template: 'A3L' },
+  T1: { description: 'Orientation tie: mirrored floor line and start mark drawn by hand; the QR decides', tieDecoy: true, quarterTurns: 2 }
 };
+
+/** Deterministic, valid sheet code for a scene. */
+function sceneCode(id) {
+  let h = 2166136261;
+  for (const ch of id) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  return HUSS.sheet.code.generate(mulberry32(h >>> 0));
+}
 
 function sceneParams(id) {
   const s = SCENES[id];
   if (!s) throw new Error('Unknown scene ' + id);
-  return Object.assign({}, BASE, s, { id, figure: Object.assign({}, BASE.figure, s.figure || {}) });
+  return Object.assign({}, BASE, s, { id, code: sceneCode(id), figure: Object.assign({}, BASE.figure, s.figure || {}) });
 }
 
 // ---------------------------------------------------------------- shapes (page mm)
@@ -119,8 +131,8 @@ function mulberry32(seed) {
   };
 }
 
-/** Printed template (black only): corner marks, floor line, start mark, text and QR stand-ins. */
-function templateGroups(T) {
+/** Printed template (black only): corner marks, floor line, hatching, start mark, text stand-ins, QR. */
+function templateGroups(T, code) {
   const shapes = [];
   const h = T.corner_size_mm / 2;
   for (const [cx, cy] of T.corners) shapes.push(rect(cx - h, cy - h, cx + h, cy + h));
@@ -137,31 +149,11 @@ function templateGroups(T) {
   text(T.code_text.right - 5 * 2.6 + 0.6, T.code_text.baseline, 3.0, 5, 2.0, 0.6); // sheet code
   text(T.template_id.x, T.template_id.baseline, 1.4, 11, 0.7, 0.25);    // "HuSS A4L v1"
 
-  shapes.push(...qrStandIn(T));
-  return [{ color: BLACK, shapes }];
-}
-
-/** QR stand-in: 25 x 25 modules (21-module symbol + 2-module quiet zone), three finder patterns. */
-function qrStandIn(T) {
-  const shapes = [];
-  const m = T.qr.size / 25, rnd = mulberry32(12345);
-  const x0 = T.qr.x + 2 * m, y0 = T.qr.y + 2 * m;
-  const origins = [[0, 0], [14, 0], [0, 14]];
-  for (let j = 0; j < 21; j++) {
-    for (let i = 0; i < 21; i++) {
-      let on = null;
-      for (const [ox, oy] of origins) {
-        const ii = i - ox, jj = j - oy;
-        if (ii >= -1 && ii <= 7 && jj >= -1 && jj <= 7) {
-          const r = Math.max(Math.abs(ii - 3), Math.abs(jj - 3));
-          on = r === 3 || r <= 1; // ring, gap, 3x3 centre; r === 4 is the white separator
-        }
-      }
-      if (on === null) on = rnd() < 0.5;
-      if (on) shapes.push(rect(x0 + i * m, y0 + j * m, x0 + (i + 1) * m, y0 + (j + 1) * m));
-    }
+  const QRc = HUSS.config.QR, qr = HUSS.sheet.qr.encode(HUSS.sheet.qr.sheetText(T.id, code), QRc.LEVEL);
+  for (const r of HUSS.sheet.qr.moduleRects(qr, T.qr.x, T.qr.y, T.qr.size, QRc.QUIET_MODULES)) {
+    shapes.push(rect(r.x, r.y, r.x + r.w, r.y + r.h));
   }
-  return shapes;
+  return [{ color: BLACK, shapes }];
 }
 
 /**
@@ -192,7 +184,8 @@ function figureShapes(cx, footBottom, height) {
 function buildPage(p) {
   const T = HUSS.sheet.template.get(p.template);
   const floorY = T.floor.y;
-  const groups = templateGroups(T);
+  const groups = templateGroups(T, p.code);
+  p = Object.assign({}, p, { ceilingY: floorY - p.ceilingRel, wallX: HUSS.sheet.template.markX(T) + p.wallRel });
 
   // Pencil section: only what the section cuts — ceiling, back wall behind the viewer, opposite wall.
   const pw = PENCIL_STROKE_MM, left = 14;
@@ -204,6 +197,17 @@ function buildPage(p) {
       seg([p.wallX, p.ceilingY], [p.wallX, floorY], pw)
     ]
   });
+  if (p.tieDecoy) {
+    // What the floor line and start mark look like when the page is turned 180 degrees.
+    const W = T.width_mm, Hh = T.height_mm, mir = ([x, y]) => [W - x, Hh - y];
+    groups.push({
+      color: grey(40),
+      shapes: [
+        seg(mir([T.floor.x0, T.floor.y]), mir([T.floor.x1, T.floor.y]), pw),
+        poly([mir(T.mark.apex), mir(T.mark.base[0]), mir(T.mark.base[1])])
+      ]
+    });
+  }
 
   // Figure: feet touch the floor line (outer edge 0.1 mm past its centre) unless lifted.
   const cx = HUSS.sheet.template.markX(T) + p.figure.dx;
@@ -222,6 +226,7 @@ function buildPage(p) {
   return {
     T, groups,
     truth: {
+      sheet_code: p.code,
       floor_y: floorY,
       axis_x: cx,
       head_y: fig.head_top,
@@ -370,5 +375,5 @@ function main() {
   fs.writeFileSync(path.join(__dirname, 'expected.json'), JSON.stringify(expected, null, 2) + '\n');
 }
 
-module.exports = { generate, SCENES, qrStandIn };
+module.exports = { generate, SCENES };
 if (require.main === module) main();

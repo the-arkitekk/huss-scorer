@@ -48,6 +48,9 @@
     var dark = HUSS.image.lab.darkness(rect);
     var floor = D.floorline.refine(dark, R, T, cfg);
     t.floor = now();
+    var qr = orient.qr || D.qr.read(D.qr.rectSampler(dark, R), T, cfg);
+    if (qr.found) qr.template_mismatch = qr.template !== T.id;
+    t.qr = now();
     var markX = HUSS.sheet.template.markX(T);
     var red = D.redfigure.detect(rect, T, D.floorline.yAt(floor, markX), cfg);
     t.red = now();
@@ -80,10 +83,11 @@
         px_per_mm_x: pxx, px_per_mm_y: pxy, rotation_deg: rot,
         residual_mm: residual,
         warning: residual > cfg.ALIGN.RESIDUAL_WARN_MM || !floor.ok,
-        quarter: orient.quarter, orientation_tie: orient.tie,
+        quarter: orient.quarter, orientation_tie: orient.tie, tie_break: orient.tieBreak,
         floor_ratio: orient.floorRatio, mark_ratio: orient.markRatio
       },
       floor: floor,
+      qr: qr,
       red: red,
       redEdges: redEdges,
       wallProfile: wallProfile,
@@ -91,7 +95,7 @@
       suggestions: sug,
       timings: {
         corners: t.corners - t.start, orientation: t.orientation - t.corners, rectify: t.rectify - t.orientation,
-        floor: t.floor - t.rectify, red: t.red - t.floor, profiles: t.profiles - t.red, total: t.profiles - t.start
+        floor: t.floor - t.rectify, qr: t.qr - t.floor, red: t.red - t.qr, profiles: t.profiles - t.red, total: t.profiles - t.start
       }
     };
   }

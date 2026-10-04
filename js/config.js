@@ -93,6 +93,20 @@
       DARKNESS_DILATE_PX: 2        // red mask grown by this before it is removed from darkness (JPEG pink rim)
     },
 
+    // 7.6 Sheet QR code (version 1, alphanumeric; content HUSS1/<TEMPLATE>/<SHEETCODE>)
+    QR: {
+      LEVEL: 'Q',                  // error correction level printed on sheets (spec: M or higher)
+      QUIET_MODULES: 4,            // quiet zone inside the 15 mm square
+      FINDER_WINDOW_MODULES: 4.5,  // half-width of the first, coarse finder centroid window
+      CORE_WINDOW_MODULES: 2,      // half-width of the core centroid windows (3 x 3 core + light ring)
+      COARSE_ITERATIONS: 2,
+      FINDER_ITERATIONS: 3,
+      SAMPLE_OFFSET: 0.25,         // 3 x 3 samples per module, this far apart (modules)
+      MIN_CONTRAST: 60,            // grey levels between the lightest and darkest sample
+      SEARCH_RADIUS_MM: 10,        // fallback search around the expected position
+      SEARCH_STEP_MM: 1.5
+    },
+
     // Rule 6
     MARK: {
       OFF_MARK_MM: 5

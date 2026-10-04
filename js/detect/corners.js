@@ -129,7 +129,7 @@
 
   /**
    * Tries the four cyclic assignments of page corners to image quadrants and picks the one
-   * whose expected floor line is darkest (ties: start mark). Returns
+   * whose expected floor line is darkest (ties: QR code, then start mark). Returns
    * { ok, H (page mm -> image px), corners: [TL, TR, BR, BL] page order in image px, quarter, floorRatio, markRatio }.
    */
   function chooseOrientation(img, quadPoints, template, threshold, config) {
@@ -160,11 +160,25 @@
     var tied = results.filter(function (r) {
       return r.floorRatio >= cfg.FLOOR_DARK_RATIO_MIN && best.floorRatio - r.floorRatio <= cfg.TIE_EPS;
     });
+    var tieBreak = null, qr = null;
     if (tied.length > 1) {
-      tied.sort(function (a, b) { return (b.markRatio - a.markRatio) || (b.floorRatio - a.floorRatio); });
-      best = tied[0];
+      // Spec 7.2: the QR code read at its expected place decides; then the start mark.
+      if (HUSS.detect.qr) {
+        for (var t = 0; t < tied.length && !qr; t++) {
+          var r = HUSS.detect.qr.read(HUSS.detect.qr.imageSampler(img, tied[t].H), template, config);
+          if (r.found) { qr = r; best = tied[t]; tieBreak = 'qr'; }
+        }
+      }
+      if (!qr) {
+        tied.sort(function (a, b) { return (b.markRatio - a.markRatio) || (b.floorRatio - a.floorRatio); });
+        best = tied[0];
+        tieBreak = 'mark';
+      }
     }
-    return { ok: true, H: best.H, corners: best.corners, quarter: best.quarter, floorRatio: best.floorRatio, markRatio: best.markRatio, tie: tied.length > 1 };
+    return {
+      ok: true, H: best.H, corners: best.corners, quarter: best.quarter, floorRatio: best.floorRatio,
+      markRatio: best.markRatio, tie: tied.length > 1, tieBreak: tieBreak, qr: qr
+    };
   }
 
   var api = { downscaleGray: downscaleGray, sampleLuma: sampleLuma, refineCentre: refineCentre, findCorners: findCorners, chooseOrientation: chooseOrientation };

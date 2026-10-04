@@ -57,6 +57,10 @@ function measure(a, t, headFoot) {
 
 function checkCommon(id, { a, g, t }) {
   assert.equal(a.ok, true, `${id}: analysis failed (${a.error})`);
+  assert.equal(a.qr.found, true, `${id}: QR not read`);
+  assert.equal(a.qr.sheet_code, t.sheet_code, `${id}: sheet code from QR`);
+  assert.equal(a.qr.template, g.template, `${id}: template from QR`);
+  assert.equal(a.qr.template_mismatch, false);
   assert.ok(alignmentError(a, g) <= TOL.align_mm, `${id}: alignment error ${alignmentError(a, g).toFixed(3)} mm`);
   near(P.floorY(a, t.axis_x), t.floor_y, TOL.align_mm, `${id} floor_y`);
   assert.equal(a.align.warning, false, `${id}: alignment warning`);
@@ -143,4 +147,59 @@ test('head and foot handles snap to the red edges and the floor line', () => {
   const none = P.snapCeiling(a, a.suggestions.axis_x, 40, r); // empty paper
   assert.equal(none.snapped, false);
   assert.equal(none.pos, 40);
+});
+
+for (const id of ['S12', 'S15']) {
+  test(`${id}: suggestions, snap, estimates and QR (${id === 'S12' ? '600 dpi' : 'A3L'})`, () => {
+    const r = run(id);
+    checkCommon(id, r);
+    checkRedFigure(id, r.a, r.t);
+    const m = measure(r.a, r.t);
+    checkSnapAndEstimates(id, r.t, m);
+    for (const f of HUSS.measure.flags.TOOL_FLAGS) assert.equal(m.flags[f], false, `${id}: unexpected ${f}`);
+  });
+}
+
+test('S13: 6 mm figure -> flag_figure_small, estimates still within 1 %', () => {
+  const r = run('S13');
+  checkCommon('S13', r);
+  checkRedFigure('S13', r.a, r.t);
+  const m = measure(r.a, r.t);
+  assert.equal(m.flags.flag_figure_small, true);
+  checkSnapAndEstimates('S13', r.t, m);
+});
+
+test('T1: floor line and start mark ambiguous after a 180 degree turn -> the QR code decides', () => {
+  const r = run('T1');
+  checkCommon('T1', r);
+  assert.equal(r.a.align.orientation_tie, true, 'tie expected');
+  assert.equal(r.a.align.tie_break, 'qr');
+  const tl = r.a.align.corners.tl, t = r.g.map(10, 10);
+  assert.ok(Math.hypot(tl[0] - t[0], tl[1] - t[1]) / r.g.pxPerMm < TOL.align_mm, 'TL corner');
+  checkRedFigure('T1', r.a, r.t);
+});
+
+test('QR is still read with a stray pencil stroke on it, and when printed 3 mm off its place', () => {
+  const { a, t } = run('S1');
+  const R = a.R, T = a.template;
+  const dark = HUSS.image.lab.darkness(a.rect);
+  // a 4 mm pencil stroke (0.6 mm, dark grey) through the data area of the code
+  const x1 = T.qr.x + 7, y1 = T.qr.y + 8, x2 = T.qr.x + 10, y2 = T.qr.y + 11;
+  for (let s = 0; s <= 1; s += 0.0005) {
+    const cx = (x1 + s * (x2 - x1)) * R, cy = (y1 + s * (y2 - y1)) * R;
+    for (let dy = -0.3 * R; dy <= 0.3 * R; dy++) for (let dx = -0.3 * R; dx <= 0.3 * R; dx++) {
+      dark.data[Math.round(cy + dy) * dark.width + Math.round(cx + dx)] = 200;
+    }
+  }
+  const damaged = HUSS.detect.qr.read(HUSS.detect.qr.rectSampler(dark, R), T);
+  assert.equal(damaged.found, true, 'read through the pencil stroke');
+  assert.equal(damaged.sheet_code, t.sheet_code);
+  assert.ok(damaged.corrected >= 1, 'errors were corrected');
+
+  const base = HUSS.detect.qr.rectSampler(HUSS.image.lab.darkness(a.rect), R);
+  for (const [dx, dy] of [[3, -2.5], [-4.2, 1.1], [0.8, 6.3]]) {
+    const moved = HUSS.detect.qr.read((x, y) => base(x - dx, y - dy), T); // code appears shifted by (dx, dy)
+    assert.equal(moved.found, true, `found by the search around the expected place (${dx}, ${dy})`);
+    assert.equal(moved.sheet_code, t.sheet_code);
+  }
 });

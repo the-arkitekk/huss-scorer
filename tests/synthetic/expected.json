@@ -8,6 +8,7 @@
     "image_width_px": 3650,
     "image_height_px": 2622,
     "truth": {
+      "sheet_code": "REZ6Y",
       "floor_y": 180,
       "axis_x": 40,
       "head_y": 160.1,
@@ -55,6 +56,7 @@
     "image_width_px": 3650,
     "image_height_px": 2622,
     "truth": {
+      "sheet_code": "G9QT6",
       "floor_y": 180,
       "axis_x": 40,
       "head_y": 160.1,
@@ -102,6 +104,7 @@
     "image_width_px": 3650,
     "image_height_px": 2622,
     "truth": {
+      "sheet_code": "E2TNB",
       "floor_y": 180,
       "axis_x": 40,
       "head_y": 160.1,
@@ -149,6 +152,7 @@
     "image_width_px": 2622,
     "image_height_px": 3650,
     "truth": {
+      "sheet_code": "H2H8Q",
       "floor_y": 180,
       "axis_x": 40,
       "head_y": 160.1,
@@ -196,6 +200,7 @@
     "image_width_px": 3650,
     "image_height_px": 2622,
     "truth": {
+      "sheet_code": "DLMY5",
       "floor_y": 180,
       "axis_x": 40,
       "head_y": 160.1,
@@ -243,6 +248,7 @@
     "image_width_px": 3650,
     "image_height_px": 2622,
     "truth": {
+      "sheet_code": "4EP9T",
       "floor_y": 180,
       "axis_x": 40,
       "head_y": 160.1,
@@ -290,6 +296,7 @@
     "image_width_px": 3650,
     "image_height_px": 2622,
     "truth": {
+      "sheet_code": "27HFG",
       "floor_y": 180,
       "axis_x": 48,
       "head_y": 160.1,
@@ -337,6 +344,7 @@
     "image_width_px": 3650,
     "image_height_px": 2622,
     "truth": {
+      "sheet_code": "D6FXH",
       "floor_y": 180,
       "axis_x": 40,
       "head_y": 158.5,
@@ -371,6 +379,198 @@
         [
           188.9763779527559,
           2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "S12": {
+    "description": "600 dpi",
+    "template": "A4L",
+    "dpi": 600,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 7299,
+    "image_height_px": 5244,
+    "truth": {
+      "sheet_code": "PZ96U",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          377.9527559055118,
+          377.9527559055118
+        ],
+        [
+          6921.259842519686,
+          377.9527559055118
+        ],
+        [
+          6921.259842519686,
+          4866.141732283465
+        ],
+        [
+          377.9527559055118,
+          4866.141732283465
+        ]
+      ]
+    }
+  },
+  "S13": {
+    "description": "Figure 6 mm tall",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "6HMNJ",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 174.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "figure_mm": 5.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 17.28813559322032,
+      "est_horizontal_m": 34.57627118644064,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": true
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "S15": {
+    "description": "A3L template",
+    "template": "A3L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 5102,
+    "image_height_px": 3650,
+    "truth": {
+      "sheet_code": "ZX76T",
+      "floor_y": 255,
+      "axis_x": 57,
+      "head_y": 235.1,
+      "raw_foot_y": 255.1,
+      "foot_y": 255,
+      "ceiling_y": 195,
+      "wall_x": 177,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          4913.385826771653,
+          188.9763779527559
+        ],
+        [
+          4913.385826771653,
+          3460.629921259843
+        ],
+        [
+          188.9763779527559,
+          3460.629921259843
+        ]
+      ]
+    }
+  },
+  "T1": {
+    "description": "Orientation tie: mirrored floor line and start mark drawn by hand; the QR decides",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 2,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "RGG8T",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          3461.0236220472443,
+          2433.0236220472443
+        ],
+        [
+          189.37007874015717,
+          2433.0236220472443
+        ],
+        [
+          189.37007874015717,
+          188.9291338582675
+        ],
+        [
+          3461.0236220472443,
+          188.9291338582675
         ]
       ]
     }

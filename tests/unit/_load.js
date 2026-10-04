@@ -21,6 +21,7 @@ const FILES = [
   'detect/redfigure.js',
   'detect/profile.js',
   'detect/snap.js',
+  'detect/qr.js',
   'detect/pipeline.js'
 ];
 
