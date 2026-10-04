@@ -2,7 +2,7 @@
 
 Semi-automatic scorer for HuSS (Human-Scaled Section) drawings. The tool suggests, the rater confirms or corrects. Everything runs in the browser; images and data never leave the computer.
 
-Status: **Phase 1 prototype (v0.1.0, rules 1.1)** — single image, automatic alignment, red-figure suggestion, handles with snap, one-row CSV. See `huss-scorer-sartname-v1.md` (technical specification, Turkish), section 13.
+Status: **Phase 1 prototype (v0.1.0, rules 1.2)** — single image, automatic alignment, red-figure suggestion, handles with snap, one-row CSV. See `huss-scorer-sartname-v1.md` (technical specification, Turkish), section 13.
 
 ## Use
 
@@ -24,9 +24,14 @@ Status: **Phase 1 prototype (v0.1.0, rules 1.1)** — single image, automatic al
 
 The foot handle is locked by default (rule 3 decides it); unlock it in the panel to move it.
 
-## Rule change in 1.1
+## Rule changes since the specification (rules 1.0)
 
-Rule 3 (foot): when the lowest red point is more than 0.5 mm **below** the floor line (feet drawn through the line), the foot is the floor line and `flag_foot_off_floor` is set. A figure more than 0.5 mm **above** the line still uses the lowest red point (flagged), as in 1.0.
+- **1.1** Rule 3 (foot): red drawn more than 0.5 mm below the floor line counts as standing on the line (flagged).
+- **1.2** Rule 3 (foot): the figure is always measured from the head top to the floor line, also when it floats above the line. A red trace ending more than 0.5 mm off the line (either side) sets `flag_foot_off_floor`. The lowest red point and the values measured to it are kept as backup columns: `red_bottom_y_mm`, `figure_red_mm`, `est_vertical_red_m`, `est_horizontal_red_m`.
+
+## Paper template
+
+Below the floor line the sheet carries ground hatching: short "/" strokes with slightly irregular spacing, lean and depth (fixed seed, identical on every sheet), so they read as ground but cannot be counted like a ruler (rule 4.3). They start 0.7 mm below the line and stop around the start mark and its label.
 
 ## Developer notes
 

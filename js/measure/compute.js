@@ -12,17 +12,15 @@
   }
 
   /**
-   * Foot rule (rule 3, rules_version 1.1):
-   * - lowest red point within `toleranceMm` of the floor line centre: foot = floor line;
-   * - more than `toleranceMm` above the line (figure floating): foot = lowest red point, flagged;
-   * - more than `toleranceMm` below the line (feet drawn through it): foot = floor line, flagged.
-   * `side` is 'above', 'below' or null.
+   * Foot rule (rule 3, rules_version 1.2): the foot is always the floor line, so the figure is
+   * measured from the head top to the floor. When the lowest red point is more than
+   * `toleranceMm` away from the line it is flagged; `side` says where it ended
+   * ('above': figure floating, 'below': feet drawn through the line, null: on the line).
    */
   function footRule(rawFootY, floorY, toleranceMm) {
     var gap = floorY - rawFootY; // positive: red ends above the line (y grows downward)
-    if (gap > toleranceMm) return { foot_y: rawFootY, off_floor: true, side: 'above' };
-    if (gap < -toleranceMm) return { foot_y: floorY, off_floor: true, side: 'below' };
-    return { foot_y: floorY, off_floor: false, side: null };
+    var side = gap > toleranceMm ? 'above' : gap < -toleranceMm ? 'below' : null;
+    return { foot_y: floorY, off_floor: side !== null, side: side };
   }
 
   /** est_m = length_mm / (figure_mm / ref_height_m); null when the scale is unusable. */
@@ -39,8 +37,9 @@
   }
 
   /**
-   * Derived values of section 7.10.
-   * h: { head_y, foot_y, ceiling_y, wall_x, axis_x, floor_y_axis } (mm, nullable)
+   * Derived values of section 7.10, plus the backup values measured to the lowest red point
+   * (figure_red_mm, est_*_red_m; the rules 1.0 way of measuring a floating figure).
+   * h: { head_y, foot_y, ceiling_y, wall_x, axis_x, floor_y_axis, red_bottom_y } (mm, nullable)
    * p: { ref_height_m, min_figure_mm }
    */
   function compute(h, p) {
@@ -57,6 +56,10 @@
       est_horizontal_m: null,
       est_vertical_alt_m: null,
       est_horizontal_alt_m: null,
+      red_bottom_y_mm: has('red_bottom_y') ? h.red_bottom_y : null,
+      figure_red_mm: null,
+      est_vertical_red_m: null,
+      est_horizontal_red_m: null,
       flag_figure_small: null
     };
     if (has('head_y') && has('foot_y')) out.figure_mm = h.foot_y - h.head_y;
@@ -72,6 +75,9 @@
     out.est_horizontal_m = estimate(out.distance_mm, out.figure_mm, p.ref_height_m);
     out.est_vertical_alt_m = estimate(out.ceiling_mm, out.figure_from_floor_mm, p.ref_height_m);
     out.est_horizontal_alt_m = estimate(out.distance_mm, out.figure_from_floor_mm, p.ref_height_m);
+    if (has('head_y') && has('red_bottom_y')) out.figure_red_mm = h.red_bottom_y - h.head_y;
+    out.est_vertical_red_m = estimate(out.ceiling_mm, out.figure_red_mm, p.ref_height_m);
+    out.est_horizontal_red_m = estimate(out.distance_mm, out.figure_red_mm, p.ref_height_m);
     if (isNum(out.figure_mm) && isNum(p.min_figure_mm)) out.flag_figure_small = out.figure_mm < p.min_figure_mm;
     return out;
   }

@@ -37,14 +37,16 @@ test('foot rule: 0.3 mm gap -> foot on floor, no flag', () => {
   assert.equal(r.off_floor, false);
 });
 
-test('foot rule: 1.2 mm gap -> foot at red bottom, flag', () => {
+// Spec 10.1 expected "foot = lowest red point" for a 1.2 mm gap (rules 1.0); rules 1.2 (owner's
+// decision, 4 Oct 2026) always measures the figure to the floor line and keeps the flag.
+test('foot rule 1.2: figure 1.2 mm above the line -> foot on floor, flag', () => {
   const r = footRule(180 - 1.2, 180, 0.5);
-  near(r.foot_y, 178.8, 1e-12, 'foot_y');
+  assert.equal(r.foot_y, 180);
   assert.equal(r.off_floor, true);
   assert.equal(r.side, 'above');
 });
 
-test('foot rule 1.1: red drawn 1.2 mm below the line -> foot on floor, flag', () => {
+test('foot rule 1.2: red drawn 1.2 mm below the line -> foot on floor, flag', () => {
   const r = footRule(180 + 1.2, 180, 0.5);
   assert.equal(r.foot_y, 180);
   assert.equal(r.off_floor, true);
@@ -80,6 +82,22 @@ test('alt values use the figure measured from the floor line', () => {
   near(out.foot_floor_gap_mm, 1.5, 1e-9, 'foot_floor_gap_mm');
   near(out.est_vertical_alt_m, 60 / (20 / 1.7), 1e-9, 'est_vertical_alt_m');
   near(out.est_horizontal_m, 120 / (18.5 / 1.7), 1e-9, 'est_horizontal_m');
+});
+
+test('backup values measure the figure to the lowest red point', () => {
+  const out = compute(
+    { head_y: 160, foot_y: 180, ceiling_y: 120, wall_x: 160, axis_x: 40, floor_y_axis: 180, red_bottom_y: 178.5 },
+    { ref_height_m: 1.7, min_figure_mm: 10 }
+  );
+  near(out.figure_mm, 20, 1e-9, 'figure_mm (to floor)');
+  near(out.red_bottom_y_mm, 178.5, 1e-9, 'red_bottom_y_mm');
+  near(out.figure_red_mm, 18.5, 1e-9, 'figure_red_mm');
+  near(out.est_vertical_m, 60 / (20 / 1.7), 1e-9, 'est_vertical_m');
+  near(out.est_vertical_red_m, 60 / (18.5 / 1.7), 1e-9, 'est_vertical_red_m');
+  near(out.est_horizontal_red_m, 120 / (18.5 / 1.7), 1e-9, 'est_horizontal_red_m');
+  const none = compute({ head_y: 160, foot_y: 180, ceiling_y: 120, wall_x: 160, axis_x: 40, floor_y_axis: 180 }, { ref_height_m: 1.7, min_figure_mm: 10 });
+  assert.equal(none.figure_red_mm, null);
+  assert.equal(none.est_vertical_red_m, null);
 });
 
 test('small figure is flagged, missing handles give nulls', () => {

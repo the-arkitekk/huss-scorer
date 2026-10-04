@@ -362,14 +362,14 @@
       tbl.appendChild(tr);
     };
     row('v_figure', fmt(c.figure_mm, 2) + mm);
-    row('v_figure_floor', fmt(c.figure_from_floor_mm, 2) + mm);
     row('v_ceiling', fmt(c.ceiling_mm, 2) + mm);
     row('v_distance', fmt(c.distance_mm, 2) + mm);
     row('v_scale', fmt(c.scale_mm_per_m, 2) + ' ' + HUSS.t('unit_mm_per_m'));
     row('v_est_v', fmt(c.est_vertical_m, 3) + m, 'est');
-    row({ text: '  ' + HUSS.t('v_alt') }, fmt(c.est_vertical_alt_m, 3) + m, 'alt', HUSS.t('v_alt_title'));
     row('v_est_h', fmt(c.est_horizontal_m, 3) + m, 'est');
-    row({ text: '  ' + HUSS.t('v_alt') }, fmt(c.est_horizontal_alt_m, 3) + m, 'alt', HUSS.t('v_alt_title'));
+    row('v_figure_red', fmt(c.figure_red_mm, 2) + mm, 'alt', HUSS.t('v_backup_title'));
+    row({ text: HUSS.t('v_est_v') + ', ' + HUSS.t('v_backup') }, fmt(c.est_vertical_red_m, 3) + m, 'alt', HUSS.t('v_backup_title'));
+    row({ text: HUSS.t('v_est_h') + ', ' + HUSS.t('v_backup') }, fmt(c.est_horizontal_red_m, 3) + m, 'alt', HUSS.t('v_backup_title'));
   }
 
   function renderFlags(d) {

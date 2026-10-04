@@ -120,11 +120,12 @@ test('S7: figure 8 mm off the mark -> axis follows the figure, flag_figure_off_m
   checkSnapAndEstimates('S7', r.t, m);
 });
 
-test('S8: figure 1.5 mm above the floor -> foot = lowest red point, flag_foot_off_floor', () => {
+test('S8: figure 1.5 mm above the floor -> foot on the floor line (rules 1.2), red bottom kept, flag_foot_off_floor', () => {
   const r = run('S8');
   checkCommon('S8', r);
   checkRedFigure('S8', r.a, r.t);
-  near(r.a.suggestions.foot_y, r.t.raw_foot_y, TOL.head_foot_mm, 'S8 foot = red bottom');
+  near(r.a.suggestions.foot_y, r.t.floor_y, TOL.head_foot_mm, 'S8 foot = floor line');
+  near(r.a.red.raw_foot_y, r.t.raw_foot_y, TOL.head_foot_mm, 'S8 red bottom');
   const m = measure(r.a, r.t);
   assert.equal(m.flags.flag_foot_off_floor, true);
   checkSnapAndEstimates('S8', r.t, m);

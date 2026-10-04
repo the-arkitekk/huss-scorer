@@ -66,6 +66,9 @@
     cols('m', ['ref_height_m']),
     cols('ratio', ['scale_mm_per_m']),
     cols('m', ['est_vertical_m', 'est_horizontal_m', 'est_vertical_alt_m', 'est_horizontal_alt_m']),
+    // Backup (rules 1.2): figure measured to the lowest red point instead of the floor line
+    cols('mm', ['red_bottom_y_mm', 'figure_red_mm']),
+    cols('m', ['est_vertical_red_m', 'est_horizontal_red_m']),
     cols('bool', [
       'flag_red_not_found', 'flag_figure_small', 'flag_figure_off_mark', 'flag_foot_off_floor',
       'flag_multiple_red', 'flag_axis_moved', 'flag_manual_alignment', 'flag_alignment_warning',

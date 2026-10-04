@@ -23,7 +23,8 @@
     var floorAxis = HUSS.detect.floorline.yAt(a.floor, h.axis.x);
     var comp = HUSS.measure.compute.compute({
       head_y: h.head.y, foot_y: h.foot.y, ceiling_y: h.ceiling.y, wall_x: h.wall.x,
-      axis_x: h.axis.x, floor_y_axis: floorAxis
+      axis_x: h.axis.x, floor_y_axis: floorAxis,
+      red_bottom_y: a.red.found ? a.red.raw_foot_y : null
     }, s.params);
     var flags = HUSS.measure.flags.toolFlags(a, {
       axis_x: h.axis.x, axis_placement: h.axis.placement, foot_y: h.foot.y, figure_mm: comp.figure_mm
@@ -107,7 +108,8 @@
       note: m.note || ''
     };
     ['figure_mm', 'figure_from_floor_mm', 'foot_floor_gap_mm', 'ceiling_mm', 'distance_mm', 'ref_height_m',
-      'scale_mm_per_m', 'est_vertical_m', 'est_horizontal_m', 'est_vertical_alt_m', 'est_horizontal_alt_m'
+      'scale_mm_per_m', 'est_vertical_m', 'est_horizontal_m', 'est_vertical_alt_m', 'est_horizontal_alt_m',
+      'red_bottom_y_mm', 'figure_red_mm', 'est_vertical_red_m', 'est_horizontal_red_m'
     ].forEach(function (k) { rec[k] = comp[k]; });
     HUSS.measure.flags.TOOL_FLAGS.forEach(function (k) { rec[k] = flags[k]; });
     cfg.EXCLUSION_IDS.forEach(function (k) { rec[k] = false; });
