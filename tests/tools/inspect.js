@@ -85,6 +85,7 @@ function main() {
   const f = (v, d = 3) => (v == null ? '-' : v.toFixed(d));
   console.log(`align: R=${R} px/mm  px_per_mm ${f(al.px_per_mm_x)} / ${f(al.px_per_mm_y)}  rotation ${f(al.rotation_deg)} deg  residual ${f(al.residual_mm)} mm  quarter ${al.quarter}  floorRatio ${f(al.floor_ratio, 2)} markRatio ${f(al.mark_ratio, 2)}${al.orientation_tie ? ' (tie)' : ''}  warning ${al.warning}`);
   console.log(`floor: ok ${a.floor.ok}  y(40)=${f(P.floorY(a, 40))}  slope ${f(a.floor.b, 6)}  inliers ${a.floor.inliers}/${a.floor.samples}`);
+  console.log(`qr: ${a.qr.found ? a.qr.text + '  (corrected ' + a.qr.corrected + ', offset ' + a.qr.offset_mm.join('/') + ' mm' + (a.qr.template_mismatch ? ', TEMPLATE MISMATCH' : '') + ')' : 'not read'}${al.orientation_tie ? '  orientation tie broken by ' + al.tie_break : ''}`);
   const red = a.red, s = a.suggestions;
   console.log(`red: found ${red.found}  multiple ${red.multiple}  T_a ${f(red.Ta, 1)}  head ${f(red.head_y)}  raw foot ${f(red.raw_foot_y)}  axis ${f(red.axis_x)}`);
   console.log(`suggest: head ${f(s.head_y)}  foot ${f(s.foot_y)} (off floor: ${s.foot_off_floor})  figure ${s.head_y != null ? f(s.foot_y - s.head_y) : '-'} mm`);

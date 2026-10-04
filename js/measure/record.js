@@ -5,11 +5,13 @@
  * session = {
  *   analysis,                          // HUSS.detect.pipeline.analyze result
  *   params: { ref_height_m, min_figure_mm, foot_tolerance_mm, snap_radius_mm },
- *   meta: { project_code, rater_code, sheet_code, code_source, mode, file_name, color_noncompliant, note },
+ *   meta: { project_code, rater_code, sheet_code, code_source, mode, file_name, color_noncompliant, note,
+ *           exclusions: { excl_id: bool }, vertical_not_measurable, horizontal_not_measurable },
  *   handles: { axis: { x, placement }, head: { y, placement }, foot: { y, placement },
  *              ceiling: { y, placement }, wall: { x, placement } },   // y/x null = not placed
  *   suggested: { head_y, foot_y, ceiling_y, wall_x },
- *   status, startedAt, confirmedAt     // ms since epoch
+ *   status, startedAt, confirmedAt,    // ms since epoch
+ *   duration_s                         // optional; time spent on the drawing over all visits
  * }
  */
 (function (root) {
@@ -17,9 +19,28 @@
   var HUSS = root.HUSS = root.HUSS || {};
   HUSS.measure = HUSS.measure || {};
 
+  function q2(v) {
+    return v == null ? v : Math.round(v * 100) / 100;
+  }
+
+  /**
+   * Handle positions at CSV precision (0.01 mm). Everything is computed from these, so a
+   * record loaded back gives exactly the same values (spec 10.1).
+   */
+  function quantized(handles) {
+    var h = handles;
+    return {
+      axis: { x: q2(h.axis.x), placement: h.axis.placement },
+      head: { y: q2(h.head.y), placement: h.head.placement },
+      foot: { y: q2(h.foot.y), placement: h.foot.placement },
+      ceiling: { y: q2(h.ceiling.y), placement: h.ceiling.placement },
+      wall: { x: q2(h.wall.x), placement: h.wall.placement }
+    };
+  }
+
   /** Computed values and tool flags for the current handle positions. */
   function derive(s) {
-    var a = s.analysis, h = s.handles;
+    var a = s.analysis, h = quantized(s.handles);
     var floorAxis = HUSS.detect.floorline.yAt(a.floor, h.axis.x);
     var comp = HUSS.measure.compute.compute({
       head_y: h.head.y, foot_y: h.foot.y, ceiling_y: h.ceiling.y, wall_x: h.wall.x,
@@ -32,12 +53,33 @@
     return { floor_y_axis: floorAxis, comp: comp, flags: flags };
   }
 
-  /** Phase 1 confirmation rule: head, foot, ceiling and wall placed, rater code given. */
+  /** Exclusion ids of the session's project (spec defaults without a project), plus excl_other. */
+  function exclusionIds(params) {
+    var list = params && params.exclusion_criteria ? params.exclusion_criteria.map(function (e) { return e.id; })
+      : HUSS.io.csv.DEFAULT_EXCLUSIONS.slice();
+    return list.filter(function (id) { return id !== 'excl_other'; }).concat(['excl_other']);
+  }
+
+  function isExcluded(s) {
+    var ex = s.meta.exclusions || {};
+    return exclusionIds(s.params).some(function (id) { return !!ex[id]; });
+  }
+
+  /**
+   * Confirmation rule (spec 8.4): measured needs head and foot, and per axis a handle or
+   * "not measurable"; any exclusion criterion makes the drawing excluded and handles optional.
+   * The rater code and the sheet code (the record key) are always needed.
+   */
   function missingForConfirm(s) {
-    var miss = [];
-    ['head', 'foot', 'ceiling'].forEach(function (k) { if (s.handles[k].y == null) miss.push(k); });
-    if (s.handles.wall.x == null) miss.push('wall');
-    if (!s.meta.rater_code) miss.push('rater_code');
+    var miss = [], m = s.meta;
+    if (!isExcluded(s)) {
+      if (s.handles.head.y == null) miss.push('head');
+      if (s.handles.foot.y == null) miss.push('foot');
+      if (!m.vertical_not_measurable && s.handles.ceiling.y == null) miss.push('ceiling');
+      if (!m.horizontal_not_measurable && s.handles.wall.x == null) miss.push('wall');
+    }
+    if (!m.rater_code) miss.push('rater_code');
+    if (!m.sheet_code) miss.push('sheet_code');
     return miss;
   }
 
@@ -66,7 +108,7 @@
   }
 
   function buildRecord(s) {
-    var a = s.analysis, h = s.handles, m = s.meta, cfg = a.config;
+    var a = s.analysis, h = quantized(s.handles), m = s.meta, cfg = a.config;
     var d = derive(s), comp = d.comp, flags = d.flags;
     var toPx = function (x, y) {
       return x == null || y == null ? [null, null] : HUSS.image.homography.apply(a.H, x, y);
@@ -75,7 +117,8 @@
     var ceil = toPx(h.axis.x, h.ceiling.y);
     var wall = toPx(h.wall.x, h.wall.x == null ? null : HUSS.detect.floorline.yAt(a.floor, h.wall.x));
     var c = a.align.corners;
-    var dur = s.startedAt && s.confirmedAt ? Math.round((s.confirmedAt - s.startedAt) / 1000) : null;
+    var dur = s.duration_s != null ? Math.round(s.duration_s)
+      : s.startedAt && s.confirmedAt ? Math.round((s.confirmedAt - s.startedAt) / 1000) : null;
 
     var rec = {
       project_code: m.project_code || '', sheet_code: m.sheet_code || '', rater_code: m.rater_code || '',
@@ -103,8 +146,8 @@
       head_suggested_y_mm: s.suggested.head_y, foot_suggested_y_mm: s.suggested.foot_y,
       ceiling_suggested_y_mm: s.suggested.ceiling_y, wall_suggested_x_mm: s.suggested.wall_x,
       flag_color_noncompliant: !!m.color_noncompliant,
-      vertical_not_measurable: false, horizontal_not_measurable: false,
-      excluded: false,
+      vertical_not_measurable: !!m.vertical_not_measurable, horizontal_not_measurable: !!m.horizontal_not_measurable,
+      excluded: isExcluded(s),
       note: m.note || ''
     };
     ['figure_mm', 'figure_from_floor_mm', 'foot_floor_gap_mm', 'ceiling_mm', 'distance_mm', 'ref_height_m',
@@ -112,11 +155,24 @@
       'red_bottom_y_mm', 'figure_red_mm', 'est_vertical_red_m', 'est_horizontal_red_m'
     ].forEach(function (k) { rec[k] = comp[k]; });
     HUSS.measure.flags.TOOL_FLAGS.forEach(function (k) { rec[k] = flags[k]; });
-    cfg.EXCLUSION_IDS.forEach(function (k) { rec[k] = false; });
+    var ex = m.exclusions || {};
+    exclusionIds(s.params).forEach(function (k) { rec[k] = !!ex[k]; });
+    // An axis marked "not measurable" carries no values (its handle may still be on screen).
+    if (m.vertical_not_measurable) {
+      ['ceiling_y_mm', 'ceiling_x_px', 'ceiling_y_px', 'ceiling_mm', 'est_vertical_m', 'est_vertical_alt_m', 'est_vertical_red_m', 'ceiling_placement']
+        .forEach(function (k) { rec[k] = null; });
+    }
+    if (m.horizontal_not_measurable) {
+      ['wall_x_mm', 'wall_x_px', 'wall_y_px', 'distance_mm', 'est_horizontal_m', 'est_horizontal_alt_m', 'est_horizontal_red_m', 'wall_placement']
+        .forEach(function (k) { rec[k] = null; });
+    }
     return rec;
   }
 
-  var api = { derive: derive, missingForConfirm: missingForConfirm, isoLocal: isoLocal, fileName: fileName, buildRecord: buildRecord };
+  var api = {
+    derive: derive, missingForConfirm: missingForConfirm, isoLocal: isoLocal, fileName: fileName, buildRecord: buildRecord,
+    exclusionIds: exclusionIds, isExcluded: isExcluded
+  };
   HUSS.measure.record = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -100,6 +100,25 @@
     };
   }
 
+  /**
+   * Fast sheet code reading for the queue (no rectification): corner marks, orientation, QR.
+   * Returns { ok: true, sheet_code, template, template_mismatch } or { ok: false, reason }.
+   */
+  function readCode(img, opts) {
+    opts = opts || {};
+    var cfg = opts.config || HUSS.config;
+    var params = opts.params || cfg.DEFAULTS;
+    var T = HUSS.sheet.template.get(opts.template || params.template || cfg.DEFAULTS.template);
+    var D = HUSS.detect;
+    var corners = D.corners.findCorners(img, T, cfg);
+    if (!corners.ok) return { ok: false, reason: 'corners' };
+    var orient = D.corners.chooseOrientation(img, corners.points, T, corners.threshold, cfg);
+    if (!orient.ok) return { ok: false, reason: 'orientation' };
+    var qr = orient.qr || D.qr.read(D.qr.imageSampler(img, orient.H), T, cfg);
+    if (!qr.found) return { ok: false, reason: 'qr' };
+    return { ok: true, sheet_code: qr.sheet_code, template: qr.template, template_mismatch: qr.template !== T.id };
+  }
+
   function floorY(a, x) {
     return HUSS.detect.floorline.yAt(a.floor, x);
   }
@@ -137,7 +156,7 @@
   }
 
   var api = {
-    analyze: analyze, floorY: floorY, ceilingProfile: ceilingProfile,
+    analyze: analyze, readCode: readCode, floorY: floorY, ceilingProfile: ceilingProfile,
     snapCeiling: snapCeiling, snapWall: snapWall, snapHead: snapHead, snapFoot: snapFoot,
     toImagePx: toImagePx
   };

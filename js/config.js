@@ -27,9 +27,6 @@
       file_project_fallback: 'HUSS'
     },
 
-    // Default exclusion criteria (spec 5.1); Phase 2 takes them from the project file.
-    EXCLUSION_IDS: ['excl_no_figure', 'excl_not_standing_full', 'excl_not_along_axis', 'excl_other'],
-
     // 7.2 Corner marks and orientation
     CORNERS: {
       DOWNSCALE_LONG_SIDE: 1000,   // px, long side of the grey working copy

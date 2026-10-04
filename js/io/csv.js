@@ -45,8 +45,15 @@
     return out;
   }
 
-  /** Columns written by the scoring screen, in file order. Post-merge columns are added by Merge. */
-  var COLUMNS = [].concat(
+  var DEFAULT_EXCLUSIONS = ['excl_no_figure', 'excl_not_standing_full', 'excl_not_along_axis'];
+
+  /**
+   * Columns written by the scoring screen, in file order, for a project's exclusion criteria
+   * (excl_other is always added). Post-merge columns are added by Merge.
+   */
+  function columnsFor(exclusionIds) {
+    var ids = (exclusionIds || DEFAULT_EXCLUSIONS).filter(function (id) { return id !== 'excl_other'; }).concat(['excl_other']);
+    return [].concat(
     cols('str', ['project_code', 'sheet_code', 'rater_code', 'mode', 'status', 'measured_at']),
     cols('int', ['duration_s']),
     cols('str', ['tool_version', 'rules_version', 'template', 'file_name']),
@@ -73,14 +80,22 @@
       'flag_red_not_found', 'flag_figure_small', 'flag_figure_off_mark', 'flag_foot_off_floor',
       'flag_multiple_red', 'flag_axis_moved', 'flag_manual_alignment', 'flag_alignment_warning',
       'flag_color_noncompliant',
-      'vertical_not_measurable', 'horizontal_not_measurable',
-      'excl_no_figure', 'excl_not_standing_full', 'excl_not_along_axis', 'excl_other', 'excluded'
+      'vertical_not_measurable', 'horizontal_not_measurable'
     ]),
+    cols('bool', ids),
+    cols('bool', ['excluded']),
     cols('str', ['note'])
-  );
+    );
+  }
 
+  var COLUMNS = columnsFor(DEFAULT_EXCLUSIONS);
   var COLUMN_TYPE = {};
   COLUMNS.forEach(function (c) { COLUMN_TYPE[c.name] = c.type; });
+
+  /** Type of a column; any excl_* column is a 0/1 exclusion criterion. */
+  function typeOf(name) {
+    return COLUMN_TYPE[name] || (/^excl_[a-z0-9_]+$/.test(name) ? 'bool' : null);
+  }
 
   var EOL = '\r\n';
   var BOM = '﻿';
@@ -114,8 +129,8 @@
     return s;
   }
 
-  function formatRow(record) {
-    return COLUMNS.map(function (c) { return formatValue(c.type, record[c.name]); });
+  function formatRow(record, columns) {
+    return (columns || COLUMNS).map(function (c) { return formatValue(c.type, record[c.name]); });
   }
 
   /** Typed record from a header + cells; unknown columns are ignored. */
@@ -123,7 +138,7 @@
     var rec = {};
     COLUMNS.forEach(function (c) { rec[c.name] = null; });
     for (var i = 0; i < header.length; i++) {
-      var type = COLUMN_TYPE[header[i]];
+      var type = typeOf(header[i]);
       if (type) rec[header[i]] = parseValue(type, cells[i]);
     }
     return rec;
@@ -143,17 +158,19 @@
   }
 
   /** Session/measurement file: UTF-8 without BOM, comma separator, dot decimal. */
-  function toCSV(records) {
-    var rows = [COLUMNS.map(function (c) { return c.name; })];
-    records.forEach(function (r) { rows.push(formatRow(r)); });
+  function toCSV(records, columns) {
+    columns = columns || COLUMNS;
+    var rows = [columns.map(function (c) { return c.name; })];
+    records.forEach(function (r) { rows.push(formatRow(r, columns)); });
     return joinLines(rows, ',');
   }
 
   /** Excel view: BOM, semicolon separator, decimal comma. Cannot be loaded back. */
-  function toExcelView(records) {
-    var rows = [COLUMNS.map(function (c) { return c.name; })];
+  function toExcelView(records, columns) {
+    columns = columns || COLUMNS;
+    var rows = [columns.map(function (c) { return c.name; })];
     records.forEach(function (r) {
-      rows.push(COLUMNS.map(function (c) {
+      rows.push(columns.map(function (c) {
         var s = formatValue(c.type, r[c.name]);
         return TYPES[c.type].kind === 'num' ? s.replace('.', ',') : s;
       }));
@@ -222,11 +239,13 @@
     } catch (e2) {
       return { ok: false, error: 'parse_error', detail: e2.message };
     }
-    return { ok: true, records: records };
+    var exclusionIds = header.filter(function (h) { return /^excl_[a-z0-9_]+$/.test(h) && h !== 'excl_other'; });
+    return { ok: true, records: records, header: header, exclusionIds: exclusionIds };
   }
 
   var api = {
-    TYPES: TYPES, COLUMNS: COLUMNS, COLUMN_TYPE: COLUMN_TYPE,
+    TYPES: TYPES, COLUMNS: COLUMNS, COLUMN_TYPE: COLUMN_TYPE, DEFAULT_EXCLUSIONS: DEFAULT_EXCLUSIONS,
+    columnsFor: columnsFor, typeOf: typeOf,
     formatValue: formatValue, parseValue: parseValue, formatRow: formatRow, parseRow: parseRow,
     toCSV: toCSV, toExcelView: toExcelView, parse: parse, isExcelView: isExcelView,
     readMeasurements: readMeasurements
