@@ -143,8 +143,9 @@
       ceiling_placement: h.ceiling.y == null ? null : h.ceiling.placement,
       wall_placement: h.wall.x == null ? null : h.wall.placement,
       axis_placement: h.axis.placement,
-      head_suggested_y_mm: s.suggested.head_y, foot_suggested_y_mm: s.suggested.foot_y,
-      ceiling_suggested_y_mm: s.suggested.ceiling_y, wall_suggested_x_mm: s.suggested.wall_x,
+      // at the same precision as the handles, so "accepted unchanged" is an exact comparison
+      head_suggested_y_mm: q2(s.suggested.head_y), foot_suggested_y_mm: q2(s.suggested.foot_y),
+      ceiling_suggested_y_mm: q2(s.suggested.ceiling_y), wall_suggested_x_mm: q2(s.suggested.wall_x),
       flag_color_noncompliant: !!m.color_noncompliant,
       vertical_not_measurable: !!m.vertical_not_measurable, horizontal_not_measurable: !!m.horizontal_not_measurable,
       excluded: isExcluded(s),

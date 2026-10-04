@@ -238,3 +238,10 @@ table.grid input.invalid { border-color: var(--warn); background: var(--warn-bg)
 table.grid td.problem { font-size: 11px; color: var(--warn); white-space: nowrap; }
 table.grid td.ok-mark { color: var(--ok); font-size: 12px; }
 @media (max-width: 1100px) { .page-grid-tables { grid-template-columns: 1fr; } }
+
+/* Manual alignment (spec 7.5) */
+.realign { margin-top: 8px; }
+.manual-methods { flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 4px; }
+#card-manual .btn-row { margin-bottom: 4px; }
+.stage.manual canvas#view { cursor: crosshair; }
+.stage.manual.panning canvas#view { cursor: grabbing; }

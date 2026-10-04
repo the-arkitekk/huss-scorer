@@ -219,7 +219,13 @@
         sheet_code: rec.sheet_code || '',
         code_source: rec.code_source || null
       },
-      seconds: rec.duration_s || 0
+      seconds: rec.duration_s || 0,
+      // A manual alignment is repeated from its corners rather than asked for again.
+      align: rec.align_method && rec.align_method !== 'auto' && rec.corner_tl_x_px != null ? {
+        method: rec.align_method,
+        corners: [[rec.corner_tl_x_px, rec.corner_tl_y_px], [rec.corner_tr_x_px, rec.corner_tr_y_px],
+          [rec.corner_br_x_px, rec.corner_br_y_px], [rec.corner_bl_x_px, rec.corner_bl_y_px]]
+      } : null
     };
   }
 

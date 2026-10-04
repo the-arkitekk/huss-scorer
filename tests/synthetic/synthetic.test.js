@@ -299,6 +299,29 @@ for (const id of ['S1', 'S3', 'S11']) {
   });
 }
 
+test('S14: floor line ends clicked the other way round -> the QR code puts the page the right way up', () => {
+  const g = generate('S14'), T = HUSS.sheet.template.get(g.template), t = g.truth;
+  const a = P.manualFloorline(g.img, g.map(T.floor.x1, T.floor.y), g.map(T.floor.x0, T.floor.y), { template: g.template, params });
+  assert.equal(a.qr.found, true);
+  checkRedFigure('S14', a, t);
+});
+
+test('a manual alignment is repeated from the corners kept in the record', () => {
+  for (const [id, how] of [['S1', 'corners'], ['S14', 'floorline']]) {
+    const g = generate(id), T = HUSS.sheet.template.get(g.template), opts = { template: g.template, params };
+    const a = how === 'corners' ? P.manualCorners(g.img, g.truth.corners_px, opts)
+      : P.manualFloorline(g.img, g.map(T.floor.x0, T.floor.y), g.map(T.floor.x1, T.floor.y), opts);
+    const c = a.align.corners;
+    const b = P.alignFromCorners(g.img, a.align.method, [c.tl, c.tr, c.br, c.bl], opts);
+    assert.equal(b.align.method, a.align.method);
+    for (const [x, y] of [[20, 20], [150, 100], [270, 190]]) {
+      const p = P.toImagePx(a, x, y), q = P.toImagePx(b, x, y);
+      assert.ok(Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.01, `${id}: repeated alignment differs`);
+    }
+    near(b.suggestions.head_y, a.suggestions.head_y, 1e-6, `${id} head`);
+  }
+});
+
 test('manual alignment: wrong number of corner clicks is refused', () => {
   const g = generate('S1');
   assert.equal(P.manualCorners(g.img, [[1, 1], [2, 2], [3, 3]], { template: g.template }).ok, false);

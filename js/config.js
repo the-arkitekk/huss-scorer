@@ -141,7 +141,8 @@
 
     // 7.5 Manual alignment
     MANUAL: {
-      REFINE_WINDOW_MM: 3          // a click is centred on the corner square within this radius
+      REFINE_WINDOW_MM: 3,         // a click is centred on the corner square within this radius
+      CLICK_SLOP_PX: 5             // a press that moves further than this pans instead of placing a point
     },
 
     // Scoring screen

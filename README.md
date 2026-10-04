@@ -2,7 +2,7 @@
 
 Semi-automatic scorer for HuSS (Human-Scaled Section) drawings. The tool suggests, the rater confirms or corrects. Everything runs in the browser; images and data never leave the computer.
 
-Status: **v0.1.0, rules 1.2** — Phase 1 (alignment, red-figure suggestion, handles with snap), Phase 2a (project file, sheet generator, QR code) and Phase 2b (folder sessions: queue, Blind/Open, exclusions, autosave, resume, Excel view). See `huss-scorer-sartname-v1.md` (technical specification, Turkish), section 13.
+Status: **v0.1.0, rules 1.2** — Phase 1 (alignment, red-figure suggestion, handles with snap), Phase 2a (project file, sheet generator, QR code), Phase 2b (folder sessions: queue, Blind/Open, exclusions, autosave, resume, Excel view) and Phase 2c (ceiling and wall suggestions, manual alignment). See `huss-scorer-sartname-v1.md` (technical specification, Turkish), section 13.
 
 ## Use
 
@@ -19,7 +19,7 @@ The top bar has four screens: **Score**, **Sheets**, **Tables** and **New projec
 1. Open `index.html` (double-click; no installation, no internet needed). Load the project file (**Load project file…**).
 2. Enter your rater code and choose **Blind** or **Open** (fixed for the session). In Open mode the key table and structures table can be loaded to show structures and E.
 3. Choose the folder of scans (or drop it on the page). The sheet codes are read from the QR codes and the drawings come in ascending sheet-code order. Repeated codes are resolved by choosing one scan; scans without a readable code come last and their code is typed.
-4. Compare the sheet code (read from the QR code) with the picture of the printed code and tick **Same as the code printed on the sheet** (`K`). Head and foot are suggested from the red figure. Click near the ceiling line, then near the opposite wall (the tool moves on by itself); a handle released within 1.5 mm of a line jumps to its centre. Tick exclusion criteria or "not measurable" where needed, add a note.
+4. Compare the sheet code (read from the QR code) with the picture of the printed code and tick **Same as the code printed on the sheet** (`K`). Head, foot, ceiling and opposite wall are suggested (dashed lines). If they sit on the right lines, nothing else is needed: `K`, then `Enter`. Otherwise drag a line, or use **Re-place** and click near the right line; a handle released within 1.5 mm of a line jumps to its centre. Lines that could not be suggested are placed by clicking (the tool moves on to the next one by itself). Tick exclusion criteria or "not measurable" where needed, add a note.
 5. **Confirm and next** (`Enter`), **Previous** (`Shift+Enter`), **Review later** (`D`). **Download CSV** saves the session; **Download for Excel** gives a semicolon / decimal-comma view that cannot be loaded back.
 6. To continue later: the browser keeps an autosave (offered when the same project, rater and mode are chosen), and **Resume from CSV…** with the folder restores everything on any computer. The downloaded CSV is the real record.
 
@@ -35,8 +35,25 @@ The top bar has four screens: **Score**, **Sheets**, **Tables** and **New projec
 | Enter / Shift+Enter | Confirm and next / previous |
 | D | Review later |
 | K | Tick "same as the printed code" |
+| Backspace | Manual alignment: undo the last point |
 
 The foot handle is locked by default (rule 3 decides it); unlock it in the panel to move it.
+
+### Suggestions (spec 7.9)
+
+- **Ceiling:** going up from 1 mm above the head, the first line that really runs horizontally: on its row, at least 60 % of the 10 mm right of the figure axis is dark (±0.5 mm, a slight slope allowed). None found: no suggestion. With a double ceiling line the inner face (nearer the figure) comes first.
+- **Opposite wall:** among the lines right of the figure, the rightmost one that rises from the floor for at least half the ceiling height (10 mm without a ceiling); it is followed upwards row by row, so slightly slanted lines and pencil breaks up to 1 mm still count. If another such line lies within 6 mm to its left, that one (the inner face of a double-line wall).
+- "Dark" means darker than halfway between the paper and the line itself, so faint pencil is treated like dark pencil. All values are in `js/config.js` (`SUGGEST`).
+- The first position of every suggestion is written to the CSV (`*_suggested_*` columns, at handle precision), together with how each handle ended up (`suggested`, `snapped`, `manual`), so the share of suggestions accepted unchanged can be reported.
+
+### Manual alignment (spec 7.5)
+
+When the corner marks of a scan cannot be found, the scan opens as it is, for alignment by hand (wheel to zoom, drag to pan, a magnifier follows the pointer):
+
+- **4 corner squares** (recommended): click the four black squares in any order. Each click is centred on its square and the page orientation is found as in automatic alignment, so the result is as accurate as automatic alignment.
+- **2 floor line ends** (when a square is missing or damaged): click the two ends of the printed floor line, the end at the triangle first. If the QR code reads only the other way round, the tool turns the page itself. This is coarser (a similarity, about 0.5 mm), but estimates are ratios, so the effect stays small.
+
+Afterwards everything runs as usual: QR code (the scan gets its code if it can be read now), suggestions, scoring. The CSV gets `align_method = manual_corners` or `manual_floorline` and `flag_manual_alignment`; reopening the scan later repeats the alignment from the corners kept in the record. **Align by hand…** under the image information replaces the alignment of any scan (for example after an alignment warning); **Cancel** goes back.
 
 ## Rule changes since the specification (rules 1.0)
 
@@ -60,7 +77,7 @@ Below the floor line the sheet carries ground hatching: short "/" strokes with s
 npm test
 ```
 
-- `node tests/synthetic/generate.js` writes the synthetic pages (S1–S8, S12 600 dpi, S13 small figure, S15 A3L, T1 orientation tie) to `samples/synthetic/` and `tests/synthetic/expected.json`.
+- `node tests/synthetic/generate.js` writes the synthetic pages (S1–S8, S9 double wall, S10 no ceiling, S11 JPEG quality 60 with noise, S12 600 dpi, S13 small figure, S14 missing corner mark, S15 A3L, T1 orientation tie) to `samples/synthetic/` and `tests/synthetic/expected.json`.
 - Sheet geometry lives in one place, `HUSS.sheet.template.items()`; the print view (`js/sheet/svg.js`), the PDF (`js/sheet/pdf.js`) and the synthetic pages all draw from it.
 - `node tests/tools/inspect.js <scan>` runs the detection on a real scan and writes overlay images (macOS: uses `sips` to decode).
 - All thresholds are named constants in `js/config.js`; all interface texts are in `js/strings.en.js`.

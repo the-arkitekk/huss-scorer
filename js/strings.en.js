@@ -8,7 +8,7 @@
 
   HUSS.strings = {
     app_title: 'HuSS Scorer',
-    phase_badge: 'Phase 1 prototype',
+    phase_badge: 'Phase 2 prototype',
     open_image: 'Open image…',
 
     drop_title: 'Drop a folder of scanned HuSS drawings here',
@@ -38,6 +38,32 @@
     sec_image: 'Image',
     no_image: 'No image loaded.',
     align_summary: 'Aligned automatically · {r} px/mm · residual {res} mm · rotation {rot}°',
+    align_summary_manual_corners: 'Aligned by hand (corner squares) · {r} px/mm · residual {res} mm · rotation {rot}°',
+    align_summary_manual_floorline: 'Aligned by hand (floor line ends) · {r} px/mm · rotation {rot}°',
+    realign: 'Align by hand…',
+    realign_title: 'Replace the alignment of this sheet by clicking its corner squares or floor line ends',
+
+    // Manual alignment (spec 7.5)
+    sec_manual: 'Manual alignment',
+    manual_why_corners_not_found: 'The corner marks of this sheet could not be found automatically. Align it by hand, then score it as usual.',
+    manual_why_orientation_failed: 'The page orientation could not be found automatically. Align it by hand, then score it as usual.',
+    manual_why_realign: 'Click again to replace the current alignment. Handles go back to the suggestions.',
+    manual_method_corners: '4 corner squares',
+    manual_method_floorline: '2 floor line ends',
+    manual_instr_corners: 'Click the four black corner squares, in any order. Each click is centred on its square.',
+    manual_instr_floorline: 'Use this when a corner square is missing or damaged: click the two ends of the printed floor line, the end at the triangle first.',
+    manual_count: '{n} of {total} points',
+    manual_undo: 'Undo (Backspace)',
+    manual_clear: 'Clear',
+    manual_cancel: 'Cancel',
+    manual_busy: 'Aligning…',
+    manual_err_no_square: 'One point was not on a corner square and has been removed. Click that square again, or switch to the floor line ends.',
+    manual_err_orientation: 'These points do not give a readable page. Check them, or switch to the floor line ends.',
+    manual_confirm_first: 'Align the sheet first (or press D to score it later).',
+    hint_manual_corners: 'Click the corner squares ({n} of 4) · Wheel: zoom · Drag: pan · Backspace: undo',
+    hint_manual_floorline: 'Click the floor line ends, triangle end first ({n} of 2) · Wheel: zoom · Drag: pan · Backspace: undo',
+    qr_after_manual: 'QR code read after manual alignment.',
+    qr_code_taken: 'The QR code says {code}, but another scan in this session already has that code. Check the printed code.',
     timing: 'Processed in {ms} ms',
 
     sec_handles: 'Handles',
@@ -96,7 +122,7 @@
     confirmed: 'Confirmed at {time}. The CSV file was downloaded.',
     changed_after_confirm: 'Changed after confirming. Confirm again to download the new values.',
 
-    err_corners_not_found: 'The four corner marks were not found. Scan the whole sheet in colour at 300 dpi. Manual alignment comes in Phase 2.',
+    err_corners_not_found: 'The four corner marks were not found.',
     err_orientation_failed: 'The page orientation could not be determined (floor line not found).',
     err_decode: 'This file could not be opened as an image.',
     err_type: 'Please choose a JPEG or PNG image.',

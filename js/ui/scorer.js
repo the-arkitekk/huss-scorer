@@ -12,7 +12,10 @@
   var cfg, view, s = null, ctx = null;
   var ui = { guides: true, snap: true, selected: null, dragging: null, placing: null, hoverPage: null, footLocked: true, confirmTried: false };
   var els = {};
-  var drag = null, pan = null, spaceDown = false, hintTimer = null;
+  var drag = null, pan = null, press = null, spaceDown = false, hintTimer = null;
+  var man = null;     // manual alignment in progress (spec 7.5)
+  var curImg = null;  // the decoded scan of the current drawing (for "Align by hand")
+  var MAN_COLOR = '#e8590c';
   var actions = { confirm: function () {}, previous: function () {}, later: function () {} };
   var loadToken = 0;
 
@@ -32,7 +35,8 @@
 
   /** Back to the empty drop zone (optionally with an error message). */
   function clear(errorText) {
-    s = null; ctx = null;
+    s = null; ctx = null; man = null; press = null; curImg = null;
+    leaveManualLook();
     view.clear();
     setCardsVisible(false);
     els.dropzone.hidden = false;
@@ -54,9 +58,17 @@
       return new Promise(function (resolve) { setTimeout(function () { resolve(img); }, 20); });
     }).then(function (img) {
       if (token !== loadToken) return false;
-      var prm = HUSS.app.params();
-      var a = HUSS.detect.pipeline.analyze(img, { template: prm.template, params: prm, config: cfg });
+      var prm = HUSS.app.params(), P = HUSS.detect.pipeline;
+      var opts = { template: prm.template, params: prm, config: cfg };
+      // A sheet aligned by hand before is aligned again from its kept corners.
+      var al = c.saved && c.saved.align;
+      var a = al ? P.alignFromCorners(img, al.method, al.corners, opts) : P.analyze(img, opts);
       setBusy(null);
+      curImg = img;
+      if (!a.ok && (a.error === 'corners_not_found' || a.error === 'orientation_failed')) {
+        startManual(img, c, prm, a.error, null);
+        return true;
+      }
       if (!a.ok) { showItemError(c, HUSS.t('err_' + a.error)); return false; }
       a.dark = null; // not needed after the analysis
       start(a, c, prm);
@@ -79,6 +91,8 @@
 
   function start(a, c, prm) {
     ctx = c;
+    man = null; press = null;
+    leaveManualLook();
     var sug = a.suggestions;
     if (prm.suggestions && prm.suggestions.figure === false) sug = Object.assign({}, sug, { head_y: null, foot_y: null });
     var saved = c.saved;
@@ -86,17 +100,17 @@
       axis: { x: sug.axis_x, placement: 'auto' },
       head: { y: sug.head_y, placement: sug.head_y != null ? 'suggested' : null },
       foot: { y: sug.foot_y, placement: sug.foot_y != null ? 'suggested' : null },
-      ceiling: { y: null, placement: null },
-      wall: { x: null, placement: null }
+      ceiling: { y: sug.ceiling_y, placement: sug.ceiling_y != null ? 'suggested' : null },
+      wall: { x: sug.wall_x, placement: sug.wall_x != null ? 'suggested' : null }
     };
-    var suggested = { head_y: sug.head_y, foot_y: sug.foot_y, ceiling_y: null, wall_x: null };
+    var suggested = { head_y: sug.head_y, foot_y: sug.foot_y, ceiling_y: sug.ceiling_y, wall_x: sug.wall_x };
     if (saved) {
       // Saved handles take precedence over the suggestions; a missing axis keeps the detected one.
       handles = JSON.parse(JSON.stringify(saved.handles));
       if (handles.axis.x == null) handles.axis = { x: sug.axis_x, placement: 'auto' };
       suggested = saved.suggested;
     }
-    var m = saved ? saved.meta : {};
+    var m = saved ? saved.meta : c.keepMeta || {};
     s = {
       analysis: a,
       params: prm,
@@ -112,7 +126,7 @@
       status: null
     };
     // Sheet code: the QR of this sheet, or what was typed for it before; never the previous drawing's.
-    els.inSheet.value = c.sheetCode || '';
+    els.inSheet.value = c.sheetCode || m.sheet_code || '';
     els.inSheet.readOnly = c.codeSource === 'qr';
     // The sheet code must be compared with the printed code (a tick): confirmed records keep it.
     els.chkCode.checked = !!(saved && c.chip && c.chip !== 'deferred');
@@ -146,15 +160,14 @@
     var al = a.align;
     els.imageInfo.textContent = open ? HUSS.t('open_file', { file: c.fileName }) + ' · ' + a.image.width + ' × ' + a.image.height + ' px' : '';
     els.imageInfo.hidden = !open;
-    els.imageAlign.textContent = HUSS.t('align_summary', {
-      r: a.R, res: al.residual_mm.toFixed(2), rot: al.rotation_deg.toFixed(1)
-    }) + ' · ' + HUSS.t('timing', { ms: Math.round(a.timings.total) });
-    if (a.qr && a.qr.found && a.qr.template_mismatch) {
-      els.imageWarn.textContent = HUSS.t('qr_template_mismatch', { qr: a.qr.template, used: a.template.id });
-      els.imageWarn.hidden = false;
-    } else {
-      els.imageWarn.hidden = true;
-    }
+    els.imageAlign.textContent = HUSS.t(al.method === 'auto' ? 'align_summary' : 'align_summary_' + al.method, {
+      r: a.R, res: al.residual_mm == null ? '–' : al.residual_mm.toFixed(2), rot: al.rotation_deg.toFixed(1)
+    }) + ' · ' + HUSS.t('timing', { ms: Math.round(a.timings.total) }) + (c.qrAfterManual ? ' · ' + HUSS.t('qr_after_manual') : '');
+    var warn = [];
+    if (a.qr && a.qr.found && a.qr.template_mismatch) warn.push(HUSS.t('qr_template_mismatch', { qr: a.qr.template, used: a.template.id }));
+    if (c.qrTaken) warn.push(HUSS.t('qr_code_taken', { code: c.qrTaken }));
+    els.imageWarn.textContent = warn.join(' ');
+    els.imageWarn.hidden = !warn.length;
     renderOpenInfo();
     drawCodePicture(a);
     setFinishMode(!!c.finished);
@@ -288,11 +301,17 @@
   // ------------------------------------------------------------ pointer
 
   function onPointerDown(e) {
-    if (!s) return;
+    if (!s && !man) return;
     els.stage.focus({ preventScroll: true });
     var p = local(e);
     if (e.button === 1 || (e.button === 0 && spaceDown)) { startPan(e, p); return; }
     if (e.button !== 0) return;
+    if (man) {
+      // A click places a point; dragging pans.
+      press = { x: p[0], y: p[1], id: e.pointerId };
+      els.canvas.setPointerCapture(e.pointerId);
+      return;
+    }
     if (ui.placing) { placeAt(ui.placing, p[0], p[1], e.altKey); return; }
     var hit = H().hitTest(view, s, p[0], p[1], cfg);
     if (hit) {
@@ -311,14 +330,26 @@
     pan = { x: p[0], y: p[1], id: e.pointerId };
     els.canvas.setPointerCapture(e.pointerId);
     els.stage.classList.add('panning');
+    view.hideMagnifier();
   }
 
   function onPointerMove(e) {
-    if (!s) return;
+    if (!s && !man) return;
     var p = local(e);
     if (pan) {
       view.panBy(p[0] - pan.x, p[1] - pan.y);
       pan.x = p[0]; pan.y = p[1];
+      return;
+    }
+    if (man) {
+      if (press && Math.hypot(p[0] - press.x, p[1] - press.y) > cfg.MANUAL.CLICK_SLOP_PX) {
+        startPan(e, [press.x, press.y]);
+        press = null;
+        view.panBy(p[0] - pan.x, p[1] - pan.y);
+        pan.x = p[0]; pan.y = p[1];
+        return;
+      }
+      showManualMagnifier(p);
       return;
     }
     if (drag) {
@@ -349,6 +380,12 @@
       els.stage.classList.remove('panning');
       return;
     }
+    if (press) {
+      var q = press;
+      press = null;
+      if (man && e.type === 'pointerup') addManualClick(view.toPage(q.x, q.y));
+      return;
+    }
     if (drag) {
       var d = drag;
       drag = null;
@@ -364,7 +401,7 @@
   }
 
   function onWheel(e) {
-    if (!s) return;
+    if (!s && !man) return;
     e.preventDefault();
     var p = local(e);
     var dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
@@ -389,17 +426,23 @@
     var k = e.key;
     if (k === 'Enter') { e.preventDefault(); if (e.shiftKey) actions.previous(); else actions.confirm(); return; }
     if ((k === 'd' || k === 'D') && !e.metaKey && !e.ctrlKey) { e.preventDefault(); actions.later(); return; }
-    if (!s) return;
+    if (!s && !man) return;
     if (k === ' ') { spaceDown = true; e.preventDefault(); return; }
+    if (man && (k === 'Backspace' || k === 'Delete' || ((k === 'z' || k === 'Z') && (e.metaKey || e.ctrlKey)))) {
+      e.preventDefault();
+      undoManual();
+      return;
+    }
     if (e.metaKey || e.ctrlKey) return;
     var handled = true;
     switch (k) {
       case '1': case '2': case '3': case '4': {
+        if (!s) { handled = false; break; }
         var key = ['head', 'foot', 'ceiling', 'wall'][Number(k) - 1];
         if (H().isPlaced(s, key)) { select(key); ui.placing = null; refresh(); } else startPlacing(key);
         break;
       }
-      case 'Escape': ui.placing = null; ui.hoverPage = null; refresh(); break;
+      case 'Escape': if (!s) { handled = false; break; } ui.placing = null; ui.hoverPage = null; refresh(); break;
       case 'ArrowUp': nudge('up', e.shiftKey); break;
       case 'ArrowDown': nudge('down', e.shiftKey); break;
       case 'ArrowLeft': nudge('left', e.shiftKey); break;
@@ -573,6 +616,11 @@
   function updateHint() {
     if (hintTimer) return;
     els.hint.classList.remove('attention');
+    if (man) {
+      els.hint.textContent = HUSS.t('hint_manual_' + man.method, { n: man.clicks.length });
+      els.stage.classList.remove('placing');
+      return;
+    }
     els.hint.textContent = ui.placing
       ? HUSS.t('hint_place', { name: HUSS.t(H().DEF[ui.placing].label) })
       : HUSS.t('hint_idle');
@@ -593,6 +641,190 @@
     updateHint();
   }
 
+  // ------------------------------------------------------------ manual alignment (spec 7.5)
+
+  function manualNeeded() {
+    return man.method === 'corners' ? 4 : 2;
+  }
+
+  /** The panel and stage back to normal scoring (no manual alignment). */
+  function leaveManualLook() {
+    els.cardManual.hidden = true;
+    els.sheetBody.hidden = false;
+    els.stage.classList.remove('manual');
+    view.hideMagnifier();
+  }
+
+  /**
+   * Shows the scan itself for clicking the corner squares or the floor line ends.
+   * why: corners_not_found | orientation_failed | realign; prev: the alignment to go back to (realign only).
+   */
+  function startManual(img, c, prm, why, prev) {
+    s = null; ctx = c; press = null; drag = null;
+    ui.placing = null; ui.dragging = null;
+    els.mmCorners.checked = true;
+    man = { img: img, prm: prm, why: why, method: 'corners', clicks: [], error: null, hover: null, busy: false, prev: prev };
+    els.dropzone.hidden = true;
+    els.dropError.hidden = true;
+    setCardsVisible(false);
+    els.cardSheet.hidden = false;
+    els.sheetBody.hidden = true;
+    els.sheetTitle.textContent = c.title;
+    els.cardManual.hidden = false;
+    els.cardActions.hidden = false;
+    els.tools.hidden = false;
+    els.hint.hidden = false;
+    els.btnManualCancel.hidden = !prev;
+    els.manualWhy.textContent = HUSS.t('manual_why_' + why);
+    els.stage.classList.add('manual');
+    els.stage.classList.remove('placing', 'over-handle');
+    view.setPage({ data: img.data, width: img.width, height: img.height, R: 1 }, null, 0, img.width, img.height);
+    view.setContrast(els.chkContrast.checked);
+    setFinishMode(false);
+    setConfirmStatus('', '');
+    updateManual();
+    els.stage.focus({ preventScroll: true });
+  }
+
+  function updateManual() {
+    var n = man.clicks.length;
+    els.manualInstr.textContent = HUSS.t('manual_instr_' + man.method);
+    els.manualCount.textContent = HUSS.t('manual_count', { n: n, total: manualNeeded() });
+    els.btnManualUndo.disabled = !n;
+    els.btnManualClear.disabled = !n;
+    els.manualError.hidden = !man.error;
+    els.manualError.textContent = man.error || '';
+    updateHint();
+    view.render();
+  }
+
+  function addManualClick(p) {
+    if (!man || man.busy) return;
+    man.clicks.push(p);
+    man.error = null;
+    if (man.clicks.length >= manualNeeded()) runManual();
+    else updateManual();
+  }
+
+  function undoManual() {
+    if (!man || man.busy || !man.clicks.length) return;
+    man.clicks.pop();
+    man.error = null;
+    updateManual();
+  }
+
+  function runManual() {
+    var m = man, token = loadToken;
+    m.busy = true;
+    view.hideMagnifier();
+    view.render();
+    setBusy(HUSS.t('manual_busy'));
+    setTimeout(function () {
+      if (token !== loadToken || man !== m) return;
+      var P = HUSS.detect.pipeline, opts = { template: m.prm.template, params: m.prm, config: cfg }, a;
+      try {
+        a = m.method === 'corners' ? P.manualCorners(m.img, m.clicks, opts) : P.manualFloorline(m.img, m.clicks[0], m.clicks[1], opts);
+      } catch (err) {
+        a = { ok: false, error: 'internal', msg: err && err.message ? err.message : String(err) };
+      }
+      setBusy(null);
+      m.busy = false;
+      if (!a.ok) {
+        if (a.error === 'manual_no_square') {
+          m.error = HUSS.t('manual_err_no_square', { n: a.index + 1 });
+          m.clicks.splice(a.index, 1);
+        } else if (a.error === 'internal') {
+          m.error = HUSS.t('err_internal', { msg: a.msg });
+        } else {
+          m.error = HUSS.t('manual_err_orientation');
+        }
+        updateManual();
+        return;
+      }
+      a.dark = null;
+      var c = ctx;
+      // The QR code can be read now: the scan gets its code from it (unless another scan has it).
+      if (a.qr && a.qr.found && c.onAligned) {
+        var r = c.onAligned(a.qr.sheet_code) || {};
+        c = Object.assign({}, c);
+        ['title', 'sheetCode', 'codeSource', 'lookup', 'qrTaken', 'qrAfterManual'].forEach(function (k) { if (k in r) c[k] = r[k]; });
+      }
+      start(a, c, m.prm);
+      if (c.onChange) c.onChange(); // keep the alignment in the autosaved draft
+    }, 30);
+  }
+
+  /** "Align by hand" on a drawing that is already aligned (e.g. after an alignment warning). */
+  function realign() {
+    if (!s || !curImg || !els.busy.hidden) return; // not while the next drawing is loading
+    syncMeta();
+    var snap = {
+      handles: JSON.parse(JSON.stringify(s.handles)), suggested: Object.assign({}, s.suggested),
+      meta: JSON.parse(JSON.stringify(s.meta))
+    };
+    var prev = { a: s.analysis, prm: s.params, c: Object.assign({}, ctx, { saved: snap }), codeChecked: els.chkCode.checked };
+    startManual(curImg, Object.assign({}, ctx, { saved: null, keepMeta: snap.meta, finished: false }), s.params, 'realign', prev);
+  }
+
+  function cancelManual() {
+    if (!man || man.busy || !man.prev) return;
+    var p = man.prev;
+    start(p.a, p.c, p.prm);
+    els.chkCode.checked = p.codeChecked;
+    refresh();
+  }
+
+  function showManualMagnifier(p) {
+    var pg = view.toPage(p[0], p[1]);
+    man.hover = pg;
+    view.render();
+    var size = cfg.UI.MAGNIFIER_SIZE_PX;
+    view.showMagnifier(p[0], p[1], pg[0], pg[1], function (mctx, toLocal) {
+      drawManualMarks(mctx, toLocal, true);
+      mctx.save();
+      mctx.strokeStyle = MAN_COLOR;
+      mctx.lineWidth = 1;
+      var c = size / 2;
+      mctx.beginPath();
+      mctx.moveTo(0, c); mctx.lineTo(c - 6, c); mctx.moveTo(c + 6, c); mctx.lineTo(size, c);
+      mctx.moveTo(c, 0); mctx.lineTo(c, c - 6); mctx.moveTo(c, c + 6); mctx.lineTo(c, size);
+      mctx.stroke();
+      mctx.restore();
+    });
+  }
+
+  /** Click marks (numbered), and the floor line between its two ends. */
+  function drawManualMarks(c2d, toS, inMagnifier) {
+    var pts = man.clicks;
+    c2d.save();
+    c2d.strokeStyle = MAN_COLOR;
+    c2d.fillStyle = MAN_COLOR;
+    c2d.lineWidth = 2;
+    if (man.method === 'floorline' && pts.length) {
+      var end = pts.length > 1 ? pts[1] : (!inMagnifier && man.hover ? man.hover : null);
+      if (end) {
+        var a = toS(pts[0][0], pts[0][1]), b = toS(end[0], end[1]);
+        c2d.setLineDash(pts.length > 1 ? [] : [6, 5]);
+        c2d.beginPath(); c2d.moveTo(a[0], a[1]); c2d.lineTo(b[0], b[1]); c2d.stroke();
+        c2d.setLineDash([]);
+      }
+    }
+    c2d.font = '600 13px system-ui, sans-serif';
+    pts.forEach(function (pt, i) {
+      var q = toS(pt[0], pt[1]);
+      c2d.beginPath(); c2d.arc(q[0], q[1], 9, 0, 2 * Math.PI); c2d.stroke();
+      c2d.beginPath();
+      c2d.moveTo(q[0] - 15, q[1]); c2d.lineTo(q[0] - 4, q[1]); c2d.moveTo(q[0] + 4, q[1]); c2d.lineTo(q[0] + 15, q[1]);
+      c2d.moveTo(q[0], q[1] - 15); c2d.lineTo(q[0], q[1] - 4); c2d.moveTo(q[0], q[1] + 4); c2d.lineTo(q[0], q[1] + 15);
+      c2d.stroke();
+      c2d.lineWidth = 3; c2d.strokeStyle = '#fff';
+      c2d.strokeText(String(i + 1), q[0] + 12, q[1] - 12);
+      c2d.fillText(String(i + 1), q[0] + 12, q[1] - 12);
+      c2d.lineWidth = 2; c2d.strokeStyle = MAN_COLOR;
+    });
+    c2d.restore();
+  }
+
   // ------------------------------------------------------------ records for the session
 
   /**
@@ -602,6 +834,10 @@
    * Returns { record } or { missing: [...] } (and points at what is missing).
    */
   function recordFor(kind, durationS) {
+    if (man) {
+      if (kind === 'confirm') flashHint(HUSS.t('manual_confirm_first'));
+      return { missing: ['alignment'] };
+    }
     if (!s) return { missing: ['image'] };
     syncMeta();
     if (kind === 'confirm') {
@@ -691,17 +927,27 @@
       exclList: $('excl-list'), chkCode: $('chk-code'), codePic: $('code-pic'), chkNmV: $('chk-nm-v'), chkNmH: $('chk-nm-h'), inNote: $('in-note'),
       chkColor: $('chk-color'), chkContrast: $('chk-contrast'), chkMask: $('chk-mask'), chkGuides: $('chk-guides'), chkSnap: $('chk-snap'),
       btnConfirm: $('btn-confirm'), btnPrev: $('btn-prev'), btnLater: $('btn-later'), confirmStatus: $('confirm-status'),
-      btnFit: $('btn-fit'), btnZoomIn: $('btn-zoom-in'), btnZoomOut: $('btn-zoom-out')
+      btnFit: $('btn-fit'), btnZoomIn: $('btn-zoom-in'), btnZoomOut: $('btn-zoom-out'),
+      sheetBody: $('sheet-body'), btnRealign: $('btn-realign'), cardManual: $('card-manual'), manualWhy: $('manual-why'),
+      mmCorners: $('mm-corners'), mmFloorline: $('mm-floorline'), manualInstr: $('manual-instr'), manualCount: $('manual-count'),
+      btnManualUndo: $('btn-manual-undo'), btnManualClear: $('btn-manual-clear'), btnManualCancel: $('btn-manual-cancel'),
+      manualError: $('manual-error')
     };
     view = HUSS.ui.canvasView.create(els.canvas, els.magnifier, cfg);
-    view.setOverlay(function (c2d, v) { if (s) H().draw(c2d, v, s, ui, cfg); });
+    view.setOverlay(function (c2d, v) {
+      if (man) drawManualMarks(c2d, v.toScreen, false);
+      else if (s) H().draw(c2d, v, s, ui, cfg);
+    });
 
     els.canvas.addEventListener('pointerdown', onPointerDown);
     els.canvas.addEventListener('pointermove', onPointerMove);
     els.canvas.addEventListener('pointerup', onPointerUp);
     els.canvas.addEventListener('pointercancel', onPointerUp);
     els.canvas.addEventListener('lostpointercapture', onPointerUp); // release outside the window
-    els.canvas.addEventListener('pointerleave', function () { if (ui.placing) { ui.hoverPage = null; view.render(); } });
+    els.canvas.addEventListener('pointerleave', function () {
+      if (man) { man.hover = null; view.hideMagnifier(); view.render(); }
+      if (ui.placing) { ui.hoverPage = null; view.render(); }
+    });
     els.canvas.addEventListener('wheel', onWheel, { passive: false });
     els.canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     document.addEventListener('keydown', onKeyDown);
@@ -733,6 +979,23 @@
       if (els.projectInput.files && els.projectInput.files[0]) loadProjectFile(els.projectInput.files[0]);
     });
     els.btnNewProject.addEventListener('click', function () { HUSS.app.show('project'); });
+    els.btnRealign.addEventListener('click', realign);
+    [els.mmCorners, els.mmFloorline].forEach(function (r) {
+      r.addEventListener('change', function () {
+        if (!man || man.busy) return;
+        man.method = els.mmFloorline.checked ? 'floorline' : 'corners';
+        man.clicks = []; man.error = null;
+        updateManual();
+        els.stage.focus({ preventScroll: true });
+      });
+    });
+    els.btnManualUndo.addEventListener('click', undoManual);
+    els.btnManualClear.addEventListener('click', function () {
+      if (!man || man.busy) return;
+      man.clicks = []; man.error = null;
+      updateManual();
+    });
+    els.btnManualCancel.addEventListener('click', cancelManual);
 
     if (typeof ResizeObserver !== 'undefined') {
       new ResizeObserver(function () { view.resize(); view.render(); }).observe(els.stage);

@@ -241,8 +241,25 @@
       title: title, chip: item.status, sheetCode: code, codeSource: item.code_source, saved: saved,
       lookup: sess.mode === 'open' && tables.key ? HUSS.io.tables.lookup(tables.key, tables.structures, code) : null,
       tablesLoaded: !!tables.key, fileName: item.name, onChange: scheduleAutosave,
+      onAligned: function (code) { return adoptCode(item, code); },
       finished: isComplete() && (item.status === 'measured' || item.status === 'excluded')
     };
+  }
+
+  /**
+   * The QR code was read only after manual alignment (spec 7.5): the scan gets that code,
+   * unless another scan of this session already has it. Returns the changed context fields.
+   */
+  function adoptCode(item, code) {
+    if (!code || item.code_source === 'qr') return null;
+    var taken = sess.items.some(function (o) { return o !== item && o.code_source === 'qr' && o.sheet_code === code; });
+    if (taken) return { qrTaken: code };
+    item.sheet_code = code;
+    item.code_source = 'qr';
+    sess.dirty = true;
+    updateSummary();
+    var c = itemContext(item);
+    return { title: c.title, sheetCode: c.sheetCode, codeSource: c.codeSource, lookup: c.lookup, qrAfterManual: true };
   }
 
   function openCurrent() {

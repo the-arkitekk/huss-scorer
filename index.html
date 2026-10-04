@@ -119,6 +119,7 @@
 
       <section class="card" id="card-sheet" hidden>
         <h2 id="sheet-title"></h2>
+        <div id="sheet-body">
         <label class="field"><span data-s="sheet_code"></span><input type="text" id="in-sheet" autocomplete="off" spellcheck="false" maxlength="5" data-s-placeholder="sheet_code_placeholder"></label>
         <p class="small" id="sheet-status" data-s="sheet_code_hint"></p>
         <div class="code-pic"><canvas id="code-pic" data-s-title="code_picture"></canvas></div>
@@ -127,6 +128,25 @@
         <p class="small" id="image-info"></p>
         <p class="small muted" id="image-align"></p>
         <p class="small bad" id="image-warn" hidden></p>
+        <button type="button" class="btn btn-xs realign" id="btn-realign" data-s="realign" data-s-title="realign_title"></button>
+        </div>
+      </section>
+
+      <section class="card" id="card-manual" hidden>
+        <h2 data-s="sec_manual"></h2>
+        <p class="small" id="manual-why"></p>
+        <div class="radio-row manual-methods">
+          <label class="check"><input type="radio" name="manual-method" id="mm-corners" value="corners" checked><span data-s="manual_method_corners"></span></label>
+          <label class="check"><input type="radio" name="manual-method" id="mm-floorline" value="floorline"><span data-s="manual_method_floorline"></span></label>
+        </div>
+        <p class="small" id="manual-instr"></p>
+        <p class="small muted" id="manual-count"></p>
+        <div class="btn-row">
+          <button type="button" class="btn btn-xs" id="btn-manual-undo" data-s="manual_undo"></button>
+          <button type="button" class="btn btn-xs" id="btn-manual-clear" data-s="manual_clear"></button>
+          <button type="button" class="btn btn-xs" id="btn-manual-cancel" data-s="manual_cancel" hidden></button>
+        </div>
+        <p class="small bad" id="manual-error" hidden></p>
       </section>
 
       <section class="card" id="card-handles" hidden>

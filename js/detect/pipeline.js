@@ -70,13 +70,33 @@
 
   /**
    * Manual alignment, floor line (spec 7.5): the two ends of the printed floor line, the end at
-   * the start mark first; a similarity transform maps the page.
+   * the start mark first; a similarity transform maps the page. When the QR code is not found
+   * in that order but is in the other, the ends were clicked the other way round.
    */
   function manualFloorline(img, p1, p2, opts) {
     var o = setup(opts), T = o.T, Hm = HUSS.image.homography;
-    var sim = Hm.fitSimilarity([[T.floor.x0, T.floor.y], [T.floor.x1, T.floor.y]], [p1, p2]);
-    var corners = T.corners.map(function (c) { return Hm.apply(sim.H, c[0], c[1]); });
-    return analyzeAligned(img, { H: sim.H, method: 'manual_floorline', corners: corners, residual: null }, opts);
+    var ends = [[T.floor.x0, T.floor.y], [T.floor.x1, T.floor.y]];
+    var run = function (a, b) {
+      var sim = Hm.fitSimilarity(ends, [a, b]);
+      return alignFromCorners(img, 'manual_floorline', T.corners.map(function (c) { return Hm.apply(sim.H, c[0], c[1]); }), opts);
+    };
+    var res = run(p1, p2);
+    if (!res.qr.found) {
+      var rev = run(p2, p1);
+      if (rev.qr.found) return rev;
+    }
+    return res;
+  }
+
+  /**
+   * Repeats a manual alignment from its page corners in the image (as kept in the CSV): a
+   * homography for manual_corners, a similarity for manual_floorline.
+   */
+  function alignFromCorners(img, method, corners, opts) {
+    var T = setup(opts).T, Hm = HUSS.image.homography;
+    var floorline = method === 'manual_floorline';
+    var H = floorline ? Hm.fitSimilarity(T.corners, corners).H : Hm.fromPoints(T.corners, corners);
+    return analyzeAligned(img, { H: H, method: method, corners: corners, residual: floorline ? null : undefined }, opts);
   }
 
   /** Everything after alignment: rectification, floor line, QR, red figure, profiles, suggestions. */
@@ -224,6 +244,7 @@
 
   var api = {
     analyze: analyze, analyzeAligned: analyzeAligned, manualCorners: manualCorners, manualFloorline: manualFloorline,
+    alignFromCorners: alignFromCorners,
     readCode: readCode, floorY: floorY, ceilingProfile: ceilingProfile,
     snapCeiling: snapCeiling, snapWall: snapWall, snapHead: snapHead, snapFoot: snapFoot,
     toImagePx: toImagePx
