@@ -89,7 +89,32 @@
     return out;
   }
 
-  var api = { TEMPLATES: TEMPLATES, get: get, markX: markX, markCentroid: markCentroid, groundHatch: groundHatch };
+  /**
+   * Everything printed on one sheet, in mm, as drawing items shared by the SVG print view, the
+   * PDF and the synthetic test pages:
+   *   { k: 'rect', x, y, w, h } | { k: 'line', x1, y1, x2, y2, w, cap } | { k: 'poly', pts }
+   *   { k: 'text', x, y (baseline), size_pt, font: 'sans' | 'mono', anchor: 'start' | 'middle' | 'end', text }
+   * Black only (rule 4.3). QR content: HUSS1/<TEMPLATE>/<SHEETCODE>.
+   */
+  function items(t, code, label) {
+    var out = [], h = t.corner_size_mm / 2, i;
+    for (i = 0; i < t.corners.length; i++) out.push({ k: 'rect', x: t.corners[i][0] - h, y: t.corners[i][1] - h, w: 2 * h, h: 2 * h });
+    out.push({ k: 'line', x1: t.floor.x0, y1: t.floor.y, x2: t.floor.x1, y2: t.floor.y, w: t.floor.width, cap: 'butt' });
+    groundHatch(t).forEach(function (s) {
+      out.push({ k: 'line', x1: s[0][0], y1: s[0][1], x2: s[1][0], y2: s[1][1], w: t.ground.stroke_mm, cap: 'round' });
+    });
+    out.push({ k: 'poly', pts: [t.mark.apex, t.mark.base[1], t.mark.base[0]] });
+    out.push({ k: 'text', x: t.label.x, y: t.label.baseline, size_pt: t.label.size_pt, font: 'sans', anchor: t.label.anchor || 'start', text: label });
+    out.push({ k: 'text', x: t.code_text.right, y: t.code_text.baseline, size_pt: t.code_text.size_pt, font: 'mono', anchor: 'end', text: code });
+    out.push({ k: 'text', x: t.template_id.x, y: t.template_id.baseline, size_pt: t.template_id.size_pt, font: 'sans', anchor: 'start', text: t.name });
+    var Q = HUSS.config.QR, qr = HUSS.sheet.qr.encode(HUSS.sheet.qr.sheetText(t.id, code), Q.LEVEL);
+    HUSS.sheet.qr.moduleRects(qr, t.qr.x, t.qr.y, t.qr.size, Q.QUIET_MODULES).forEach(function (r) {
+      out.push({ k: 'rect', x: r.x, y: r.y, w: r.w, h: r.h });
+    });
+    return out;
+  }
+
+  var api = { TEMPLATES: TEMPLATES, get: get, markX: markX, markCentroid: markCentroid, groundHatch: groundHatch, items: items };
   HUSS.sheet.template = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

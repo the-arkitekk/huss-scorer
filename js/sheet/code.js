@@ -43,7 +43,42 @@
     return body + checkChar(body);
   }
 
-  var api = { ALPHABET: ALPHABET, normalize: normalize, checkChar: checkChar, isValid: isValid, generate: generate };
+  /** Valid sheet codes found anywhere in a text (a pasted list or a code-list CSV). */
+  function extract(text) {
+    var out = [], seen = {}, m, re = /[0-9A-Z]{5}/g, up = String(text || '').toUpperCase();
+    while ((m = re.exec(up))) {
+      if (isValid(m[0]) && !seen[m[0]]) { seen[m[0]] = true; out.push(m[0]); }
+    }
+    return out;
+  }
+
+  /** n new codes, all different and none in `exclude`; `random` returns floats in [0, 1). */
+  function batch(n, exclude, random) {
+    var taken = {}, out = [], tries = 0;
+    (exclude || []).forEach(function (c) { taken[normalize(c)] = true; });
+    while (out.length < n) {
+      if (++tries > n * 50 + 1000) throw new Error('Could not find enough unused sheet codes');
+      var c = generate(random);
+      if (!taken[c]) { taken[c] = true; out.push(c); }
+    }
+    return out;
+  }
+
+  /** Cryptographically strong random floats in [0, 1) when the platform offers them. */
+  function secureRandom() {
+    var c = (typeof globalThis !== 'undefined' && globalThis.crypto) || null;
+    if (c && c.getRandomValues) {
+      var a = new Uint32Array(1);
+      c.getRandomValues(a);
+      return a[0] / 4294967296;
+    }
+    return Math.random();
+  }
+
+  var api = {
+    ALPHABET: ALPHABET, normalize: normalize, checkChar: checkChar, isValid: isValid, generate: generate,
+    extract: extract, batch: batch, secureRandom: secureRandom
+  };
   HUSS.sheet.code = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

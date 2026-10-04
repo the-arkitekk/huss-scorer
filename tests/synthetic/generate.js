@@ -131,27 +131,26 @@ function mulberry32(seed) {
   };
 }
 
-/** Printed template (black only): corner marks, floor line, hatching, start mark, text stand-ins, QR. */
+/**
+ * Printed template, drawn from the same items as the PDF and the print view
+ * (HUSS.sheet.template.items). Text becomes one block per glyph (glyph width, cap height).
+ */
 function templateGroups(T, code) {
-  const shapes = [];
-  const h = T.corner_size_mm / 2;
-  for (const [cx, cy] of T.corners) shapes.push(rect(cx - h, cy - h, cx + h, cy + h));
-  shapes.push(seg([T.floor.x0, T.floor.y], [T.floor.x1, T.floor.y], T.floor.width));
-  shapes.push(poly([T.mark.apex, T.mark.base[1], T.mark.base[0]]));
-  for (const [b, t] of HUSS.sheet.template.groundHatch(T)) shapes.push(seg(b, t, T.ground.stroke_mm));
-
-  // Text stand-ins: rows of small blocks with the size of the printed glyphs.
-  const text = (x, baseline, height, n, glyphW, gap) => {
-    for (let i = 0; i < n; i++) shapes.push(rect(x + i * (glyphW + gap), baseline - height, x + i * (glyphW + gap) + glyphW, baseline));
-  };
-  const labelW = 6 * 1.1 + 5 * 0.35;
-  text(T.label.anchor === 'middle' ? T.label.x - labelW / 2 : T.label.x, T.label.baseline, 2.0, 6, 1.1, 0.35); // "figure"
-  text(T.code_text.right - 5 * 2.6 + 0.6, T.code_text.baseline, 3.0, 5, 2.0, 0.6); // sheet code
-  text(T.template_id.x, T.template_id.baseline, 1.4, 11, 0.7, 0.25);    // "HuSS A4L v1"
-
-  const QRc = HUSS.config.QR, qr = HUSS.sheet.qr.encode(HUSS.sheet.qr.sheetText(T.id, code), QRc.LEVEL);
-  for (const r of HUSS.sheet.qr.moduleRects(qr, T.qr.x, T.qr.y, T.qr.size, QRc.QUIET_MODULES)) {
-    shapes.push(rect(r.x, r.y, r.x + r.w, r.y + r.h));
+  const shapes = [], PT = 72 / 25.4, label = HUSS.config.DEFAULTS.sheet_label;
+  const glyphW = (ch, it) => HUSS.sheet.pdf.widthPt(ch, it.font, it.size_pt) / PT;
+  for (const it of HUSS.sheet.template.items(T, code, label)) {
+    if (it.k === 'rect') shapes.push(rect(it.x, it.y, it.x + it.w, it.y + it.h));
+    else if (it.k === 'line') shapes.push(seg([it.x1, it.y1], [it.x2, it.y2], it.w));
+    else if (it.k === 'poly') shapes.push(poly(it.pts));
+    else if (it.k === 'text') {
+      const cap = 0.7 * it.size_pt / PT, w = HUSS.sheet.pdf.widthPt(it.text, it.font, it.size_pt) / PT;
+      let x = it.anchor === 'middle' ? it.x - w / 2 : it.anchor === 'end' ? it.x - w : it.x;
+      for (const ch of it.text) {
+        const cw = glyphW(ch, it);
+        if (ch !== ' ') shapes.push(rect(x + 0.12 * cw, it.y - cap, x + 0.88 * cw, it.y));
+        x += cw;
+      }
+    }
   }
   return [{ color: BLACK, shapes }];
 }
