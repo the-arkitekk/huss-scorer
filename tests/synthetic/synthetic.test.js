@@ -245,3 +245,61 @@ test('S14: a corner mark is missing -> automatic alignment asks for manual align
   assert.equal(a.error, 'corners_not_found');
   assert.equal(P.readCode(g.img, { template: g.template }).ok, false);
 });
+
+/** Seeded click noise: a point (page mm) mapped to the image, moved by up to +-maxMm on each axis. */
+function clickAt(g, x, y, maxMm, rnd) {
+  const p = g.map(x, y);
+  return [p[0] + (rnd() * 2 - 1) * maxMm * g.pxPerMm, p[1] + (rnd() * 2 - 1) * maxMm * g.pxPerMm];
+}
+
+function seeded(seed) {
+  let s = seed;
+  return () => { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+}
+
+test('S14: manual alignment by the two floor line ends (+-0.2 mm clicks) -> QR read, estimates within 1 %', () => {
+  const g = generate('S14'), T = HUSS.sheet.template.get(g.template), t = g.truth, rnd = seeded(14);
+  for (let k = 0; k < 3; k++) {
+    const a = P.manualFloorline(g.img, clickAt(g, T.floor.x0, T.floor.y, 0.2, rnd), clickAt(g, T.floor.x1, T.floor.y, 0.2, rnd), { template: g.template, params });
+    assert.equal(a.ok, true);
+    assert.equal(a.align.method, 'manual_floorline');
+    assert.equal(a.align.residual_mm, null);
+    assert.equal(a.qr.found, true, 'QR after manual alignment');
+    assert.equal(a.qr.sheet_code, t.sheet_code);
+    checkRedFigure('S14', a, t);
+    const m = measure(a, t);
+    near(m.comp.est_vertical_m, t.est_vertical_m, TOL.est_rel * t.est_vertical_m, 'S14 est_vertical_m');
+    near(m.comp.est_horizontal_m, t.est_horizontal_m, TOL.est_rel * t.est_horizontal_m, 'S14 est_horizontal_m');
+    assert.equal(m.flags.flag_manual_alignment, true);
+  }
+});
+
+test('S14: four corner clicks with one square missing -> the click without a square is named', () => {
+  const g = generate('S14'), t = g.truth, rnd = seeded(41);
+  const clicks = t.corners_px.map(([x, y]) => [x + (rnd() * 2 - 1) * 0.8 * g.pxPerMm, y + (rnd() * 2 - 1) * 0.8 * g.pxPerMm]);
+  const a = P.manualCorners(g.img, clicks, { template: g.template, params });
+  assert.equal(a.ok, false);
+  assert.equal(a.error, 'manual_no_square');
+  assert.equal(a.index, g.params.missingCorner);
+});
+
+for (const id of ['S1', 'S3', 'S11']) {
+  test(`${id}: manual alignment by four corner clicks 0.8 mm off, any order -> centred, same accuracy as automatic`, () => {
+    const g = generate(id), t = g.truth, rnd = seeded(7);
+    const clicks = t.corners_px.map(([x, y]) => [x + (rnd() < 0.5 ? -0.8 : 0.8) * g.pxPerMm, y + (rnd() < 0.5 ? -0.8 : 0.8) * g.pxPerMm]);
+    clicks.reverse().push(clicks.shift()); // a different order than the page corners
+    const a = P.manualCorners(g.img, clicks, { template: g.template, params });
+    assert.equal(a.ok, true, `${id}: ${a.error}`);
+    assert.equal(a.align.method, 'manual_corners');
+    assert.ok(alignmentError(a, g) <= TOL.align_mm, `${id}: alignment error ${alignmentError(a, g).toFixed(3)} mm`);
+    assert.equal(a.qr.found, true);
+    assert.equal(a.qr.sheet_code, t.sheet_code);
+    checkRedFigure(id, a, t);
+    assert.equal(HUSS.measure.flags.toolFlags(a, { axis_x: a.suggestions.axis_x, axis_placement: 'auto', foot_y: a.suggestions.foot_y, figure_mm: 20 }, params, HUSS.config).flag_manual_alignment, true);
+  });
+}
+
+test('manual alignment: wrong number of corner clicks is refused', () => {
+  const g = generate('S1');
+  assert.equal(P.manualCorners(g.img, [[1, 1], [2, 2], [3, 3]], { template: g.template }).ok, false);
+});

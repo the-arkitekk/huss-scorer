@@ -16,27 +16,83 @@
    * opts: { template: 'A4L' | 'A3L', params: { foot_tolerance_mm, ... }, config }
    * Returns { ok: false, error, stage } or the analysis object (see bottom).
    */
-  function analyze(img, opts) {
+  function setup(opts) {
     opts = opts || {};
     var cfg = opts.config || HUSS.config;
     var params = opts.params || cfg.DEFAULTS;
-    var T = HUSS.sheet.template.get(opts.template || params.template || cfg.DEFAULTS.template);
-    var Hm = HUSS.image.homography, D = HUSS.detect;
-    var t = { start: now() };
+    return { cfg: cfg, params: params, T: HUSS.sheet.template.get(opts.template || params.template || cfg.DEFAULTS.template) };
+  }
 
+  function analyze(img, opts) {
+    var o = setup(opts), cfg = o.cfg, T = o.T, D = HUSS.detect;
+    var t = { start: now() };
     var corners = D.corners.findCorners(img, T, cfg);
     t.corners = now();
     if (!corners.ok) return { ok: false, stage: 'corners', error: corners.error, missing: corners.missing };
     var orient = D.corners.chooseOrientation(img, corners.points, T, corners.threshold, cfg);
     t.orientation = now();
     if (!orient.ok) return { ok: false, stage: 'orientation', error: orient.error };
+    return analyzeAligned(img, {
+      H: orient.H, method: 'auto', corners: orient.corners, quarter: orient.quarter, tie: orient.tie,
+      tieBreak: orient.tieBreak, qr: orient.qr, floorRatio: orient.floorRatio, markRatio: orient.markRatio
+    }, opts, t);
+  }
 
-    var H = orient.H, Hinv = Hm.invert(H);
-    var sim = Hm.fitSimilarity(T.corners, orient.corners);
-    var residual = 0;
+  /**
+   * Manual alignment, corner marks (spec 7.5): four clicks near the corner squares, in any order.
+   * Each click is centred on its square; the orientation is found as in automatic alignment.
+   */
+  function manualCorners(img, clicks, opts) {
+    var o = setup(opts), cfg = o.cfg, T = o.T, D = HUSS.detect;
+    if (!clicks || clicks.length !== 4) return { ok: false, stage: 'manual', error: 'manual_points' };
+    var est = Math.max(img.width, img.height) / Math.max(T.width_mm, T.height_mm);
+    var win = cfg.MANUAL.REFINE_WINDOW_MM * est;
+    var pts = [];
     for (var i = 0; i < 4; i++) {
-      var q = Hm.apply(sim.H, T.corners[i][0], T.corners[i][1]);
-      residual = Math.max(residual, Math.hypot(q[0] - orient.corners[i][0], q[1] - orient.corners[i][1]) / sim.scale);
+      var c = clicks[i];
+      for (var k = 0; k < 2; k++) {
+        var r = D.corners.refineCentre(img, c[0] - win, c[1] - win, c[0] + win, c[1] + win, cfg.CORNERS);
+        if (!r) return { ok: false, stage: 'manual', error: 'manual_no_square', index: i };
+        c = r;
+      }
+      pts.push(c);
+    }
+    var cx = 0, cy = 0;
+    pts.forEach(function (p) { cx += p[0] / 4; cy += p[1] / 4; });
+    pts.sort(function (a, b) { return Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx); }); // TL, TR, BR, BL
+    var orient = D.corners.chooseOrientation(img, pts, T, D.corners.darkThreshold(img, cfg), cfg);
+    if (!orient.ok) return { ok: false, stage: 'manual', error: 'orientation_failed' };
+    return analyzeAligned(img, {
+      H: orient.H, method: 'manual_corners', corners: orient.corners, quarter: orient.quarter, tie: orient.tie,
+      tieBreak: orient.tieBreak, qr: orient.qr, floorRatio: orient.floorRatio, markRatio: orient.markRatio
+    }, opts);
+  }
+
+  /**
+   * Manual alignment, floor line (spec 7.5): the two ends of the printed floor line, the end at
+   * the start mark first; a similarity transform maps the page.
+   */
+  function manualFloorline(img, p1, p2, opts) {
+    var o = setup(opts), T = o.T, Hm = HUSS.image.homography;
+    var sim = Hm.fitSimilarity([[T.floor.x0, T.floor.y], [T.floor.x1, T.floor.y]], [p1, p2]);
+    var corners = T.corners.map(function (c) { return Hm.apply(sim.H, c[0], c[1]); });
+    return analyzeAligned(img, { H: sim.H, method: 'manual_floorline', corners: corners, residual: null }, opts);
+  }
+
+  /** Everything after alignment: rectification, floor line, QR, red figure, profiles, suggestions. */
+  function analyzeAligned(img, al, opts, t) {
+    var o = setup(opts), cfg = o.cfg, params = o.params, T = o.T;
+    var Hm = HUSS.image.homography, D = HUSS.detect;
+    t = t || { start: now() };
+    if (!t.corners) { t.corners = t.start; t.orientation = t.start; }
+    var H = al.H, Hinv = Hm.invert(H);
+    var residual = al.residual === undefined ? 0 : al.residual;
+    if (al.residual === undefined) {
+      var sim = Hm.fitSimilarity(T.corners, al.corners);
+      for (var i = 0; i < 4; i++) {
+        var q = Hm.apply(sim.H, T.corners[i][0], T.corners[i][1]);
+        residual = Math.max(residual, Math.hypot(q[0] - al.corners[i][0], q[1] - al.corners[i][1]) / sim.scale);
+      }
     }
     var J = Hm.jacobian(H, T.width_mm / 2, T.height_mm / 2);
     var pxx = Math.hypot(J[0][0], J[1][0]), pxy = Math.hypot(J[0][1], J[1][1]);
@@ -48,7 +104,7 @@
     var dark = HUSS.image.lab.darkness(rect);
     var floor = D.floorline.refine(dark, R, T, cfg);
     t.floor = now();
-    var qr = orient.qr || D.qr.read(D.qr.rectSampler(dark, R), T, cfg);
+    var qr = al.qr || D.qr.read(D.qr.rectSampler(dark, R), T, cfg);
     if (qr.found) qr.template_mismatch = qr.template !== T.id;
     t.qr = now();
     var markX = HUSS.sheet.template.markX(T);
@@ -79,7 +135,7 @@
     }
     t.suggest = now();
 
-    var c = orient.corners; // page order TL, TR, BR, BL
+    var c = al.corners; // page order TL, TR, BR, BL
     return {
       ok: true,
       template: T,
@@ -88,13 +144,13 @@
       H: H, Hinv: Hinv, R: R,
       rect: rect, dark: dark, dm: dm,
       align: {
-        method: 'auto',
+        method: al.method,
         corners: { tl: c[0], tr: c[1], br: c[2], bl: c[3] },
         px_per_mm_x: pxx, px_per_mm_y: pxy, rotation_deg: rot,
         residual_mm: residual,
-        warning: residual > cfg.ALIGN.RESIDUAL_WARN_MM || !floor.ok,
-        quarter: orient.quarter, orientation_tie: orient.tie, tie_break: orient.tieBreak,
-        floor_ratio: orient.floorRatio, mark_ratio: orient.markRatio
+        warning: (residual != null && residual > cfg.ALIGN.RESIDUAL_WARN_MM) || !floor.ok,
+        quarter: al.quarter == null ? null : al.quarter, orientation_tie: !!al.tie, tie_break: al.tieBreak || null,
+        floor_ratio: al.floorRatio == null ? null : al.floorRatio, mark_ratio: al.markRatio == null ? null : al.markRatio
       },
       floor: floor,
       qr: qr,
@@ -167,7 +223,8 @@
   }
 
   var api = {
-    analyze: analyze, readCode: readCode, floorY: floorY, ceilingProfile: ceilingProfile,
+    analyze: analyze, analyzeAligned: analyzeAligned, manualCorners: manualCorners, manualFloorline: manualFloorline,
+    readCode: readCode, floorY: floorY, ceilingProfile: ceilingProfile,
     snapCeiling: snapCeiling, snapWall: snapWall, snapHead: snapHead, snapFoot: snapFoot,
     toImagePx: toImagePx
   };

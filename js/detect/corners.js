@@ -115,6 +115,15 @@
     return { ok: true, points: points, threshold: T };
   }
 
+  /** The dark/paper threshold used by findCorners (Otsu on the downscaled grey copy). */
+  function darkThreshold(img, config) {
+    var cfg = config.CORNERS, longSide = Math.max(img.width, img.height);
+    var g = downscaleGray(img, Math.max(1, Math.round(longSide / cfg.DOWNSCALE_LONG_SIDE)));
+    var hist = new Array(256).fill(0);
+    for (var i = 0; i < g.data.length; i++) hist[g.data[i]]++;
+    return HUSS.image.components.otsu(hist);
+  }
+
   /** Dark-sample ratio along a page-space polyline sample set. */
   function darkRatio(img, H, pts, threshold) {
     var dark = 0, total = 0, Hm = HUSS.image.homography;
@@ -181,7 +190,10 @@
     };
   }
 
-  var api = { downscaleGray: downscaleGray, sampleLuma: sampleLuma, refineCentre: refineCentre, findCorners: findCorners, chooseOrientation: chooseOrientation };
+  var api = {
+    downscaleGray: downscaleGray, sampleLuma: sampleLuma, refineCentre: refineCentre, findCorners: findCorners,
+    chooseOrientation: chooseOrientation, darkThreshold: darkThreshold
+  };
   HUSS.detect.corners = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
