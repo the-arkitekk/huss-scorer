@@ -9,6 +9,9 @@
     Array.prototype.forEach.call(scope.querySelectorAll('[data-s]'), function (el) {
       el.textContent = HUSS.t(el.getAttribute('data-s'));
     });
+    Array.prototype.forEach.call(scope.querySelectorAll('[data-s-placeholder]'), function (el) {
+      el.placeholder = HUSS.t(el.getAttribute('data-s-placeholder'));
+    });
     Array.prototype.forEach.call(scope.querySelectorAll('[data-s-title]'), function (el) {
       el.title = HUSS.t(el.getAttribute('data-s-title'));
       el.setAttribute('aria-label', el.title);

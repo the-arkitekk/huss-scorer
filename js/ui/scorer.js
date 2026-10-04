@@ -391,6 +391,7 @@
     els.inSheet.classList.toggle('invalid', st === 'bad');
     els.sheetStatus.className = 'small' + (st === 'ok' ? ' ok' : st === 'bad' ? ' bad' : ' muted');
     els.sheetStatus.textContent = HUSS.t(st === 'ok' ? 'sheet_code_ok' : st === 'bad' ? 'sheet_code_bad' : 'sheet_code_hint');
+    if (els.inRater.value.trim()) els.inRater.classList.remove('invalid');
     if (!s) return;
     s.meta.project_code = els.inProject.value.trim().toUpperCase();
     s.meta.rater_code = els.inRater.value.trim().toUpperCase();
@@ -460,6 +461,13 @@
     if (miss.length) {
       ui.confirmTried = true;
       updatePanel();
+      // Point at the first thing the rater can type in.
+      var field = miss.indexOf('rater_code') >= 0 ? els.inRater : miss.indexOf('sheet_code') >= 0 ? els.inSheet : null;
+      if (field) {
+        field.classList.add('invalid');
+        field.scrollIntoView({ block: 'nearest' });
+        field.focus();
+      }
       return;
     }
     ui.confirmTried = false;
