@@ -25,7 +25,7 @@
 
     sec_session: 'Session',
     project_code: 'Project code',
-    rater_code: 'Your rater code *',
+    rater_code: 'Rater code *',
     rater_code_placeholder: 'your initials, e.g. EY',
     rater_code_help: 'Who is scoring: your initials or a short code. Required; it is written into the CSV.',
     sheet_code: 'Sheet code',
@@ -90,7 +90,7 @@
     confirm: 'Confirm and download CSV',
     download_again: 'Download CSV again',
     missing: 'Still needed before the CSV can be downloaded: {list}',
-    need_rater_code: 'your rater code (box just above the button)',
+    need_rater_code: 'your rater code (Session, top of this panel)',
     confirmed: 'Confirmed at {time}. The CSV file was downloaded.',
     changed_after_confirm: 'Changed after confirming. Confirm again to download the new values.',
 

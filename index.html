@@ -46,6 +46,8 @@
       <section class="card">
         <h2 data-s="sec_session"></h2>
         <label class="field"><span data-s="project_code"></span><input type="text" id="in-project" autocomplete="off" spellcheck="false"></label>
+        <label class="field"><span data-s="rater_code"></span><input type="text" id="in-rater" autocomplete="off" spellcheck="false" required data-s-placeholder="rater_code_placeholder"></label>
+        <p class="small muted rater-help" data-s="rater_code_help"></p>
         <label class="field"><span data-s="sheet_code"></span><input type="text" id="in-sheet" autocomplete="off" spellcheck="false" maxlength="5"></label>
         <p class="small" id="sheet-status" data-s="sheet_code_hint"></p>
       </section>
@@ -81,8 +83,6 @@
       </section>
 
       <section class="card card-actions" id="card-actions" hidden>
-        <label class="field field-stacked"><span data-s="rater_code"></span><input type="text" id="in-rater" autocomplete="off" spellcheck="false" required data-s-placeholder="rater_code_placeholder"></label>
-        <p class="small muted rater-help" data-s="rater_code_help"></p>
         <button type="button" class="btn btn-primary btn-block" id="btn-confirm" data-s="confirm"></button>
         <button type="button" class="btn btn-block" id="btn-download" data-s="download_again" hidden></button>
         <p class="small" id="confirm-status"></p>
