@@ -42,10 +42,15 @@
   function pageContent(t, code, label) {
     var X = function (x) { return f3(x * PT); };
     var Y = function (y) { return f3((t.height_mm - y) * PT); };
-    var ops = ['0 g', '0 G'];
+    // White page first: a rasterised PDF must not come out transparent (QR readers see that as black).
+    var ops = ['1 g', '0 0 ' + f3(t.width_mm * PT) + ' ' + f3(t.height_mm * PT) + ' re f', '0 g', '0 G'];
     HUSS.sheet.template.items(t, code, label).forEach(function (it) {
       if (it.k === 'rect') {
         ops.push(X(it.x) + ' ' + Y(it.y + it.h) + ' ' + f3(it.w * PT) + ' ' + f3(it.h * PT) + ' re f');
+      } else if (it.k === 'rects') {
+        ops.push(it.rects.map(function (r) {
+          return X(r.x) + ' ' + Y(r.y + r.h) + ' ' + f3(r.w * PT) + ' ' + f3(r.h * PT) + ' re';
+        }).join('\n') + '\nf');
       } else if (it.k === 'poly') {
         ops.push(it.pts.map(function (p, i) { return X(p[0]) + ' ' + Y(p[1]) + (i ? ' l' : ' m'); }).join(' ') + ' h f');
       } else if (it.k === 'line') {

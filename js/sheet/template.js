@@ -92,7 +92,8 @@
   /**
    * Everything printed on one sheet, in mm, as drawing items shared by the SVG print view, the
    * PDF and the synthetic test pages:
-   *   { k: 'rect', x, y, w, h } | { k: 'line', x1, y1, x2, y2, w, cap } | { k: 'poly', pts }
+   *   { k: 'rect', x, y, w, h } | { k: 'rects', rects: [{ x, y, w, h }] } (filled as one shape)
+   *   { k: 'line', x1, y1, x2, y2, w, cap } | { k: 'poly', pts }
    *   { k: 'text', x, y (baseline), size_pt, font: 'sans' | 'mono', anchor: 'start' | 'middle' | 'end', text }
    * Black only (rule 4.3). QR content: HUSS1/<TEMPLATE>/<SHEETCODE>.
    */
@@ -108,9 +109,7 @@
     out.push({ k: 'text', x: t.code_text.right, y: t.code_text.baseline, size_pt: t.code_text.size_pt, font: 'mono', anchor: 'end', text: code });
     out.push({ k: 'text', x: t.template_id.x, y: t.template_id.baseline, size_pt: t.template_id.size_pt, font: 'sans', anchor: 'start', text: t.name });
     var Q = HUSS.config.QR, qr = HUSS.sheet.qr.encode(HUSS.sheet.qr.sheetText(t.id, code), Q.LEVEL);
-    HUSS.sheet.qr.moduleRects(qr, t.qr.x, t.qr.y, t.qr.size, Q.QUIET_MODULES).forEach(function (r) {
-      out.push({ k: 'rect', x: r.x, y: r.y, w: r.w, h: r.h });
-    });
+    out.push({ k: 'rects', rects: HUSS.sheet.qr.moduleRects(qr, t.qr.x, t.qr.y, t.qr.size, Q.QUIET_MODULES) });
     return out;
   }
 

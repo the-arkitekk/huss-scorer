@@ -29,6 +29,10 @@
     its.forEach(function (it) {
       if (it.k === 'rect') {
         fills.push('<rect x="' + num(it.x) + '" y="' + num(it.y) + '" width="' + num(it.w) + '" height="' + num(it.h) + '"/>');
+      } else if (it.k === 'rects') {
+        fills.push('<path d="' + it.rects.map(function (r) {
+          return 'M' + num(r.x) + ' ' + num(r.y) + 'h' + num(r.w) + 'v' + num(r.h) + 'h' + num(-r.w) + 'z';
+        }).join('') + '"/>');
       } else if (it.k === 'poly') {
         fills.push('<polygon points="' + it.pts.map(function (p) { return num(p[0]) + ',' + num(p[1]); }).join(' ') + '"/>');
       } else if (it.k === 'line') {

@@ -9,6 +9,7 @@
 
   var H = function () { return HUSS.ui.handles; };
   var cfg, view, s = null;
+  var lastFile = null, qrCode = null;
   var ui = { guides: true, snap: true, selected: null, dragging: null, placing: null, confirmed: false, hoverPage: null, footLocked: true };
   var els = {};
   var drag = null, pan = null, spaceDown = false, hintTimer = null;
@@ -36,10 +37,12 @@
     els.dropError.hidden = false;
     els.imageInfo.textContent = HUSS.t('no_image');
     els.imageAlign.textContent = '';
+    els.imageWarn.hidden = true;
   }
 
   function load(file) {
     if (!file) return;
+    lastFile = file;
     if (!isImageFile(file)) { showError(HUSS.t('err_type')); return; }
     els.dropError.hidden = true;
     els.busy.hidden = false;
@@ -49,7 +52,8 @@
     }, function () {
       throw { userMessage: HUSS.t('err_decode') };
     }).then(function (img) {
-      var a = HUSS.detect.pipeline.analyze(img, { template: cfg.DEFAULTS.template, params: cfg.DEFAULTS, config: cfg });
+      var prm = HUSS.app.params();
+      var a = HUSS.detect.pipeline.analyze(img, { template: prm.template, params: prm, config: cfg });
       els.busy.hidden = true;
       if (!a.ok) { showError(HUSS.t('err_' + a.error)); return; }
       a.dark = null; // not needed after the analysis
@@ -61,10 +65,17 @@
   }
 
   function start(file, a) {
+    var prm = HUSS.app.params();
     var sug = a.suggestions;
+    if (prm.suggestions && prm.suggestions.figure === false) {
+      sug = Object.assign({}, sug, { head_y: null, foot_y: null }); // project switched figure suggestions off
+    }
+    // The sheet code comes from this sheet's QR code, never from the previous image.
+    qrCode = a.qr && a.qr.found ? a.qr.sheet_code : null;
+    els.inSheet.value = qrCode || '';
     s = {
       analysis: a,
-      params: Object.assign({}, cfg.DEFAULTS),
+      params: prm,
       meta: { project_code: '', rater_code: '', sheet_code: '', mode: cfg.DEFAULTS.mode, file_name: file.name, color_noncompliant: false, note: '' },
       handles: {
         axis: { x: sug.axis_x, placement: 'auto' },
@@ -96,6 +107,12 @@
     els.imageAlign.textContent = HUSS.t('align_summary', {
       r: a.R, res: al.residual_mm.toFixed(2), rot: al.rotation_deg.toFixed(1)
     }) + ' · ' + HUSS.t('timing', { ms: Math.round(a.timings.total) });
+    if (a.qr && a.qr.found && a.qr.template_mismatch) {
+      els.imageWarn.textContent = HUSS.t('qr_template_mismatch', { qr: a.qr.template, used: a.template.id });
+      els.imageWarn.hidden = false;
+    } else {
+      els.imageWarn.hidden = true;
+    }
     els.btnDownload.hidden = true;
     setConfirmStatus('', '');
     els.stage.focus({ preventScroll: true });
@@ -389,13 +406,15 @@
   function syncMeta() {
     var st = sheetCodeState();
     els.inSheet.classList.toggle('invalid', st === 'bad');
+    var fromQr = st === 'ok' && qrCode !== null && HUSS.sheet.code.normalize(els.inSheet.value) === qrCode;
     els.sheetStatus.className = 'small' + (st === 'ok' ? ' ok' : st === 'bad' ? ' bad' : ' muted');
-    els.sheetStatus.textContent = HUSS.t(st === 'ok' ? 'sheet_code_ok' : st === 'bad' ? 'sheet_code_bad' : 'sheet_code_hint');
+    els.sheetStatus.textContent = HUSS.t(fromQr ? 'sheet_code_qr' : st === 'ok' ? 'sheet_code_ok' : st === 'bad' ? 'sheet_code_bad' : 'sheet_code_hint');
     if (els.inRater.value.trim()) els.inRater.classList.remove('invalid');
     if (!s) return;
     s.meta.project_code = els.inProject.value.trim().toUpperCase();
     s.meta.rater_code = els.inRater.value.trim().toUpperCase();
     s.meta.sheet_code = st === 'ok' ? HUSS.sheet.code.normalize(els.inSheet.value) : '';
+    s.meta.code_source = st === 'ok' ? (fromQr ? 'qr' : 'manual') : null;
     s.meta.color_noncompliant = els.chkColor.checked;
   }
 
@@ -486,6 +505,54 @@
     refresh();
   }
 
+  // ------------------------------------------------------------ project
+
+  function updateProjectCard() {
+    var p = HUSS.app.state.project;
+    if (p) {
+      els.projectInfo.textContent = HUSS.t('project_info', {
+        code: p.project_code, title: p.title ? ' — ' + p.title : '', template: p.template, ref: p.ref_height_m.toFixed(2)
+      });
+      els.inProject.value = p.project_code;
+      els.inProject.readOnly = true;
+      if (p.rules_version !== cfg.RULES_VERSION) {
+        els.projectWarn.textContent = HUSS.t('project_rules_mismatch', { file: p.rules_version, tool: cfg.RULES_VERSION });
+        els.projectWarn.hidden = false;
+      } else {
+        els.projectWarn.hidden = true;
+      }
+    } else {
+      els.projectInfo.textContent = HUSS.t('project_none');
+      els.inProject.readOnly = false;
+      els.projectWarn.hidden = true;
+    }
+    syncMeta();
+  }
+
+  /** The loaded project changed: show it, and analyse the open image again with its settings. */
+  function projectChanged() {
+    updateProjectCard();
+    if (s && lastFile) load(lastFile);
+  }
+
+  function loadProjectFile(file) {
+    HUSS.io.files.readText(file).then(function (text) {
+      var r = HUSS.io.project.parse(text);
+      if (!r.ok) {
+        els.projectWarn.textContent = HUSS.t('project_bad_file', { list: HUSS.ui.projectForm.describe(r.errors) });
+        els.projectWarn.hidden = false;
+        return;
+      }
+      HUSS.app.setProject(r.project);
+    });
+  }
+
+  /** The scoring screen became visible again: the canvas may have changed size while hidden. */
+  function onShow() {
+    view.resize();
+    view.render();
+  }
+
   // ------------------------------------------------------------ init
 
   function init(config) {
@@ -494,7 +561,9 @@
       stage: $('stage'), canvas: $('view'), magnifier: $('magnifier'), dropzone: $('dropzone'), dropError: $('drop-error'),
       busy: $('busy'), tools: $('stage-tools'), hint: $('hint'),
       inProject: $('in-project'), inRater: $('in-rater'), inSheet: $('in-sheet'), sheetStatus: $('sheet-status'),
-      imageInfo: $('image-info'), imageAlign: $('image-align'),
+      imageInfo: $('image-info'), imageAlign: $('image-align'), imageWarn: $('image-warn'),
+      projectInfo: $('project-info'), projectWarn: $('project-warn'), projectInput: $('project-input'),
+      btnLoadProject: $('btn-load-project'), btnNewProject: $('btn-new-project'),
       cardHandles: $('card-handles'), cardValues: $('card-values'), cardFlags: $('card-flags'), cardView: $('card-view'), cardActions: $('card-actions'),
       handleTable: $('handle-table'), valueTable: $('value-table'), flagList: $('flag-list'),
       chkColor: $('chk-color'), chkContrast: $('chk-contrast'), chkMask: $('chk-mask'), chkGuides: $('chk-guides'), chkSnap: $('chk-snap'),
@@ -533,6 +602,11 @@
         }
       });
     });
+    els.btnLoadProject.addEventListener('click', function () { els.projectInput.value = ''; els.projectInput.click(); });
+    els.projectInput.addEventListener('change', function () {
+      if (els.projectInput.files && els.projectInput.files[0]) loadProjectFile(els.projectInput.files[0]);
+    });
+    els.btnNewProject.addEventListener('click', function () { HUSS.app.show('project'); });
     els.btnConfirm.addEventListener('click', confirm);
     els.btnDownload.addEventListener('click', function () {
       if (last.csv) HUSS.io.files.downloadText(last.name, last.csv);
@@ -546,5 +620,8 @@
     syncMeta();
   }
 
-  HUSS.ui.scorer = { init: init, load: load, get session() { return s; } };
+  HUSS.ui.scorer = {
+    init: init, load: load, onShow: onShow, projectChanged: projectChanged, loadProjectFile: loadProjectFile,
+    get session() { return s; }
+  };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

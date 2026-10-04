@@ -140,6 +140,7 @@ function templateGroups(T, code) {
   const glyphW = (ch, it) => HUSS.sheet.pdf.widthPt(ch, it.font, it.size_pt) / PT;
   for (const it of HUSS.sheet.template.items(T, code, label)) {
     if (it.k === 'rect') shapes.push(rect(it.x, it.y, it.x + it.w, it.y + it.h));
+    else if (it.k === 'rects') for (const r of it.rects) shapes.push(rect(r.x, r.y, r.x + r.w, r.y + r.h));
     else if (it.k === 'line') shapes.push(seg([it.x1, it.y1], [it.x2, it.y2], it.w));
     else if (it.k === 'poly') shapes.push(poly(it.pts));
     else if (it.k === 'text') {

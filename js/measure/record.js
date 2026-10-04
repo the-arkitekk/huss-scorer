@@ -5,7 +5,7 @@
  * session = {
  *   analysis,                          // HUSS.detect.pipeline.analyze result
  *   params: { ref_height_m, min_figure_mm, foot_tolerance_mm, snap_radius_mm },
- *   meta: { project_code, rater_code, sheet_code, mode, file_name, color_noncompliant, note },
+ *   meta: { project_code, rater_code, sheet_code, code_source, mode, file_name, color_noncompliant, note },
  *   handles: { axis: { x, placement }, head: { y, placement }, foot: { y, placement },
  *              ceiling: { y, placement }, wall: { x, placement } },   // y/x null = not placed
  *   suggested: { head_y, foot_y, ceiling_y, wall_x },
@@ -84,7 +84,7 @@
       duration_s: dur,
       tool_version: cfg.TOOL_VERSION, rules_version: cfg.RULES_VERSION, template: a.template.id,
       file_name: m.file_name || '', image_width_px: a.image.width, image_height_px: a.image.height,
-      code_source: m.sheet_code ? 'manual' : null,
+      code_source: m.sheet_code ? (m.code_source || 'manual') : null,
       align_method: a.align.method,
       px_per_mm_x: a.align.px_per_mm_x, px_per_mm_y: a.align.px_per_mm_y,
       rotation_deg: a.align.rotation_deg, align_residual_mm: a.align.residual_mm,

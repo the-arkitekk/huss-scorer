@@ -10,9 +10,7 @@ const T3 = HUSS.sheet.template.get('A3L');
 function qrFromItems(t, items) {
   const m = t.qr.size / 29, x0 = t.qr.x + 4 * m, y0 = t.qr.y + 4 * m;
   const grid = Array.from({ length: 21 }, () => new Array(21).fill(false));
-  for (const it of items) {
-    const inBox = it.x >= t.qr.x - 1e-9 && it.y >= t.qr.y - 1e-9 && it.x + it.w <= t.qr.x + t.qr.size + 1e-9 && it.y + it.h <= t.qr.y + t.qr.size + 1e-9;
-    if (it.k !== 'rect' || !inBox) continue;
+  for (const it of items.filter((i) => i.k === 'rects').flatMap((i) => i.rects)) {
     const r = Math.round((it.y - y0) / m), c0 = Math.round((it.x - x0) / m), n = Math.round(it.w / m);
     for (let c = c0; c < c0 + n; c++) grid[r][c] = true;
   }
@@ -36,7 +34,9 @@ test('sheet items: corner marks, floor line, hatching, mark, texts and a readabl
     assert.equal(d.ok, true);
     assert.equal(d.text, `HUSS1/${t.id}/6QHJ4`);
     // nothing printed above the floor line except the two top corner marks (rule 4.3)
-    const above = items.filter((i) => (i.k === 'rect' ? i.y + i.h : i.k === 'line' ? Math.max(i.y1, i.y2) : i.k === 'poly' ? Math.max(...i.pts.map((p) => p[1])) : i.y) < t.floor.y - 0.2);
+    const bottom = (i) => i.k === 'rect' ? i.y + i.h : i.k === 'rects' ? Math.max(...i.rects.map((r) => r.y + r.h)) :
+      i.k === 'line' ? Math.max(i.y1, i.y2) : i.k === 'poly' ? Math.max(...i.pts.map((p) => p[1])) : i.y;
+    const above = items.filter((i) => bottom(i) < t.floor.y - 0.2);
     assert.equal(above.length, 2);
   }
 });
@@ -47,6 +47,7 @@ test('SVG print view: true size in mm, escaped text', () => {
   assert.ok(svg.includes('a&lt;b &amp; &quot;c&quot;'));
   assert.ok(svg.includes('>6QHJ4</text>'));
   assert.ok(svg.includes('text-anchor="middle"'));
+  assert.equal((svg.match(/<path /g) || []).length, 1, 'QR drawn as one path');
   assert.ok(HUSS.sheet.svg.sheet(T3, '6QHJ4', 'x').includes('width="420mm" height="297mm"'));
 });
 
