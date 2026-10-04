@@ -7,6 +7,7 @@ const FILES = [
   'strings.en.js',
   'sheet/template.js',
   'sheet/code.js',
+  'sheet/qr.js',
   'image/homography.js',
   'image/lab.js',
   'image/components.js',
