@@ -94,12 +94,26 @@
   }
 
   var COLUMNS = columnsFor(DEFAULT_EXCLUSIONS);
-  var COLUMN_TYPE = {};
-  COLUMNS.forEach(function (c) { COLUMN_TYPE[c.name] = c.type; });
 
-  /** Type of a column; any excl_* column is a 0/1 exclusion criterion. */
+  /**
+   * Columns Merge adds after the measurement columns (spec 8.6): who and what was drawn, the
+   * true dimensions and E = (est - true) / true for the main values and the backup values.
+   * Extra key table columns follow as key_<name> (text).
+   */
+  var MERGED_COLUMNS = [].concat(
+    cols('str', ['participant_code', 'structure_code', 'structure_name']),
+    cols('m', ['true_vertical_m', 'true_horizontal_m']),
+    cols('E', ['E_vertical', 'E_horizontal']),
+    cols('E', ['E_vertical_at_axis', 'E_horizontal_at_floor', 'E_vertical_red', 'E_horizontal_red']),
+    cols('str', ['source_file'])
+  );
+
+  var COLUMN_TYPE = {};
+  COLUMNS.concat(MERGED_COLUMNS).forEach(function (c) { COLUMN_TYPE[c.name] = c.type; });
+
+  /** Type of a column; any excl_* column is a 0/1 exclusion criterion, any key_* column text. */
   function typeOf(name) {
-    return COLUMN_TYPE[name] || (/^excl_[a-z0-9_]+$/.test(name) ? 'bool' : null);
+    return COLUMN_TYPE[name] || (/^excl_[a-z0-9_]+$/.test(name) ? 'bool' : /^key_[a-z0-9_]+$/.test(name) ? 'str' : null);
   }
 
   var EOL = '\r\n';
@@ -254,7 +268,7 @@
   }
 
   var api = {
-    TYPES: TYPES, COLUMNS: COLUMNS, COLUMN_TYPE: COLUMN_TYPE, DEFAULT_EXCLUSIONS: DEFAULT_EXCLUSIONS,
+    TYPES: TYPES, COLUMNS: COLUMNS, MERGED_COLUMNS: MERGED_COLUMNS, COLUMN_TYPE: COLUMN_TYPE, DEFAULT_EXCLUSIONS: DEFAULT_EXCLUSIONS,
     columnsFor: columnsFor, typeOf: typeOf,
     formatValue: formatValue, parseValue: parseValue, formatRow: formatRow, parseRow: parseRow,
     toCSV: toCSV, toExcelView: toExcelView, toText: toText, parse: parse, isExcelView: isExcelView,

@@ -17,6 +17,7 @@
       <button type="button" class="tab active" data-screen="score" data-s="tab_score"></button>
       <button type="button" class="tab" data-screen="sheets" data-s="tab_sheets"></button>
       <button type="button" class="tab" data-screen="tables" data-s="tab_tables"></button>
+      <button type="button" class="tab" data-screen="results" data-s="tab_results"></button>
       <button type="button" class="tab" data-screen="project" data-s="tab_project"></button>
     </nav>
     <div class="topbar-actions">
@@ -298,6 +299,60 @@
     </div>
   </main>
 
+  <main class="screen-page" id="screen-results" hidden>
+    <div class="res-wrap">
+      <p class="res-warning" data-s="res_warning"></p>
+      <div class="res-controls">
+        <section class="page-card">
+          <h1 data-s="res_files"></h1>
+          <p class="small muted" data-s="res_files_help"></p>
+          <ul class="res-files" id="res-files"></ul>
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary btn-xs" id="res-add" data-s="res_add"></button>
+            <button type="button" class="btn btn-xs" id="res-clear" data-s="res_clear"></button>
+            <input type="file" id="res-input" accept=".csv,text/csv" multiple hidden>
+          </div>
+          <p class="small bad" id="res-file-errors" hidden></p>
+        </section>
+        <section class="page-card">
+          <h1 data-s="res_tables"></h1>
+          <p class="small muted" data-s="res_tables_help"></p>
+          <p class="small" id="res-tables-status"></p>
+          <div class="btn-row">
+            <button type="button" class="btn btn-xs" id="res-use-screen" data-s="res_use_screen"></button>
+            <button type="button" class="btn btn-xs" id="res-load-key" data-s="res_load_key"></button>
+            <button type="button" class="btn btn-xs" id="res-load-structures" data-s="res_load_structures"></button>
+            <input type="file" id="res-key-input" accept=".csv,.txt,text/csv,text/plain" hidden>
+            <input type="file" id="res-structures-input" accept=".csv,.txt,text/csv,text/plain" hidden>
+          </div>
+          <p class="small bad" id="res-table-errors" hidden></p>
+        </section>
+        <section class="page-card res-merge">
+          <p class="small" id="res-merged"></p>
+          <div class="btn-row">
+            <button type="button" class="btn btn-xs" id="res-dl-merged" data-s="res_dl_merged" disabled></button>
+            <button type="button" class="btn btn-xs" id="res-dl-excel" data-s="res_dl_excel" disabled></button>
+          </div>
+        </section>
+      </div>
+      <section class="page-card res-report-card">
+        <div class="res-report-bar">
+          <h1 data-s="res_report"></h1>
+          <label class="res-select"><span data-s="res_rater"></span><select id="res-rater"></select></label>
+          <label class="res-select"><span data-s="res_method"></span><select id="res-method">
+            <option value="main" data-s="rp_method_main"></option>
+            <option value="points" data-s="rp_method_points"></option>
+            <option value="red" data-s="rp_method_red"></option>
+          </select></label>
+          <span class="res-spacer"></span>
+          <button type="button" class="btn btn-xs" id="res-print" data-s="res_print" disabled></button>
+          <button type="button" class="btn btn-xs" id="res-dl-html" data-s="res_dl_html" disabled></button>
+        </div>
+        <div id="res-report" class="res-report"><p class="small muted" data-s="res_empty"></p></div>
+      </section>
+    </div>
+  </main>
+
   <div id="print-root" aria-hidden="true"></div>
   <style id="print-page-style"></style>
 
@@ -333,6 +388,10 @@
   <script src="js/detect/glyphs.js"></script>
   <script src="js/detect/ocr.js"></script>
   <script src="js/detect/pipeline.js"></script>
+  <script src="js/io/merge.js"></script>
+  <script src="js/report/stats.js"></script>
+  <script src="js/report/charts.js"></script>
+  <script src="js/report/build.js"></script>
   <script src="js/ui/canvasView.js"></script>
   <script src="js/ui/handles.js"></script>
   <script src="js/ui/scorer.js"></script>
@@ -341,6 +400,7 @@
   <script src="js/ui/sheetgen.js"></script>
   <script src="js/ui/projectForm.js"></script>
   <script src="js/ui/tablesForm.js"></script>
+  <script src="js/ui/results.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

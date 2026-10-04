@@ -245,3 +245,24 @@ table.grid td.ok-mark { color: var(--ok); font-size: 12px; }
 #card-manual .btn-row { margin-bottom: 4px; }
 .stage.manual canvas#view { cursor: crosshair; }
 .stage.manual.panning canvas#view { cursor: grabbing; }
+
+/* Results screen (Merge and Report) */
+.res-wrap { max-width: 1400px; margin: 0 auto; }
+.res-warning { background: var(--warn-bg); color: var(--warn); border-radius: var(--radius); padding: 8px 12px; margin: 0 0 14px; font-size: 13px; }
+.res-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
+.res-controls .res-merge { grid-column: 1 / -1; padding: 10px 18px; }
+.res-controls .res-merge .btn-row { margin: 4px 0 0; }
+.res-files { list-style: none; margin: 8px 0; padding: 0; font-size: 12px; }
+.res-files li { display: flex; align-items: center; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.res-files li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.res-report-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 12px; }
+.res-report-bar h1 { margin: 0; }
+.res-select { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
+.res-select select { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); }
+.res-spacer { flex: 1; }
+.rp-fig { position: relative; }
+.rp-fig .rp-tools { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0.25; transition: opacity 0.15s; }
+.rp-fig:hover .rp-tools, .rp-fig:focus-within .rp-tools { opacity: 1; }
+@media (max-width: 1000px) { .res-controls { grid-template-columns: 1fr; } }
+.res-report .rp-section h2 { text-transform: none; letter-spacing: 0; font-size: 16px; color: var(--ink); margin: 0 0 10px; }
+.res-report .rp-section h3 { font-size: 13px; }

@@ -22,6 +22,7 @@ const FILES = [
   'io/session.js',
   'io/autosave.js',
   'io/tables.js',
+  'io/merge.js',
   'detect/corners.js',
   'detect/floorline.js',
   'detect/redfigure.js',
@@ -32,7 +33,10 @@ const FILES = [
   'detect/line.js',
   'detect/glyphs.js',
   'detect/ocr.js',
-  'detect/pipeline.js'
+  'detect/pipeline.js',
+  'report/stats.js',
+  'report/charts.js',
+  'report/build.js'
 ];
 
 const JS = path.join(__dirname, '..', '..', 'js');

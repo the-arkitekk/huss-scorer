@@ -6,13 +6,23 @@ Status: **v0.1.0, rules 1.3** — Phase 1 (alignment, red-figure suggestion, han
 
 ## Use
 
-The top bar has four screens: **Score**, **Sheets**, **Tables** and **New project**.
+The top bar has five screens: **Score**, **Sheets**, **Tables**, **Results** and **New project**.
 
 **New project** (once, by the project owner): fill in the form and download `<project_code>.huss.json`; send it to the raters. It holds no personal data.
 
 **Sheets**: choose the number of sheets (and optionally codes not to use, e.g. an earlier code list), then **Print…** or **Download PDF**, and keep the code list CSV. Print at 100 % (actual size); on a printed sheet the centres of the two top corner squares are 277 mm apart (A3L: 400 mm). Optionally a back side for the desk coordinator is printed (participant and structure codes, date; double-sided, flip on short edge). The back is never scanned, so raters stay blind.
 
 **Tables**: the structures (code, name, true ceiling height, true distance in metres) and the key table (sheet code → participant code, structure code), entered by hand or imported. Sheet codes are checked while typing; download both as CSV or load them straight into Open mode.
+
+**Results** (after scoring): add one or more measurement CSVs (any raters) and the key and structures tables (from the Tables screen or files). The tool merges them by sheet code (spec 8.6), computes E = (estimate − true) / true for every drawing, lists data problems (sheets not in the key, missing structures, sheets scored twice, unfinished records, key sheets without a record) and downloads the merged CSV. Below it the **Report**:
+
+- summary cards: drawings, measured / excluded, participants, structures, raters, median error and share overestimating for both axes;
+- charts: error by structure (dots with box and median), estimated against true (with the identity line), error in height against error in distance (four quadrants), error distributions, and scoring quality (how the handles ended up, i.e. the share of suggestions kept unchanged; flags; where sheet codes came from; alignment; time per drawing);
+- tables: by structure (n, true value, mean and median estimate, median E with the middle half, share over) and suggestions per handle;
+- a rater selector and a **Values** selector: line averages (rules 1.3), the rules 1.2 points, or the figure to the lowest red point;
+- exports: each chart as SVG or PNG, **Print / save as PDF**, and **Download report (HTML)**, one self-contained file that opens offline.
+
+The charts are drawn by the tool itself (`js/report/charts.js`), no chart library. Only descriptive statistics are computed; ICC and kappa stay in R. Example data from the trial scans, with an example report: `samples/example/`.
 
 **Score**:
 
@@ -90,6 +100,7 @@ npm test
 
 - `node tests/synthetic/generate.js` writes the synthetic pages (S1–S8, S9 double wall, S10 no ceiling, S11 JPEG quality 60 with noise, S12 600 dpi, S13 small figure, S14 missing corner mark, S15 A3L, S16 freehand slanted and wobbly ceiling and wall, S17 clearly slanted ceiling, T1 orientation tie) to `samples/synthetic/` and `tests/synthetic/expected.json`.
 - Sheet geometry lives in one place, `HUSS.sheet.template.items()`; the print view (`js/sheet/svg.js`), the PDF (`js/sheet/pdf.js`) and the synthetic pages all draw from it.
+- `node tests/tools/make-example.js` rebuilds `samples/example/` from the scans in `samples/real/` (every suggestion accepted; the values are the tool's, not a rater's).
 - `tests/fixtures/printed-codes/` holds the printed-code strips of the six trial scans (only the five characters, cut with `node tests/tools/code-crops.js`), the test material of the printed-code reader.
 - `node tests/tools/inspect.js <scan>` runs the detection on a real scan and writes overlay images, including `<name>_lines.png` with the followed ceiling and wall lines and their averages (macOS: uses `sips` to decode).
 - All thresholds are named constants in `js/config.js`; all interface texts are in `js/strings.en.js`.
