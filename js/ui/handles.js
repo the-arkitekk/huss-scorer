@@ -53,14 +53,18 @@
     return DEF[key].dir === 'y' ? Math.max(0, Math.min(T.height_mm, py)) : Math.max(0, Math.min(T.width_mm, px));
   }
 
-  /** Snap a released position (spec 7.8). Axis never snaps. */
-  function snap(s, key, v) {
-    var P = HUSS.detect.pipeline, a = s.analysis, r = s.params.snap_radius_mm, ax = s.handles.axis.x;
+  /**
+   * Snap a released position (spec 7.8); ceiling and wall go to the average of their line
+   * (rules 1.3), the ceiling averaged up to the wall handle, the wall up to the ceiling handle.
+   * radius defaults to the snap radius. Axis never snaps.
+   */
+  function snap(s, key, v, radius) {
+    var P = HUSS.detect.pipeline, a = s.analysis, r = radius || s.params.snap_radius_mm, ax = s.handles.axis.x;
     switch (key) {
       case 'head': return P.snapHead(a, v, r);
       case 'foot': return P.snapFoot(a, ax, v, r);
-      case 'ceiling': return P.snapCeiling(a, ax, v, r);
-      case 'wall': return P.snapWall(a, v, r);
+      case 'ceiling': return P.snapCeiling(a, ax, v, r, s.handles.wall.x);
+      case 'wall': return P.snapWall(a, v, r, s.handles.ceiling.y);
       default: return { pos: v, snapped: false };
     }
   }
@@ -156,11 +160,34 @@
     ctx.restore();
   }
 
+  /** The stretch of pencil line a ceiling or wall handle is the average of, as a soft highlight. */
+  function drawLines(ctx, view, s, lines) {
+    ['ceiling', 'wall'].forEach(function (k) {
+      var l = lines[k];
+      if (!l || !l.pts.length) return;
+      ctx.save();
+      ctx.globalAlpha = 0.4;
+      ctx.strokeStyle = color(k);
+      ctx.lineWidth = Math.max(3, 0.5 * view.scale);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      var step = Math.max(1, Math.floor(l.pts.length / 1500));
+      for (var i = 0; i < l.pts.length; i += step) {
+        var p = view.toScreen(l.pts[i][0], l.pts[i][1]);
+        if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+      }
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+
   /**
-   * Draws guides and handles. ui: { guides, selected, dragging, confirmed, placing, hoverPage }.
+   * Draws guides and handles. ui: { guides, selected, dragging, confirmed, placing, hoverPage, lines }.
    */
   function draw(ctx, view, s, ui, cfg) {
     if (ui.guides) drawGuides(ctx, view, s);
+    if (ui.lines && ui.guides) drawLines(ctx, view, s, ui.lines);
     KEYS.forEach(function (k) {
       var g = segment(view, s, k, cfg);
       if (!g) return;

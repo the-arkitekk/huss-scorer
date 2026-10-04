@@ -12,7 +12,7 @@
     // 1.1: rule 3 — red drawn below the floor line counts as standing on the line (flagged).
     // 1.2: rule 3 — the figure is always measured from the head top to the floor line;
     //      a red trace ending off the line is flagged, its own bottom kept as a backup value.
-    RULES_VERSION: '1.2',
+    RULES_VERSION: '1.3',
 
     // Project-level defaults (spec 5.1). Phase 2 reads these from the project file.
     DEFAULTS: {
@@ -140,6 +140,25 @@
     },
 
     // 7.5 Manual alignment
+    // Average position of hand-drawn ceiling and wall lines (rules 1.3, rules 4 and 5)
+    LINE: {
+      WINDOW_HALF_MM: 1.0,         // the line centre is looked for within this distance of the previous one
+      GAP_MM: 1.0,                 // pencil breaks up to this length are bridged
+      END_MM: 1.0,                 // left out at the ends next to a corner (thicker ink where lines meet)
+      MIN_LENGTH_MM: 2,            // less followed line than this: the point value is used
+      STRENGTH_RUN_MM: 3,          // the line's typical darkness is taken over this length at its start
+      FOLLOW_FRACTION: 0.35,       // a sample is on the line when darker than this share of the way from paper to it
+      MIN_CONTRAST: 15,            // a start stretch less dark than this above the paper has no line to follow
+      PAGE_MARGIN_MM: 8,           // a ceiling without a wall is followed at most this close to the page edge
+      CANDIDATE_EXTRA_MM: 10,      // lines crossing the axis (ceiling) or the floor band (wall) this much beyond the snap
+                                   // radius are candidates too: a slanted line crosses there away from its average
+      FOLLOW_UP_EXTRA_MM: 3,       // a suggested/snapped handle is averaged again within snap radius + this when the other moves
+      TURN_SLOPE: 1,               // a line turning steeper than this (45 degrees) over TURN_RUN_MM ends there (a corner)
+      TURN_RUN_MM: 0.5,
+      TURN_SLACK_MM: 0.15,         // allowance for pencil texture in that test
+      UNEVEN_MM: 5                 // flag_ceiling_uneven / flag_wall_uneven above this largest deviation
+                                   // (freehand ceilings in the trial scans deviate 2-4 mm; 5 marks a clearly slanted line)
+    },
     MANUAL: {
       REFINE_WINDOW_MM: 3,         // a click is centred on the corner square within this radius
       CLICK_SLOP_PX: 5             // a press that moves further than this pans instead of placing a point

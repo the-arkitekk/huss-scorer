@@ -76,10 +76,15 @@
     // Backup (rules 1.2): figure measured to the lowest red point instead of the floor line
     cols('mm', ['red_bottom_y_mm', 'figure_red_mm']),
     cols('m', ['est_vertical_red_m', 'est_horizontal_red_m']),
+    // Backup (rules 1.3): ceiling where its line crosses the axis, wall where it stands on the floor;
+    // spread = largest deviation of the followed line from its average
+    cols('mm', ['ceiling_at_axis_y_mm', 'wall_at_floor_x_mm']),
+    cols('m', ['est_vertical_at_axis_m', 'est_horizontal_at_floor_m']),
+    cols('mm', ['ceiling_spread_mm', 'wall_spread_mm']),
     cols('bool', [
       'flag_red_not_found', 'flag_figure_small', 'flag_figure_off_mark', 'flag_foot_off_floor',
       'flag_multiple_red', 'flag_axis_moved', 'flag_manual_alignment', 'flag_alignment_warning',
-      'flag_color_noncompliant',
+      'flag_ceiling_uneven', 'flag_wall_uneven', 'flag_color_noncompliant',
       'vertical_not_measurable', 'horizontal_not_measurable'
     ]),
     cols('bool', ids),

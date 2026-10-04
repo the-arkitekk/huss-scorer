@@ -8,11 +8,12 @@
 
   var TOOL_FLAGS = [
     'flag_red_not_found', 'flag_figure_small', 'flag_figure_off_mark', 'flag_foot_off_floor',
-    'flag_multiple_red', 'flag_axis_moved', 'flag_manual_alignment', 'flag_alignment_warning'
+    'flag_multiple_red', 'flag_axis_moved', 'flag_manual_alignment', 'flag_alignment_warning',
+    'flag_ceiling_uneven', 'flag_wall_uneven'
   ];
 
   /**
-   * a: analysis (pipeline result); s: { axis_x, axis_placement, foot_y, figure_mm };
+   * a: analysis (pipeline result); s: { axis_x, axis_placement, foot_y, figure_mm, ceiling_spread, wall_spread };
    * p: { min_figure_mm, foot_tolerance_mm }; config: HUSS.config.
    * flag_foot_off_floor is set when the red trace ends off the line (either side, rule 3)
    * or when the final foot handle is off the line.
@@ -32,7 +33,9 @@
       flag_multiple_red: !!a.red.multiple,
       flag_axis_moved: s.axis_placement === 'manual',
       flag_manual_alignment: a.align.method !== 'auto',
-      flag_alignment_warning: !!a.align.warning
+      flag_alignment_warning: !!a.align.warning,
+      flag_ceiling_uneven: isNum(s.ceiling_spread) && s.ceiling_spread > config.LINE.UNEVEN_MM,
+      flag_wall_uneven: isNum(s.wall_spread) && s.wall_spread > config.LINE.UNEVEN_MM
     };
   }
 

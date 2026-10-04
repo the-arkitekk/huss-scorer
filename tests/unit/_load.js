@@ -29,6 +29,7 @@ const FILES = [
   'detect/snap.js',
   'detect/qr.js',
   'detect/suggest.js',
+  'detect/line.js',
   'detect/pipeline.js'
 ];
 

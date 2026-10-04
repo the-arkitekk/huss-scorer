@@ -145,14 +145,23 @@
       sug.foot_off_floor = fr.off_floor;
     }
     var result = {
-      ok: true, template: T, config: cfg, R: R, dm: dm, floor: floor, wallProfile: wallProfile, ceilingCache: {}
+      ok: true, template: T, config: cfg, R: R, dm: dm, floor: floor, wallProfile: wallProfile, ceilingCache: {}, lineCache: null
     };
     var switches = params.suggestions || {};
-    if (switches.ceiling !== false) sug.ceiling_y = D.suggest.ceiling(result, axisX, sug.head_y);
+    // Where the lines are (spec 7.9): the ceiling where it crosses the axis, the wall just above the floor.
+    var pc = switches.ceiling !== false ? D.suggest.ceiling(result, axisX, sug.head_y) : null, pw = null;
     if (switches.wall !== false) {
-      var ceilMm = sug.ceiling_y != null ? D.floorline.yAt(floor, axisX) - sug.ceiling_y : null;
-      sug.wall_x = D.suggest.wall(result, axisX, red.found ? red.right_x : null, ceilMm);
+      var ceilMm = pc != null ? D.floorline.yAt(floor, axisX) - pc : null;
+      pw = D.suggest.wall(result, axisX, red.found ? red.right_x : null, ceilMm);
     }
+    // What is measured (rules 1.3): their averages, the ceiling up to the wall and the wall up to the ceiling.
+    var w0 = pw != null ? D.line.wallLine(result, pw, pc) : null;
+    var c1 = pc != null ? D.line.ceilingLine(result, axisX, pc, w0 ? w0.pos : null) : null;
+    var w1 = pw != null ? D.line.wallLine(result, pw, c1 ? c1.pos : null) : null;
+    sug.ceiling_y = c1 ? c1.pos : null;
+    sug.wall_x = w1 ? w1.pos : null;
+    sug.ceiling_at_axis_y = pc;
+    sug.wall_at_floor_x = pw;
     t.suggest = now();
 
     var c = al.corners; // page order TL, TR, BR, BL
@@ -178,6 +187,7 @@
       redEdges: redEdges,
       wallProfile: wallProfile,
       ceilingCache: result.ceilingCache,
+      lineCache: result.lineCache,
       suggestions: sug,
       timings: {
         corners: t.corners - t.start, orientation: t.orientation - t.corners, rectify: t.rectify - t.orientation,
@@ -221,12 +231,18 @@
     return a.ceilingCache[key];
   }
 
-  function snapCeiling(a, axisX, dropY, radius) {
-    return HUSS.detect.snap.toLine(ceilingProfile(a, axisX), a.R, dropY, radius, a.config.PROFILE);
+  /**
+   * Snap (spec 7.8, rules 1.3): a released ceiling or wall handle jumps to the average of the
+   * line whose average lies within radius. wallX / ceilingY bound the averaged part (optional).
+   */
+  function snapCeiling(a, axisX, dropY, radius, wallX) {
+    var l = HUSS.detect.line.ceilingNear(a, axisX, dropY, radius, wallX);
+    return l ? { pos: l.pos, snapped: true, line: l } : { pos: dropY, snapped: false };
   }
 
-  function snapWall(a, dropX, radius) {
-    return HUSS.detect.snap.toLine(a.wallProfile, a.R, dropX, radius, a.config.PROFILE);
+  function snapWall(a, dropX, radius, ceilingY) {
+    var l = HUSS.detect.line.wallNear(a, dropX, radius, ceilingY);
+    return l ? { pos: l.pos, snapped: true, line: l } : { pos: dropX, snapped: false };
   }
 
   function snapHead(a, dropY, radius) {

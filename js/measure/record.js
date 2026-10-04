@@ -38,19 +38,39 @@
     };
   }
 
+  /**
+   * The drawn lines under the ceiling and wall handles (rules 1.3): the line whose average lies
+   * within the snap radius of the handle, or null. Gives the backup points, the spread and the
+   * stretch drawn on screen.
+   */
+  function lines(s) {
+    var a = s.analysis, h = quantized(s.handles), r = s.params.snap_radius_mm, L = HUSS.detect.line;
+    return {
+      ceiling: h.ceiling.y == null || h.axis.x == null ? null : L.ceilingNear(a, h.axis.x, h.ceiling.y, r, h.wall.x),
+      wall: h.wall.x == null ? null : L.wallNear(a, h.wall.x, r, h.ceiling.y)
+    };
+  }
+
   /** Computed values and tool flags for the current handle positions. */
   function derive(s) {
-    var a = s.analysis, h = quantized(s.handles);
+    var a = s.analysis, h = quantized(s.handles), ln = lines(s);
     var floorAxis = HUSS.detect.floorline.yAt(a.floor, h.axis.x);
     var comp = HUSS.measure.compute.compute({
       head_y: h.head.y, foot_y: h.foot.y, ceiling_y: h.ceiling.y, wall_x: h.wall.x,
       axis_x: h.axis.x, floor_y_axis: floorAxis,
-      red_bottom_y: a.red.found ? a.red.raw_foot_y : null
+      red_bottom_y: a.red.found ? a.red.raw_foot_y : null,
+      ceiling_at_axis_y: ln.ceiling ? ln.ceiling.at_axis : null,
+      wall_at_floor_x: ln.wall ? ln.wall.at_floor : null
     }, s.params);
+    var spread = {
+      ceiling: ln.ceiling && !s.meta.vertical_not_measurable ? ln.ceiling.spread : null,
+      wall: ln.wall && !s.meta.horizontal_not_measurable ? ln.wall.spread : null
+    };
     var flags = HUSS.measure.flags.toolFlags(a, {
-      axis_x: h.axis.x, axis_placement: h.axis.placement, foot_y: h.foot.y, figure_mm: comp.figure_mm
+      axis_x: h.axis.x, axis_placement: h.axis.placement, foot_y: h.foot.y, figure_mm: comp.figure_mm,
+      ceiling_spread: spread.ceiling, wall_spread: spread.wall
     }, s.params, a.config);
-    return { floor_y_axis: floorAxis, comp: comp, flags: flags };
+    return { floor_y_axis: floorAxis, comp: comp, flags: flags, lines: ln, spread: spread };
   }
 
   /** Exclusion ids of the session's project (spec defaults without a project), plus excl_other. */
@@ -153,25 +173,30 @@
     };
     ['figure_mm', 'figure_from_floor_mm', 'foot_floor_gap_mm', 'ceiling_mm', 'distance_mm', 'ref_height_m',
       'scale_mm_per_m', 'est_vertical_m', 'est_horizontal_m', 'est_vertical_alt_m', 'est_horizontal_alt_m',
-      'red_bottom_y_mm', 'figure_red_mm', 'est_vertical_red_m', 'est_horizontal_red_m'
+      'red_bottom_y_mm', 'figure_red_mm', 'est_vertical_red_m', 'est_horizontal_red_m',
+      'ceiling_at_axis_y_mm', 'wall_at_floor_x_mm', 'est_vertical_at_axis_m', 'est_horizontal_at_floor_m'
     ].forEach(function (k) { rec[k] = comp[k]; });
+    rec.ceiling_spread_mm = d.spread.ceiling;
+    rec.wall_spread_mm = d.spread.wall;
     HUSS.measure.flags.TOOL_FLAGS.forEach(function (k) { rec[k] = flags[k]; });
     var ex = m.exclusions || {};
     exclusionIds(s.params).forEach(function (k) { rec[k] = !!ex[k]; });
     // An axis marked "not measurable" carries no values (its handle may still be on screen).
     if (m.vertical_not_measurable) {
-      ['ceiling_y_mm', 'ceiling_x_px', 'ceiling_y_px', 'ceiling_mm', 'est_vertical_m', 'est_vertical_alt_m', 'est_vertical_red_m', 'ceiling_placement']
+      ['ceiling_y_mm', 'ceiling_x_px', 'ceiling_y_px', 'ceiling_mm', 'est_vertical_m', 'est_vertical_alt_m', 'est_vertical_red_m', 'ceiling_placement',
+        'ceiling_at_axis_y_mm', 'est_vertical_at_axis_m', 'ceiling_spread_mm']
         .forEach(function (k) { rec[k] = null; });
     }
     if (m.horizontal_not_measurable) {
-      ['wall_x_mm', 'wall_x_px', 'wall_y_px', 'distance_mm', 'est_horizontal_m', 'est_horizontal_alt_m', 'est_horizontal_red_m', 'wall_placement']
+      ['wall_x_mm', 'wall_x_px', 'wall_y_px', 'distance_mm', 'est_horizontal_m', 'est_horizontal_alt_m', 'est_horizontal_red_m', 'wall_placement',
+        'wall_at_floor_x_mm', 'est_horizontal_at_floor_m', 'wall_spread_mm']
         .forEach(function (k) { rec[k] = null; });
     }
     return rec;
   }
 
   var api = {
-    derive: derive, missingForConfirm: missingForConfirm, isoLocal: isoLocal, fileName: fileName, buildRecord: buildRecord,
+    derive: derive, lines: lines, missingForConfirm: missingForConfirm, isoLocal: isoLocal, fileName: fileName, buildRecord: buildRecord,
     exclusionIds: exclusionIds, isExcluded: isExcluded
   };
   HUSS.measure.record = api;

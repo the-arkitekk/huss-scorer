@@ -36,7 +36,11 @@ const BASE = {
   ceilingFromX: null,       // ceiling line starts here (S10: nothing above the figure)
   missingCorner: -1,        // index of a corner mark left out (0 TL, 1 TR, 2 BR, 3 BL)
   jpegQuality: 0,           // > 0: JPEG degradation of this quality
-  noise: 0                  // Gaussian noise sigma (grey levels), before JPEG
+  noise: 0,                 // Gaussian noise sigma (grey levels), before JPEG
+  ceilingSlope: 0,          // ceiling y change per mm to the right of the axis (negative: rises)
+  ceilingWave: null,        // { amp, period } mm: sinusoidal wobble of the ceiling
+  wallSlope: 0,             // wall x change per mm up from the floor (positive: leans right)
+  wallWave: null            // { amp, period } mm: sinusoidal wobble of the wall
 };
 
 const SCENES = {
@@ -55,7 +59,12 @@ const SCENES = {
   S9: { description: 'Double-line opposite wall (3 mm)', wallDouble: 3 },
   S10: { description: 'No ceiling above the figure', ceilingFromX: 60 },
   S11: { description: 'JPEG quality 60 and noise', jpegQuality: 60, noise: 4 },
-  S14: { description: 'One corner mark missing', missingCorner: 2 }
+  S14: { description: 'One corner mark missing', missingCorner: 2 },
+  S16: {
+    description: 'Freehand lines: ceiling rising 4 mm with a wobble, wall leaning 2.4 mm with a wobble (rules 1.3 averages)',
+    ceilingSlope: -0.035, ceilingWave: { amp: 0.5, period: 30 }, wallSlope: 0.04, wallWave: { amp: 0.3, period: 20 }
+  },
+  S17: { description: 'Clearly slanted ceiling (rising 12 mm): flag_ceiling_uneven', ceilingSlope: -0.1 }
 };
 
 /** Deterministic, valid sheet code for a scene. */
@@ -202,14 +211,32 @@ function buildPage(p) {
 
   // Pencil section: only what the section cuts — ceiling, back wall behind the viewer, opposite wall.
   const pw = PENCIL_STROKE_MM, left = 14;
-  groups.push({
-    color: grey(p.pencil),
-    shapes: [
-      seg([p.ceilingFromX != null ? p.ceilingFromX : left, p.ceilingY], [p.wallX + p.wallDouble + 0.6, p.ceilingY], pw),
-      seg([left, p.ceilingY], [left, floorY], pw),
-      seg([p.wallX, p.ceilingY], [p.wallX, floorY], pw)
-    ].concat(p.wallDouble > 0 ? [seg([p.wallX + p.wallDouble, p.ceilingY], [p.wallX + p.wallDouble, floorY], pw)] : [])
-  });
+  const axisX = HUSS.sheet.template.markX(T) + p.figure.dx;
+  const freehand = p.ceilingSlope || p.ceilingWave || p.wallSlope || p.wallWave;
+  const wave = (w, t) => (w ? w.amp * Math.sin((2 * Math.PI * t) / w.period) : 0);
+  const cy = (x) => p.ceilingY + p.ceilingSlope * (x - axisX) + wave(p.ceilingWave, x - axisX);  // ceiling y at x
+  const wx = (y) => p.wallX + p.wallSlope * (floorY - y) + wave(p.wallWave, floorY - y);         // wall x at y
+  if (!freehand) {
+    groups.push({
+      color: grey(p.pencil),
+      shapes: [
+        seg([p.ceilingFromX != null ? p.ceilingFromX : left, p.ceilingY], [p.wallX + p.wallDouble + 0.6, p.ceilingY], pw),
+        seg([left, p.ceilingY], [left, floorY], pw),
+        seg([p.wallX, p.ceilingY], [p.wallX, floorY], pw)
+      ].concat(p.wallDouble > 0 ? [seg([p.wallX + p.wallDouble, p.ceilingY], [p.wallX + p.wallDouble, floorY], pw)] : [])
+    });
+  } else {
+    let yTop = p.ceilingY;                                   // where the wall meets the ceiling
+    for (let k = 0; k < 20; k++) yTop = cy(wx(yTop));
+    const chain = (pts) => pts.slice(1).map((q, i) => seg(pts[i], q, pw));
+    const ceil = [], wall = [];
+    const xEnd = wx(yTop) + 0.6;
+    for (let x = left; x < xEnd; x += 0.5) ceil.push([x, cy(x)]);
+    ceil.push([xEnd, cy(xEnd)]);
+    for (let y = floorY; y > yTop; y -= 0.5) wall.push([wx(y), y]);
+    wall.push([wx(yTop), yTop]);
+    groups.push({ color: grey(p.pencil), shapes: chain(ceil).concat(chain(wall), [seg([left, cy(left)], [left, floorY], pw)]) });
+  }
   if (p.tieDecoy) {
     // What the floor line and start mark look like when the page is turned 180 degrees.
     const W = T.width_mm, Hh = T.height_mm, mir = ([x, y]) => [W - x, Hh - y];
@@ -235,6 +262,31 @@ function buildPage(p) {
     head_y: fig.head_top, foot_y: rule.foot_y, ceiling_y: p.ceilingY, wall_x: p.wallX,
     axis_x: cx, floor_y_axis: floorY
   };
+  // Rules 1.3: the ceiling is its average from the axis to 1 mm before the wall, the wall its
+  // average from 1 mm above the floor to 1 mm below the ceiling (solved together). Backup points:
+  // the ceiling at the axis, the wall over the 1-6 mm band above the floor (spec 7.8 profile).
+  const L = HUSS.config.LINE, PR = HUSS.config.PROFILE;
+  const mean = (f, a, b) => { let s = 0; const n = 4000; for (let i = 0; i < n; i++) s += f(a + ((i + 0.5) * (b - a)) / n); return s / n; };
+  let ceilAvg = p.ceilingY, wallAvg = p.wallX;
+  if (freehand) {
+    for (let k = 0; k < 10; k++) {
+      ceilAvg = mean(cy, axisX, wallAvg - L.END_MM);
+      wallAvg = mean(wx, ceilAvg + L.END_MM, floorY - L.END_MM);
+    }
+  }
+  const lineTruth = {
+    ceiling_at_axis_y: p.ceilingY,
+    wall_at_floor_x: freehand ? mean(wx, floorY - PR.WALL_BAND_MAX_MM, floorY - PR.WALL_BAND_MIN_MM) : p.wallX,
+    ceiling_spread: 0, wall_spread: 0
+  };
+  if (freehand) {
+    for (let x = axisX; x <= wallAvg - L.END_MM; x += 0.05) lineTruth.ceiling_spread = Math.max(lineTruth.ceiling_spread, Math.abs(cy(x) - ceilAvg));
+    for (let y = ceilAvg + L.END_MM; y <= floorY - L.END_MM; y += 0.05) lineTruth.wall_spread = Math.max(lineTruth.wall_spread, Math.abs(wx(y) - wallAvg));
+  }
+  handles.ceiling_y = ceilAvg;
+  handles.wall_x = wallAvg;
+  handles.ceiling_at_axis_y = lineTruth.ceiling_at_axis_y;
+  handles.wall_at_floor_x = lineTruth.wall_at_floor_x;
   const comp = HUSS.measure.compute.compute(handles, cfg);
   return {
     T, groups,
@@ -245,13 +297,19 @@ function buildPage(p) {
       head_y: fig.head_top,
       raw_foot_y: footBottom,
       foot_y: rule.foot_y,
-      ceiling_y: p.ceilingY,
-      wall_x: p.wallX,
+      ceiling_y: ceilAvg,
+      wall_x: wallAvg,
+      ceiling_at_axis_y: lineTruth.ceiling_at_axis_y,
+      wall_at_floor_x: lineTruth.wall_at_floor_x,
+      ceiling_spread: lineTruth.ceiling_spread,
+      wall_spread: lineTruth.wall_spread,
       figure_mm: comp.figure_mm,
       ceiling_mm: comp.ceiling_mm,
       distance_mm: comp.distance_mm,
       est_vertical_m: comp.est_vertical_m,
       est_horizontal_m: comp.est_horizontal_m,
+      est_vertical_at_axis_m: comp.est_vertical_at_axis_m,
+      est_horizontal_at_floor_m: comp.est_horizontal_at_floor_m,
       flags: {
         flag_red_not_found: !isRed,
         flag_figure_off_mark: Math.abs(p.figure.dx) > HUSS.config.MARK.OFF_MARK_MM,

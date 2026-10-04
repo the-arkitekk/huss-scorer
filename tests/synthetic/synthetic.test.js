@@ -206,8 +206,8 @@ test('QR is still read with a stray pencil stroke on it, and when printed 3 mm o
 
 // ---------------------------------------------------------------- Phase 2c
 
-test('7.9 suggestions: ceiling and wall within 0.3 mm (S1-S5, S9, S11, S12, S15)', () => {
-  for (const id of ['S1', 'S2', 'S3', 'S4', 'S5', 'S9', 'S11', 'S12', 'S15']) {
+test('7.9 suggestions: ceiling and wall within 0.3 mm (S1-S5, S9, S11, S12, S15, S16, S17)', () => {
+  for (const id of ['S1', 'S2', 'S3', 'S4', 'S5', 'S9', 'S11', 'S12', 'S15', 'S16', 'S17']) {
     const { a, t } = run(id);
     assert.equal(a.ok, true, id);
     near(a.suggestions.ceiling_y, t.ceiling_y, 0.3, `${id} ceiling suggestion`);
@@ -325,4 +325,83 @@ test('a manual alignment is repeated from the corners kept in the record', () =>
 test('manual alignment: wrong number of corner clicks is refused', () => {
   const g = generate('S1');
   assert.equal(P.manualCorners(g.img, [[1, 1], [2, 2], [3, 3]], { template: g.template }).ok, false);
+});
+
+// ---------------------------------------------------------------- rules 1.3: line averages
+
+/** A scoring state as the scoring screen keeps it, with all suggestions accepted. */
+function acceptedState(a, extra) {
+  const sug = a.suggestions;
+  return Object.assign({
+    analysis: a, params,
+    meta: { project_code: 'VR3005', rater_code: 'AB', sheet_code: 'ABCDE', mode: 'open', file_name: 'x.png', exclusions: {} },
+    handles: {
+      axis: { x: sug.axis_x, placement: 'auto' },
+      head: { y: sug.head_y, placement: 'suggested' }, foot: { y: sug.foot_y, placement: 'suggested' },
+      ceiling: { y: sug.ceiling_y, placement: 'suggested' }, wall: { x: sug.wall_x, placement: 'suggested' }
+    },
+    suggested: { head_y: sug.head_y, foot_y: sug.foot_y, ceiling_y: sug.ceiling_y, wall_x: sug.wall_x },
+    status: 'measured', confirmedAt: Date.UTC(2026, 9, 4, 12, 0, 0)
+  }, extra || {});
+}
+
+test('S16: freehand ceiling and wall -> averages suggested and snapped to; backup points and spread kept', () => {
+  const r = run('S16'), a = r.a, t = r.t, rad = params.snap_radius_mm;
+  checkCommon('S16', r);
+  checkRedFigure('S16', a, t);
+  near(a.suggestions.ceiling_y, t.ceiling_y, TOL.snap_mm, 'S16 ceiling average');
+  near(a.suggestions.wall_x, t.wall_x, TOL.snap_mm, 'S16 wall average');
+  assert.ok(Math.abs(t.ceiling_y - t.ceiling_at_axis_y) > 1.5, 'the scene must make the average differ from the axis point');
+  // A handle dropped near the slanted line (1 mm off its average) snaps to the average.
+  const ceil = P.snapCeiling(a, a.suggestions.axis_x, t.ceiling_y + 1.0, rad, t.wall_x);
+  const wall = P.snapWall(a, t.wall_x - 1.0, rad, t.ceiling_y);
+  assert.equal(ceil.snapped, true); assert.equal(wall.snapped, true);
+  near(ceil.pos, t.ceiling_y, TOL.snap_mm, 'S16 ceiling snap');
+  near(wall.pos, t.wall_x, TOL.snap_mm, 'S16 wall snap');
+  const rec = HUSS.measure.record.buildRecord(acceptedState(a));
+  near(rec.est_vertical_m, t.est_vertical_m, TOL.est_rel * t.est_vertical_m, 'S16 est_vertical_m');
+  near(rec.est_horizontal_m, t.est_horizontal_m, TOL.est_rel * t.est_horizontal_m, 'S16 est_horizontal_m');
+  near(rec.ceiling_at_axis_y_mm, t.ceiling_at_axis_y, TOL.snap_mm, 'S16 ceiling at axis');
+  near(rec.wall_at_floor_x_mm, t.wall_at_floor_x, TOL.snap_mm, 'S16 wall at floor');
+  near(rec.est_vertical_at_axis_m, t.est_vertical_at_axis_m, TOL.est_rel * t.est_vertical_at_axis_m, 'S16 est_vertical_at_axis_m');
+  near(rec.est_horizontal_at_floor_m, t.est_horizontal_at_floor_m, TOL.est_rel * t.est_horizontal_at_floor_m, 'S16 est_horizontal_at_floor_m');
+  near(rec.ceiling_spread_mm, t.ceiling_spread, 0.2, 'S16 ceiling spread');
+  near(rec.wall_spread_mm, t.wall_spread, 0.2, 'S16 wall spread');
+  assert.equal(rec.flag_ceiling_uneven, false);
+  assert.equal(rec.flag_wall_uneven, false);
+  assert.equal(rec.rules_version, '1.3');
+});
+
+test('S17: clearly slanted ceiling -> flag_ceiling_uneven; not measurable clears the backup columns', () => {
+  const r = run('S17'), t = r.t;
+  near(r.a.suggestions.ceiling_y, t.ceiling_y, TOL.snap_mm, 'S17 ceiling average');
+  const rec = HUSS.measure.record.buildRecord(acceptedState(r.a));
+  assert.ok(t.ceiling_spread > HUSS.config.LINE.UNEVEN_MM);
+  assert.equal(rec.flag_ceiling_uneven, true);
+  assert.equal(rec.flag_wall_uneven, false);
+  const st = acceptedState(r.a);
+  st.meta.vertical_not_measurable = true;
+  const nm = HUSS.measure.record.buildRecord(st);
+  assert.equal(nm.flag_ceiling_uneven, false);
+  for (const k of ['ceiling_y_mm', 'ceiling_at_axis_y_mm', 'est_vertical_at_axis_m', 'ceiling_spread_mm']) assert.equal(nm[k], null, k);
+});
+
+test('straight lines: average, axis point and floor point coincide (S1, S9 inner face, S11 JPEG)', () => {
+  for (const id of ['S1', 'S9', 'S11']) {
+    const { a, t } = run(id);
+    const rec = HUSS.measure.record.buildRecord(acceptedState(a));
+    near(rec.ceiling_at_axis_y_mm, t.ceiling_y, TOL.snap_mm, id + ' ceiling at axis');
+    near(rec.wall_at_floor_x_mm, t.wall_x, TOL.snap_mm, id + ' wall at floor');
+    assert.ok(rec.ceiling_spread_mm < 0.3 && rec.wall_spread_mm < 0.3, id + ' spread ' + rec.ceiling_spread_mm + ' / ' + rec.wall_spread_mm);
+  }
+});
+
+test('the ceiling average depends on where the wall is: the averaged part ends 1 mm before it', () => {
+  const { a, t } = run('S16');
+  const ax = a.suggestions.axis_x, rad = params.snap_radius_mm, L = HUSS.detect.line;
+  const full = L.ceilingNear(a, ax, t.ceiling_y, rad, t.wall_x);
+  const short = L.ceilingNear(a, ax, t.ceiling_y, rad + HUSS.config.LINE.FOLLOW_UP_EXTRA_MM, ax + 40);
+  assert.ok(short.pts[short.pts.length - 1][0] <= ax + 39.05, 'ends before the wall');
+  assert.ok(full.pts[full.pts.length - 1][0] > t.wall_x - 1.2, 'runs up to 1 mm before the wall');
+  assert.ok(short.pos > full.pos, 'the ceiling rises to the right: a shorter part averages lower');
 });

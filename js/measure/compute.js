@@ -37,9 +37,12 @@
   }
 
   /**
-   * Derived values of section 7.10, plus the backup values measured to the lowest red point
-   * (figure_red_mm, est_*_red_m; the rules 1.0 way of measuring a floating figure).
-   * h: { head_y, foot_y, ceiling_y, wall_x, axis_x, floor_y_axis, red_bottom_y } (mm, nullable)
+   * Derived values of section 7.10, plus backup values:
+   * - measured to the lowest red point (figure_red_mm, est_*_red_m; rules 1.0 for a floating figure);
+   * - with the ceiling where its line crosses the axis and the wall where its line stands on the
+   *   floor (est_vertical_at_axis_m, est_horizontal_at_floor_m; rules 1.0-1.2 instead of averages).
+   * h: { head_y, foot_y, ceiling_y, wall_x, axis_x, floor_y_axis, red_bottom_y,
+   *      ceiling_at_axis_y, wall_at_floor_x } (mm, nullable)
    * p: { ref_height_m, min_figure_mm }
    */
   function compute(h, p) {
@@ -60,6 +63,10 @@
       figure_red_mm: null,
       est_vertical_red_m: null,
       est_horizontal_red_m: null,
+      ceiling_at_axis_y_mm: has('ceiling_at_axis_y') ? h.ceiling_at_axis_y : null,
+      wall_at_floor_x_mm: has('wall_at_floor_x') ? h.wall_at_floor_x : null,
+      est_vertical_at_axis_m: null,
+      est_horizontal_at_floor_m: null,
       flag_figure_small: null
     };
     if (has('head_y') && has('foot_y')) out.figure_mm = h.foot_y - h.head_y;
@@ -78,6 +85,12 @@
     if (has('head_y') && has('red_bottom_y')) out.figure_red_mm = h.red_bottom_y - h.head_y;
     out.est_vertical_red_m = estimate(out.ceiling_mm, out.figure_red_mm, p.ref_height_m);
     out.est_horizontal_red_m = estimate(out.distance_mm, out.figure_red_mm, p.ref_height_m);
+    if (has('ceiling_at_axis_y') && has('floor_y_axis')) {
+      out.est_vertical_at_axis_m = estimate(h.floor_y_axis - h.ceiling_at_axis_y, out.figure_mm, p.ref_height_m);
+    }
+    if (has('wall_at_floor_x') && has('axis_x')) {
+      out.est_horizontal_at_floor_m = estimate(h.wall_at_floor_x - h.axis_x, out.figure_mm, p.ref_height_m);
+    }
     if (isNum(out.figure_mm) && isNum(p.min_figure_mm)) out.flag_figure_small = out.figure_mm < p.min_figure_mm;
     return out;
   }

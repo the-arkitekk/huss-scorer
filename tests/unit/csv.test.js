@@ -32,7 +32,9 @@ test('header matches the spec column list exactly', () => {
   assert.equal(header.at(-1), 'note');
   assert.equal(new Set(header).size, header.length, 'no duplicate columns');
   for (const name of ['corner_tl_x_px', 'corner_br_y_px', 'floor_x_px', 'wall_y_px', 'wall_suggested_x_mm',
-    'est_horizontal_alt_m', 'flag_alignment_warning', 'horizontal_not_measurable', 'excl_other']) {
+    'est_horizontal_alt_m', 'flag_alignment_warning', 'horizontal_not_measurable', 'excl_other',
+    'ceiling_at_axis_y_mm', 'wall_at_floor_x_mm', 'est_vertical_at_axis_m', 'est_horizontal_at_floor_m',
+    'ceiling_spread_mm', 'wall_spread_mm', 'flag_ceiling_uneven', 'flag_wall_uneven']) {
     assert.ok(header.includes(name), name);
   }
   assert.equal(header.includes('E_vertical'), false, 'post-merge columns are added by Merge');

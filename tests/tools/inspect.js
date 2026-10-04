@@ -89,6 +89,10 @@ function main() {
   const red = a.red, s = a.suggestions;
   console.log(`red: found ${red.found}  multiple ${red.multiple}  T_a ${f(red.Ta, 1)}  head ${f(red.head_y)}  raw foot ${f(red.raw_foot_y)}  axis ${f(red.axis_x)}`);
   console.log(`suggest: head ${f(s.head_y)}  foot ${f(s.foot_y)} (off floor: ${s.foot_off_floor})  figure ${s.head_y != null ? f(s.foot_y - s.head_y) : '-'} mm`);
+  const L = HUSS.detect.line;
+  const cl = s.ceiling_y != null ? L.ceilingLine(a, s.axis_x, s.ceiling_at_axis_y, s.wall_x) : null;
+  const wl = s.wall_x != null ? L.wallLine(a, s.wall_at_floor_x, s.ceiling_y) : null;
+  console.log(`lines (rules 1.3): ceiling average ${f(s.ceiling_y)} (at axis ${f(s.ceiling_at_axis_y)}, spread ${cl ? f(cl.spread, 2) : '-'})  wall average ${f(s.wall_x)} (at floor ${f(s.wall_at_floor_x)}, spread ${wl ? f(wl.spread, 2) : '-'})`);
   console.log('timings ms:', JSON.stringify(Object.fromEntries(Object.entries(a.timings).map(([k, v]) => [k, Math.round(v)]))));
 
   // Snap candidates: ceiling above the head along the axis, wall right of the figure.
@@ -114,6 +118,13 @@ function main() {
   for (const p of ceilPeaks) hline(c, ax * R - 2 * R, ax * R + 2 * R, p.centre, [255, 140, 0], 1);
   const fy = P.floorY(a, 150);
   for (const p of wallPeaks) vline(c, p.centre, (fy - 8) * R, (fy - 0.5) * R, [255, 140, 0], 1);
+  // Followed lines (red-orange: ceiling, purple: wall) and their averages (thin).
+  if (cl) { for (const [x, y] of cl.pts) for (let k = -1; k <= 1; k++) px(c, x * R, y * R + k, [255, 60, 0], 0.9); hline(c, ax * R, (s.wall_x || ax + 50) * R, s.ceiling_y * R, [255, 60, 0], 0); }
+  if (wl) { for (const [x, y] of wl.pts) for (let k = -1; k <= 1; k++) px(c, x * R + k, y * R, [150, 0, 200], 0.9); vline(c, s.wall_x * R, (s.ceiling_y || 20) * R, P.floorY(a, s.wall_x) * R, [150, 0, 200], 0); }
+  if (cl || wl) {
+    const x1 = (s.wall_x != null ? s.wall_x + 12 : ax + 80), y0 = (s.ceiling_y != null ? s.ceiling_y - 12 : 20);
+    fs.writeFileSync(path.join(outDir, `${name}_lines.png`), png.encode(crop(c, (ax - 15) * R, y0 * R, x1 * R, (P.floorY(a, ax) + 5) * R), R * 25.4));
+  }
   const overlay = path.join(outDir, `${name}_overlay.png`);
   fs.writeFileSync(overlay, png.encode(c, R * 25.4));
   const figTop = (s.head_y != null ? s.head_y : P.floorY(a, ax) - 30) - 8;

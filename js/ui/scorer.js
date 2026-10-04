@@ -14,7 +14,6 @@
   var els = {};
   var drag = null, pan = null, press = null, spaceDown = false, hintTimer = null;
   var man = null;     // manual alignment in progress (spec 7.5)
-  var curImg = null;  // the decoded scan of the current drawing (for "Align by hand")
   var MAN_COLOR = '#e8590c';
   var actions = { confirm: function () {}, previous: function () {}, later: function () {} };
   var loadToken = 0;
@@ -35,7 +34,7 @@
 
   /** Back to the empty drop zone (optionally with an error message). */
   function clear(errorText) {
-    s = null; ctx = null; man = null; press = null; curImg = null;
+    s = null; ctx = null; man = null; press = null;
     leaveManualLook();
     view.clear();
     setCardsVisible(false);
@@ -64,9 +63,8 @@
       var al = c.saved && c.saved.align;
       var a = al ? P.alignFromCorners(img, al.method, al.corners, opts) : P.analyze(img, opts);
       setBusy(null);
-      curImg = img;
       if (!a.ok && (a.error === 'corners_not_found' || a.error === 'orientation_failed')) {
-        startManual(img, c, prm, a.error, null);
+        startManual(img, c, prm, a.error);
         return true;
       }
       if (!a.ok) { showItemError(c, HUSS.t('err_' + a.error)); return false; }
@@ -110,7 +108,7 @@
       if (handles.axis.x == null) handles.axis = { x: sug.axis_x, placement: 'auto' };
       suggested = saved.suggested;
     }
-    var m = saved ? saved.meta : c.keepMeta || {};
+    var m = saved ? saved.meta : {};
     s = {
       analysis: a,
       params: prm,
@@ -280,10 +278,27 @@
   function finishMove(key, v, noSnap) {
     if (key === 'axis') {
       H().setValue(s, 'axis', v, 'manual');
-      return;
+    } else {
+      var r = (!noSnap && ui.snap) ? H().snap(s, key, v) : { pos: v, snapped: false };
+      H().setValue(s, key, r.pos, r.snapped ? 'snapped' : 'manual');
     }
-    var r = (!noSnap && ui.snap) ? H().snap(s, key, v) : { pos: v, snapped: false };
-    H().setValue(s, key, r.pos, r.snapped ? 'snapped' : 'manual');
+    followUp(key);
+  }
+
+  /**
+   * The ceiling is averaged from the axis to the wall and the wall up to the ceiling (rules 1.3):
+   * after one of them (or the axis) moves, the other is averaged again if it came from a line
+   * (suggested or snapped). A handle placed by hand stays where it is.
+   */
+  function followUp(key) {
+    // The other one first, then the moved one again (its bound moved too); manual handles are skipped.
+    var order = key === 'ceiling' ? ['wall', 'ceiling'] : key === 'wall' || key === 'axis' ? ['ceiling', 'wall'] : [];
+    order.forEach(function (k) {
+      var h = s.handles[k];
+      if (!H().isPlaced(s, k) || (h.placement !== 'suggested' && h.placement !== 'snapped')) return;
+      var r = H().snap(s, k, H().value(s, k), s.params.snap_radius_mm + cfg.LINE.FOLLOW_UP_EXTRA_MM);
+      if (r.snapped) H().setValue(s, k, r.pos);
+    });
   }
 
   function nudge(dir, big) {
@@ -295,6 +310,7 @@
     var step = big ? cfg.UI.NUDGE_BIG_MM : cfg.UI.NUDGE_MM;
     var sign = (dir === 'up' || dir === 'left') ? -1 : 1;
     H().setValue(s, key, H().value(s, key) + sign * step, 'manual');
+    followUp(key);
     changed();
   }
 
@@ -552,6 +568,8 @@
     row('v_figure_red', fmt(c.figure_red_mm, 2) + mm, 'alt', HUSS.t('v_backup_title'));
     row({ text: HUSS.t('v_est_v') + ', ' + HUSS.t('v_backup') }, (nmV ? '–' : fmt(c.est_vertical_red_m, 3)) + m, 'alt', HUSS.t('v_backup_title'));
     row({ text: HUSS.t('v_est_h') + ', ' + HUSS.t('v_backup') }, (nmH ? '–' : fmt(c.est_horizontal_red_m, 3)) + m, 'alt', HUSS.t('v_backup_title'));
+    row('v_est_v_axis', (nmV ? '–' : fmt(c.est_vertical_at_axis_m, 3)) + m, 'alt', HUSS.t('v_line_backup_title'));
+    row('v_est_h_floor', (nmH ? '–' : fmt(c.est_horizontal_at_floor_m, 3)) + m, 'alt', HUSS.t('v_line_backup_title'));
   }
 
   function renderFlags(d) {
@@ -656,14 +674,14 @@
   }
 
   /**
-   * Shows the scan itself for clicking the corner squares or the floor line ends.
-   * why: corners_not_found | orientation_failed | realign; prev: the alignment to go back to (realign only).
+   * Shows the scan itself for clicking the corner squares or the floor line ends; only when the
+   * automatic alignment failed. why: corners_not_found | orientation_failed.
    */
-  function startManual(img, c, prm, why, prev) {
+  function startManual(img, c, prm, why) {
     s = null; ctx = c; press = null; drag = null;
     ui.placing = null; ui.dragging = null;
     els.mmCorners.checked = true;
-    man = { img: img, prm: prm, why: why, method: 'corners', clicks: [], error: null, hover: null, busy: false, prev: prev };
+    man = { img: img, prm: prm, why: why, method: 'corners', clicks: [], error: null, hover: null, busy: false };
     els.dropzone.hidden = true;
     els.dropError.hidden = true;
     setCardsVisible(false);
@@ -674,7 +692,6 @@
     els.cardActions.hidden = false;
     els.tools.hidden = false;
     els.hint.hidden = false;
-    els.btnManualCancel.hidden = !prev;
     els.manualWhy.textContent = HUSS.t('manual_why_' + why);
     els.stage.classList.add('manual');
     els.stage.classList.remove('placing', 'over-handle');
@@ -752,26 +769,6 @@
       start(a, c, m.prm);
       if (c.onChange) c.onChange(); // keep the alignment in the autosaved draft
     }, 30);
-  }
-
-  /** "Align by hand" on a drawing that is already aligned (e.g. after an alignment warning). */
-  function realign() {
-    if (!s || !curImg || !els.busy.hidden) return; // not while the next drawing is loading
-    syncMeta();
-    var snap = {
-      handles: JSON.parse(JSON.stringify(s.handles)), suggested: Object.assign({}, s.suggested),
-      meta: JSON.parse(JSON.stringify(s.meta))
-    };
-    var prev = { a: s.analysis, prm: s.params, c: Object.assign({}, ctx, { saved: snap }), codeChecked: els.chkCode.checked };
-    startManual(curImg, Object.assign({}, ctx, { saved: null, keepMeta: snap.meta, finished: false }), s.params, 'realign', prev);
-  }
-
-  function cancelManual() {
-    if (!man || man.busy || !man.prev) return;
-    var p = man.prev;
-    start(p.a, p.c, p.prm);
-    els.chkCode.checked = p.codeChecked;
-    refresh();
   }
 
   function showManualMagnifier(p) {
@@ -928,15 +925,17 @@
       chkColor: $('chk-color'), chkContrast: $('chk-contrast'), chkMask: $('chk-mask'), chkGuides: $('chk-guides'), chkSnap: $('chk-snap'),
       btnConfirm: $('btn-confirm'), btnPrev: $('btn-prev'), btnLater: $('btn-later'), confirmStatus: $('confirm-status'),
       btnFit: $('btn-fit'), btnZoomIn: $('btn-zoom-in'), btnZoomOut: $('btn-zoom-out'),
-      sheetBody: $('sheet-body'), btnRealign: $('btn-realign'), cardManual: $('card-manual'), manualWhy: $('manual-why'),
+      sheetBody: $('sheet-body'), cardManual: $('card-manual'), manualWhy: $('manual-why'),
       mmCorners: $('mm-corners'), mmFloorline: $('mm-floorline'), manualInstr: $('manual-instr'), manualCount: $('manual-count'),
-      btnManualUndo: $('btn-manual-undo'), btnManualClear: $('btn-manual-clear'), btnManualCancel: $('btn-manual-cancel'),
+      btnManualUndo: $('btn-manual-undo'), btnManualClear: $('btn-manual-clear'),
       manualError: $('manual-error')
     };
     view = HUSS.ui.canvasView.create(els.canvas, els.magnifier, cfg);
     view.setOverlay(function (c2d, v) {
-      if (man) drawManualMarks(c2d, v.toScreen, false);
-      else if (s) H().draw(c2d, v, s, ui, cfg);
+      if (man) { drawManualMarks(c2d, v.toScreen, false); return; }
+      if (!s) return;
+      ui.lines = ui.dragging ? null : HUSS.measure.record.lines(s);
+      H().draw(c2d, v, s, ui, cfg);
     });
 
     els.canvas.addEventListener('pointerdown', onPointerDown);
@@ -979,7 +978,6 @@
       if (els.projectInput.files && els.projectInput.files[0]) loadProjectFile(els.projectInput.files[0]);
     });
     els.btnNewProject.addEventListener('click', function () { HUSS.app.show('project'); });
-    els.btnRealign.addEventListener('click', realign);
     [els.mmCorners, els.mmFloorline].forEach(function (r) {
       r.addEventListener('change', function () {
         if (!man || man.busy) return;
@@ -995,7 +993,7 @@
       man.clicks = []; man.error = null;
       updateManual();
     });
-    els.btnManualCancel.addEventListener('click', cancelManual);
+
 
     if (typeof ResizeObserver !== 'undefined') {
       new ResizeObserver(function () { view.resize(); view.render(); }).observe(els.stage);
