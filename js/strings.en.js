@@ -29,9 +29,10 @@
     rater_code_placeholder: 'your initials, e.g. EY',
     rater_code_help: 'Who is scoring: your initials or a short code. Required; it is written into the CSV.',
     sheet_code: 'Sheet code',
-    sheet_code_hint: 'Typed by hand until QR reading arrives (Phase 2).',
+    sheet_code_placeholder: 'optional, e.g. 6QHJ4',
+    sheet_code_hint: 'Optional for now: the 5 characters printed at the bottom right of the sheet, next to the QR square. From Phase 2 on it is read from the QR automatically.',
     sheet_code_ok: 'Check character OK',
-    sheet_code_bad: 'Not a valid sheet code',
+    sheet_code_bad: 'Not a sheet code. Copy the 5 characters printed at the bottom right, next to the QR square (they never contain 0, 1, I, O or S).',
 
     sec_image: 'Image',
     no_image: 'No image loaded.',
