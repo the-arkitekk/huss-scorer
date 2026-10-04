@@ -1,5 +1,4 @@
 .DS_Store
 node_modules/
-samples/real/
 .claude/
 test_scans/
