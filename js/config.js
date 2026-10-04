@@ -163,6 +163,8 @@
       UNEVEN_MM: 5                 // flag_ceiling_uneven / flag_wall_uneven above this largest deviation
                                    // (freehand ceilings in the trial scans deviate 2-4 mm; 5 marks a clearly slanted line)
     },
+    // Calibration check (spec 10.3): measured lengths of printed calibration sheets
+    CALIBRATION: { TOL_MM: 0.3, TOL_REL: 0.01 },
     // Printed sheet code read from its characters when the QR code cannot be read (js/detect/ocr.js)
     OCR: {
       LENGTH: 5,

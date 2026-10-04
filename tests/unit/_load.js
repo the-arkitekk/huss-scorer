@@ -38,7 +38,8 @@ const FILES = [
   'detect/pipeline.js',
   'report/stats.js',
   'report/charts.js',
-  'report/build.js'
+  'report/build.js',
+  'report/calibration.js'
 ];
 
 const JS = path.join(__dirname, '..', '..', 'js');

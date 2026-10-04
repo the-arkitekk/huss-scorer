@@ -40,7 +40,8 @@ const BASE = {
   ceilingSlope: 0,          // ceiling y change per mm to the right of the axis (negative: rises)
   ceilingWave: null,        // { amp, period } mm: sinusoidal wobble of the ceiling
   wallSlope: 0,             // wall x change per mm up from the floor (positive: leans right)
-  wallWave: null            // { amp, period } mm: sinusoidal wobble of the wall
+  wallWave: null,           // { amp, period } mm: sinusoidal wobble of the wall
+  calibration: null         // calibration layout index: the printed calibration page instead of a drawing
 };
 
 const SCENES = {
@@ -64,7 +65,9 @@ const SCENES = {
     description: 'Freehand lines: ceiling rising 4 mm with a wobble, wall leaning 2.4 mm with a wobble (rules 1.3 averages)',
     ceilingSlope: -0.035, ceilingWave: { amp: 0.5, period: 30 }, wallSlope: 0.04, wallWave: { amp: 0.3, period: 20 }
   },
-  S17: { description: 'Clearly slanted ceiling (rising 12 mm): flag_ceiling_uneven', ceilingSlope: -0.1 }
+  S17: { description: 'Clearly slanted ceiling (rising 12 mm): flag_ceiling_uneven', ceilingSlope: -0.1 },
+  C1: { description: 'Calibration page, layout 1 (spec 10.3)', calibration: 0 },
+  C10: { description: 'Calibration page, layout 10 (spec 10.3)', calibration: 9 }
 };
 
 /** Deterministic, valid sheet code for a scene. */
@@ -153,11 +156,17 @@ function mulberry32(seed) {
  * Printed template, drawn from the same items as the PDF and the print view
  * (HUSS.sheet.template.items). Text becomes one block per glyph (glyph width, cap height).
  */
-function templateGroups(T, code, missingCorner) {
-  const shapes = [], PT = 72 / 25.4, label = HUSS.config.DEFAULTS.sheet_label;
+function templateGroups(T, code, missingCorner, calibration) {
+  const shapes = [], PT = 72 / 25.4, label = HUSS.config.DEFAULTS.sheet_label, colored = {};
   const skip = missingCorner >= 0 ? T.corners[missingCorner] : null;
   const glyphW = (ch, it) => HUSS.sheet.pdf.widthPt(ch, it.font, it.size_pt) / PT;
-  for (const it of HUSS.sheet.template.items(T, code, label)) {
+  const all = calibration != null ? HUSS.sheet.template.calibrationItems(T, code, label, calibration) : HUSS.sheet.template.items(T, code, label);
+  for (const it of all) {
+    if (it.color) {
+      const key = it.color.join(','), list = colored[key] || (colored[key] = []);
+      list.push(it.k === 'ring' ? ring([it.cx, it.cy], it.r, it.w) : seg([it.x1, it.y1], [it.x2, it.y2], it.w));
+      continue;
+    }
     if (it.k === 'rect') {
       if (skip && Math.abs(it.x + it.w / 2 - skip[0]) < 1e-6 && Math.abs(it.y + it.h / 2 - skip[1]) < 1e-6) continue;
       shapes.push(rect(it.x, it.y, it.x + it.w, it.y + it.h));
@@ -175,7 +184,7 @@ function templateGroups(T, code, missingCorner) {
       }
     }
   }
-  return [{ color: BLACK, shapes }];
+  return [{ color: BLACK, shapes }].concat(Object.keys(colored).map((k) => ({ color: k.split(',').map(Number), shapes: colored[k] })));
 }
 
 /**
@@ -206,6 +215,7 @@ function figureShapes(cx, footBottom, height) {
 function buildPage(p) {
   const T = HUSS.sheet.template.get(p.template);
   const floorY = T.floor.y;
+  if (p.calibration != null) return calibrationPage(T, p);
   const groups = templateGroups(T, p.code, p.missingCorner);
   p = Object.assign({}, p, { ceilingY: floorY - p.ceilingRel, wallX: HUSS.sheet.template.markX(T) + p.wallRel });
 
@@ -316,6 +326,22 @@ function buildPage(p) {
         flag_foot_off_floor: isRed && rule.off_floor,
         flag_figure_small: comp.figure_mm < cfg.min_figure_mm
       }
+    }
+  };
+}
+
+/** A printed calibration page (spec 10.3): its drawing and truth come from the template. */
+function calibrationPage(T, p) {
+  const g = HUSS.sheet.template.calibration(T, p.calibration), cfg = HUSS.config.DEFAULTS;
+  const handles = { head_y: g.head_y, foot_y: T.floor.y, ceiling_y: g.ceiling_y, wall_x: g.wall_x, axis_x: g.axis_x, floor_y_axis: T.floor.y };
+  const comp = HUSS.measure.compute.compute(handles, cfg);
+  return {
+    T, groups: templateGroups(T, p.code, -1, p.calibration),
+    truth: {
+      sheet_code: p.code, floor_y: T.floor.y, axis_x: g.axis_x, head_y: g.head_y, raw_foot_y: T.floor.y + 0.1, foot_y: T.floor.y,
+      ceiling_y: g.ceiling_y, wall_x: g.wall_x, figure_mm: comp.figure_mm, ceiling_mm: comp.ceiling_mm, distance_mm: comp.distance_mm,
+      est_vertical_m: comp.est_vertical_m, est_horizontal_m: comp.est_horizontal_m, calibration: g,
+      flags: { flag_red_not_found: false, flag_figure_off_mark: false, flag_foot_off_floor: false, flag_figure_small: comp.figure_mm < cfg.min_figure_mm }
     }
   };
 }

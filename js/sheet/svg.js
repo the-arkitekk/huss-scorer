@@ -32,6 +32,13 @@
     return draw(t, HUSS.sheet.template.backItems(t, code));
   }
 
+  /** SVG markup for calibration layout index (spec 10.3). */
+  function calibration(t, code, label, index) {
+    return draw(t, HUSS.sheet.template.calibrationItems(t, code, label, index));
+  }
+
+  function rgb(c) { return c ? 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')' : null; }
+
   function draw(t, its) {
     var W = t.width_mm, H = t.height_mm;
     var fills = [], lines = [], texts = [];
@@ -46,7 +53,10 @@
         fills.push('<polygon points="' + it.pts.map(function (p) { return num(p[0]) + ',' + num(p[1]); }).join(' ') + '"/>');
       } else if (it.k === 'line') {
         lines.push('<line x1="' + num(it.x1) + '" y1="' + num(it.y1) + '" x2="' + num(it.x2) + '" y2="' + num(it.y2) +
-          '" stroke-width="' + num(it.w) + '" stroke-linecap="' + it.cap + '"/>');
+          '" stroke-width="' + num(it.w) + '" stroke-linecap="' + it.cap + '"' + (it.color ? ' stroke="' + rgb(it.color) + '"' : '') + '/>');
+      } else if (it.k === 'ring') {
+        lines.push('<circle cx="' + num(it.cx) + '" cy="' + num(it.cy) + '" r="' + num(it.r) + '" stroke-width="' + num(it.w) + '"' +
+          (it.color ? ' stroke="' + rgb(it.color) + '"' : '') + '/>');
       } else if (it.k === 'text') {
         texts.push('<text x="' + num(it.x) + '" y="' + num(it.y) + '" font-size="' + num(it.size_pt * PT_MM) +
           '" font-family=\'' + FONTS[it.font] + '\' text-anchor="' + it.anchor + '">' + esc(it.text) + '</text>');
@@ -60,7 +70,7 @@
       '</svg>';
   }
 
-  var api = { sheet: sheet, back: back };
+  var api = { sheet: sheet, back: back, calibration: calibration };
   HUSS.sheet.svg = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

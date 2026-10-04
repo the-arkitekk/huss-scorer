@@ -970,5 +970,121 @@
         ]
       ]
     }
+  },
+  "C1": {
+    "description": "Calibration page, layout 1 (spec 10.3)",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "A9XAG",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 168,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 135,
+      "wall_x": 120,
+      "figure_mm": 12,
+      "ceiling_mm": 45,
+      "distance_mm": 80,
+      "est_vertical_m": 6.375,
+      "est_horizontal_m": 11.333333333333334,
+      "calibration": {
+        "layout": 1,
+        "figure_mm": 12,
+        "ceiling_mm": 45,
+        "distance_mm": 80,
+        "axis_x": 40,
+        "head_y": 168,
+        "ceiling_y": 135,
+        "wall_x": 120
+      },
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "C10": {
+    "description": "Calibration page, layout 10 (spec 10.3)",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "HFPWV",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 140,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 60,
+      "wall_x": 190,
+      "figure_mm": 40,
+      "ceiling_mm": 120,
+      "distance_mm": 150,
+      "est_vertical_m": 5.1,
+      "est_horizontal_m": 6.374999999999999,
+      "calibration": {
+        "layout": 10,
+        "figure_mm": 40,
+        "ceiling_mm": 120,
+        "distance_mm": 150,
+        "axis_x": 40,
+        "head_y": 140,
+        "ceiling_y": 60,
+        "wall_x": 190
+      },
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
   }
 }

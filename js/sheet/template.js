@@ -93,7 +93,7 @@
    * Everything printed on one sheet, in mm, as drawing items shared by the SVG print view, the
    * PDF and the synthetic test pages:
    *   { k: 'rect', x, y, w, h } | { k: 'rects', rects: [{ x, y, w, h }] } (filled as one shape)
-   *   { k: 'line', x1, y1, x2, y2, w, cap } | { k: 'poly', pts }
+   *   { k: 'line', x1, y1, x2, y2, w, cap, color? } | { k: 'ring', cx, cy, r, w, color? } | { k: 'poly', pts }
    *   { k: 'text', x, y (baseline), size_pt, font: 'sans' | 'mono', anchor: 'start' | 'middle' | 'end', text }
    * Black only (rule 4.3). QR content: HUSS1/<TEMPLATE>/<SHEETCODE>.
    */
@@ -111,6 +111,45 @@
     var Q = HUSS.config.QR, qr = HUSS.sheet.qr.encode(HUSS.sheet.qr.sheetText(t.id, code), Q.LEVEL);
     out.push({ k: 'rects', rects: HUSS.sheet.qr.moduleRects(qr, t.qr.x, t.qr.y, t.qr.size, Q.QUIET_MODULES) });
     return out;
+  }
+
+  // Calibration pages (spec 10.3): a red figure, ceiling and walls of known size printed on the
+  // sheet, in ten layouts. Lengths in mm on A4L (scaled for A3L): the figure from head top to the
+  // floor line, the ceiling above the floor line, the opposite wall right of the start mark.
+  var CAL = {
+    figure: [12, 15, 18, 20, 22, 25, 28, 30, 35, 40],
+    ceiling: [45, 60, 75, 90, 110, 130, 50, 70, 100, 120],
+    wall: [80, 100, 120, 140, 160, 180, 200, 220, 110, 150],
+    red: [210, 35, 45], pencil: [70, 70, 70], stroke: 0.4, line: 0.5, left: 14
+  };
+  var CAL_LAYOUTS = CAL.figure.length;
+
+  /** Known geometry of calibration layout index (0-9): { figure_mm, ceiling_mm, distance_mm, axis_x, head_y, ceiling_y, wall_x }. */
+  function calibration(t, index) {
+    var k = t.width_mm / 297, i = ((index % CAL_LAYOUTS) + CAL_LAYOUTS) % CAL_LAYOUTS;
+    var f = Math.round(CAL.figure[i] * k * 100) / 100, c = Math.round(CAL.ceiling[i] * k * 100) / 100, w = Math.round(CAL.wall[i] * k * 100) / 100;
+    var ax = markX(t);
+    return { layout: i + 1, figure_mm: f, ceiling_mm: c, distance_mm: w, axis_x: ax, head_y: t.floor.y - f, ceiling_y: t.floor.y - c, wall_x: ax + w };
+  }
+
+  /** The stick figure of a calibration page: head top at headY, feet on the floor line. */
+  function figureItems(cx, headY, footBottom, w, color) {
+    var H = footBottom - headY, r = 0.07 * H - w / 2, hc = headY + w / 2 + r;
+    var sh = headY + 0.2 * H, hip = footBottom - 0.47 * H, hand = headY + 0.5 * H, foot = footBottom - w / 2;
+    var ln = function (x1, y1, x2, y2) { return { k: 'line', x1: x1, y1: y1, x2: x2, y2: y2, w: w, cap: 'round', color: color }; };
+    return [
+      { k: 'ring', cx: cx, cy: hc, r: r, w: w, color: color },
+      ln(cx, hc + r, cx, hip), ln(cx, sh, cx - 0.17 * H, hand), ln(cx, sh, cx + 0.17 * H, hand),
+      ln(cx, hip, cx - 0.12 * H, foot), ln(cx, hip, cx + 0.12 * H, foot)
+    ];
+  }
+
+  /** Items of a calibration sheet: the sheet itself plus the drawing of layout index. */
+  function calibrationItems(t, code, label, index) {
+    var g = calibration(t, index), out = items(t, code, label), pc = CAL.pencil, lw = CAL.line, L = CAL.left * t.width_mm / 297;
+    var ln = function (x1, y1, x2, y2) { return { k: 'line', x1: x1, y1: y1, x2: x2, y2: y2, w: lw, cap: 'butt', color: pc }; };
+    out.push(ln(L, g.ceiling_y, g.wall_x + 0.6, g.ceiling_y), ln(L, g.ceiling_y, L, t.floor.y), ln(g.wall_x, g.ceiling_y, g.wall_x, t.floor.y));
+    return out.concat(figureItems(g.axis_x, g.head_y, t.floor.y + 0.1, CAL.stroke, CAL.red));
   }
 
   /**
@@ -143,7 +182,10 @@
     return out;
   }
 
-  var api = { TEMPLATES: TEMPLATES, get: get, markX: markX, markCentroid: markCentroid, groundHatch: groundHatch, items: items, backItems: backItems };
+  var api = {
+    TEMPLATES: TEMPLATES, get: get, markX: markX, markCentroid: markCentroid, groundHatch: groundHatch, items: items, backItems: backItems,
+    calibration: calibration, calibrationItems: calibrationItems, CAL_LAYOUTS: CAL_LAYOUTS
+  };
   HUSS.sheet.template = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

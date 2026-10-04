@@ -37,7 +37,7 @@
 
   function baseName() {
     var proj = HUSS.app.state.project;
-    return (proj ? proj.project_code : HUSS.config.DEFAULTS.file_project_fallback) + '_sheets_' + stamp(last.generatedAt);
+    return (proj ? proj.project_code : HUSS.config.DEFAULTS.file_project_fallback) + (last.calibration ? '_calibration_' : '_sheets_') + stamp(last.generatedAt);
   }
 
   function generate() {
@@ -47,19 +47,26 @@
     if (!label || label.length > 20) { setStatus(HUSS.t('sg_bad_label'), 'bad'); return; }
     var T = template();
     var codes = HUSS.sheet.code.batch(n, excluded(), HUSS.sheet.code.secureRandom);
-    last = { template: T, label: label, codes: codes, generatedAt: new Date(), back: els.back.checked };
-    els.preview.innerHTML = HUSS.sheet.svg.sheet(T, codes[0], label) + (last.back ? HUSS.sheet.svg.back(T, codes[0]) : '');
+    var cal = els.calibration.checked;
+    last = { template: T, label: label, codes: codes, generatedAt: new Date(), back: els.back.checked && !cal, calibration: cal };
+    els.preview.innerHTML = front(codes[0], 0) + (last.back ? HUSS.sheet.svg.back(T, codes[0]) : '');
+    els.csv.textContent = HUSS.t(cal ? 'sg_cal_key' : 'sg_csv');
     els.check.textContent = HUSS.t('sg_check', { mm: T.corners[1][0] - T.corners[0][0] });
     els.codes.textContent = HUSS.t('sg_codes', { list: codes.join(', ') });
     els.result.hidden = false;
-    setStatus(HUSS.t('sg_done', { n: n, template: T.id }), 'ok');
+    setStatus(HUSS.t(cal ? 'sg_cal_done' : 'sg_done', { n: n, template: T.id }), 'ok');
+  }
+
+  /** SVG of the front of sheet i: a normal sheet, or a calibration sheet (layout i). */
+  function front(code, i) {
+    return last.calibration ? HUSS.sheet.svg.calibration(last.template, code, last.label, i) : HUSS.sheet.svg.sheet(last.template, code, last.label);
   }
 
   function print() {
     if (!last) return;
     var T = last.template;
-    els.printRoot.innerHTML = last.codes.map(function (c) {
-      return HUSS.sheet.svg.sheet(T, c, last.label) + (last.back ? HUSS.sheet.svg.back(T, c) : '');
+    els.printRoot.innerHTML = last.codes.map(function (c, i) {
+      return front(c, i) + (last.back ? HUSS.sheet.svg.back(T, c) : '');
     }).join('');
     els.pageStyle.textContent = '@page { size: ' + T.width_mm + 'mm ' + T.height_mm + 'mm; margin: 0; }';
     window.print();
@@ -71,11 +78,17 @@
 
   function downloadPdf() {
     if (!last) return;
-    HUSS.io.files.downloadBytes(baseName() + '.pdf', HUSS.sheet.pdf.sheets(last.template, last.codes, last.label, { back: last.back }), 'application/pdf');
+    var opts = { back: last.back };
+    if (last.calibration) opts.itemsFor = function (code, i) { return HUSS.sheet.template.calibrationItems(last.template, code, last.label, i); };
+    HUSS.io.files.downloadBytes(baseName() + '.pdf', HUSS.sheet.pdf.sheets(last.template, last.codes, last.label, opts), 'application/pdf');
   }
 
   function downloadCsv() {
     if (!last) return;
+    if (last.calibration) {
+      HUSS.io.files.downloadText(baseName() + '_calibration-key.csv', HUSS.report.calibration.keyToCSV(last.template, last.codes, last.generatedAt));
+      return;
+    }
     var when = HUSS.measure.record.isoLocal(last.generatedAt);
     var lines = ['sheet_code,template,generated_at'].concat(last.codes.map(function (c) {
       return c + ',' + last.template.id + ',' + when;
@@ -102,7 +115,7 @@
     els = {
       template: $('sg-template'), templateNote: $('sg-template-note'), label: $('sg-label'), count: $('sg-count'),
       exclude: $('sg-exclude'), excludeInfo: $('sg-exclude-info'), loadList: $('sg-load-list'), listInput: $('sg-list-input'),
-      generate: $('sg-generate'), back: $('sg-back'), status: $('sg-status'), result: $('sg-result'), check: $('sg-check'),
+      generate: $('sg-generate'), back: $('sg-back'), calibration: $('sg-calibration'), status: $('sg-status'), result: $('sg-result'), check: $('sg-check'),
       print: $('sg-print'), pdf: $('sg-pdf'), csv: $('sg-csv'), codes: $('sg-codes'), preview: $('sg-preview'),
       printRoot: $('print-root'), pageStyle: $('print-page-style')
     };

@@ -38,6 +38,7 @@
   }
 
   function f3(v) { return v.toFixed(3); }
+  function rg(c) { return (c[0] / 255).toFixed(3) + ' ' + (c[1] / 255).toFixed(3) + ' ' + (c[2] / 255).toFixed(3); }
 
   function pageContent(t, items) {
     var X = function (x) { return f3(x * PT); };
@@ -54,8 +55,17 @@
       } else if (it.k === 'poly') {
         ops.push(it.pts.map(function (p, i) { return X(p[0]) + ' ' + Y(p[1]) + (i ? ' l' : ' m'); }).join(' ') + ' h f');
       } else if (it.k === 'line') {
-        ops.push(f3(it.w * PT) + ' w ' + (it.cap === 'round' ? 1 : 0) + ' J ' +
-          X(it.x1) + ' ' + Y(it.y1) + ' m ' + X(it.x2) + ' ' + Y(it.y2) + ' l S');
+        ops.push((it.color ? rg(it.color) + ' RG ' : '') + f3(it.w * PT) + ' w ' + (it.cap === 'round' ? 1 : 0) + ' J ' +
+          X(it.x1) + ' ' + Y(it.y1) + ' m ' + X(it.x2) + ' ' + Y(it.y2) + ' l S' + (it.color ? ' 0 G' : ''));
+      } else if (it.k === 'ring') {
+        // circle from four Bezier quarter arcs
+        var k = 0.5522847498 * it.r, cx = it.cx, cy = it.cy, r = it.r;
+        ops.push((it.color ? rg(it.color) + ' RG ' : '') + f3(it.w * PT) + ' w ' +
+          X(cx + r) + ' ' + Y(cy) + ' m ' +
+          X(cx + r) + ' ' + Y(cy + k) + ' ' + X(cx + k) + ' ' + Y(cy + r) + ' ' + X(cx) + ' ' + Y(cy + r) + ' c ' +
+          X(cx - k) + ' ' + Y(cy + r) + ' ' + X(cx - r) + ' ' + Y(cy + k) + ' ' + X(cx - r) + ' ' + Y(cy) + ' c ' +
+          X(cx - r) + ' ' + Y(cy - k) + ' ' + X(cx - k) + ' ' + Y(cy - r) + ' ' + X(cx) + ' ' + Y(cy - r) + ' c ' +
+          X(cx + k) + ' ' + Y(cy - r) + ' ' + X(cx + r) + ' ' + Y(cy - k) + ' ' + X(cx + r) + ' ' + Y(cy) + ' c S' + (it.color ? ' 0 G' : ''));
       } else if (it.k === 'text') {
         var s = toWinAnsi(it.text), w = widthPt(s, it.font, it.size_pt);
         var x = it.x * PT - (it.anchor === 'middle' ? w / 2 : it.anchor === 'end' ? w : 0);
@@ -85,8 +95,9 @@
       kids.push(add('<< /Type /Page /Parent ' + pages + ' 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 ' +
         f1 + ' 0 R /F2 ' + f2 + ' 0 R >> >> /Contents ' + cs + ' 0 R >>'));
     };
-    codes.forEach(function (code) {
-      page(HUSS.sheet.template.items(t, code, label));
+    var front = opts && opts.itemsFor ? opts.itemsFor : function (code) { return HUSS.sheet.template.items(t, code, label); };
+    codes.forEach(function (code, i) {
+      page(front(code, i));
       if (withBack) page(HUSS.sheet.template.backItems(t, code));
     });
     objs[catalog - 1] = '<< /Type /Catalog /Pages ' + pages + ' 0 R /ViewerPreferences << /PrintScaling /None >> >>';

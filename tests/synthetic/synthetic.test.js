@@ -423,3 +423,48 @@ test('the ceiling average depends on where the wall is: the averaged part ends 1
   assert.ok(full.pts[full.pts.length - 1][0] > t.wall_x - 1.2, 'runs up to 1 mm before the wall');
   assert.ok(short.pos > full.pos, 'the ceiling rises to the right: a shorter part averages lower');
 });
+
+// ---------------------------------------------------------------- calibration sheets (spec 10.3)
+
+test('calibration sheets (C1, C10): every suggestion accepted -> lengths within 0.3 mm or 1 %; the check says so', () => {
+  const Cal = HUSS.report.calibration, T = HUSS.sheet.template.get('A4L');
+  const gens = ['C1', 'C10'].map((id) => generate(id));
+  const codes = gens.map((g) => g.truth.sheet_code);
+  // the key lists layout i for code i: build it from the same layouts as the pages
+  const key = Cal.parseKey('sheet_code,layout,figure_mm,ceiling_mm,distance_mm\r\n' + gens.map((g) => {
+    const c = g.truth.calibration;
+    return [g.truth.sheet_code, c.layout, c.figure_mm, c.ceiling_mm, c.distance_mm].join(',');
+  }).join('\r\n'));
+  assert.equal(key.ok, true);
+  const records = gens.map((g) => {
+    const a = P.analyze(g.img, { template: g.template, params });
+    assert.equal(a.qr.sheet_code, g.truth.sheet_code);
+    assert.equal(a.red.found, true);
+    return HUSS.measure.record.buildRecord(acceptedState(a, { meta: { project_code: 'CAL', rater_code: 'EY', sheet_code: g.truth.sheet_code, mode: 'open', exclusions: {} } }));
+  });
+  const res = Cal.check(records, key);
+  assert.equal(res.n, 2);
+  assert.equal(res.passed, 2, JSON.stringify(res.items.map((i) => i.lengths.map((l) => l.diff))));
+  for (const it of res.items) for (const l of it.lengths) assert.ok(Math.abs(l.diff) <= 0.15, `${it.sheet_code} ${l.name} off by ${l.diff}`);
+  // the key the Sheets screen writes reads back with the same lengths
+  const text = Cal.keyToCSV(T, codes, new Date(2026, 9, 5));
+  const back = Cal.parseKey(text);
+  assert.deepEqual(Object.keys(back.rows), codes);
+  assert.equal(back.rows[codes[1]].figure_mm, HUSS.sheet.template.calibration(T, 1).figure_mm);
+  assert.ok(Cal.html(res).includes('2 of 2'));
+});
+
+test('calibration sheets in the PDF and the print view: red figure (stroke colour, circle head), grey lines', () => {
+  const T = HUSS.sheet.template.get('A4L'), code = 'Q4J87';
+  const its = HUSS.sheet.template.calibrationItems(T, code, 'figure', 3);
+  assert.equal(its.filter((i) => i.k === 'ring').length, 1);
+  assert.ok(its.some((i) => i.color && i.color[0] === 210), 'red items');
+  const svg = HUSS.sheet.svg.calibration(T, code, 'figure', 3);
+  assert.ok(svg.includes('<circle') && svg.includes('stroke="rgb(210,35,45)"'));
+  const pdf = Buffer.from(HUSS.sheet.pdf.sheets(T, [code, 'QQZZX'], 'figure', {
+    itemsFor: (c, i) => HUSS.sheet.template.calibrationItems(T, c, 'figure', i)
+  })).toString('latin1');
+  assert.ok(/0\.824 0\.137 0\.176 RG/.test(pdf), 'red stroke colour in the PDF');
+  assert.ok(/ c S/.test(pdf), 'Bezier circle in the PDF');
+  assert.equal((pdf.match(/\/Type \/Page /g) || []).length, 2);
+});

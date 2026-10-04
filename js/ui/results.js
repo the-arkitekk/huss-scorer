@@ -11,7 +11,8 @@
   var files = [];                                   // [{ name, records, exclusionIds }]
   var tables = { source: 'screen', key: null, structures: null };
   var merged = null, model = null;
-  var raterPick = null;                            // the rater chosen in the report bar ('' = all), null = default
+  var raterPick = null;
+  var calKey = null;                               // calibration key (spec 10.3), when loaded                            // the rater chosen in the report bar ('' = all), null = default
 
   function $(id) { return document.getElementById(id); }
 
@@ -142,6 +143,13 @@
     els.dlMerged.disabled = els.dlExcel.disabled = !merged;
     renderRaters();
     renderReport();
+    renderCalibration();
+  }
+
+  function renderCalibration() {
+    if (!calKey) { els.cal.innerHTML = ''; return; }
+    var rows = merged ? merged.rows : [];
+    els.cal.innerHTML = HUSS.report.calibration.html(HUSS.report.calibration.check(rows, calKey));
   }
 
   // ------------------------------------------------------------ exports
@@ -207,6 +215,7 @@
       files: $('res-files'), input: $('res-input'), fileErrors: $('res-file-errors'), tablesStatus: $('res-tables-status'),
       tableErrors: $('res-table-errors'), useScreen: $('res-use-screen'), keyInput: $('res-key-input'), structuresInput: $('res-structures-input'),
       merged: $('res-merged'), dlMerged: $('res-dl-merged'), dlExcel: $('res-dl-excel'),
+      cal: $('res-cal'), calInput: $('res-cal-input'),
       rater: $('res-rater'), method: $('res-method'), print: $('res-print'), dlHtml: $('res-dl-html'), report: $('res-report')
     };
     var style = document.createElement('style');
@@ -232,6 +241,17 @@
       if (merged) HUSS.io.files.downloadText(projectBase() + '_merged_excel-view.csv', HUSS.io.csv.toExcelView(merged.rows, merged.columns));
     });
     els.rater.addEventListener('change', function () { raterPick = els.rater.value; renderReport(); });
+    $('res-load-cal').addEventListener('click', function () { els.calInput.value = ''; els.calInput.click(); });
+    els.calInput.addEventListener('change', function () {
+      var f = els.calInput.files[0];
+      if (!f) return;
+      HUSS.io.files.readText(f).then(function (text) {
+        var k = HUSS.report.calibration.parseKey(text);
+        calKey = k.ok ? k : null;
+        if (!k.ok) els.cal.innerHTML = '<p class="rp-note">' + HUSS.report.charts.esc(HUSS.t('cal_bad', { name: f.name })) + '</p>';
+        else renderCalibration();
+      });
+    });
     els.method.addEventListener('change', renderReport);
     els.print.addEventListener('click', printReport);
     els.dlHtml.addEventListener('click', function () {

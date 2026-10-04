@@ -437,7 +437,27 @@
     rp_doc_title: 'HuSS report · {projects}',
     rp_footer: 'E = (estimate − true) / true. Descriptive statistics only; ICC and kappa are computed with r/icc_kappa.R.',
 
-// Compare screen (spec 8.7) and subsample lists (spec 5.4, 8.1)
+    // Calibration sheets and check (spec 10.3)
+    sg_calibration: 'Calibration sheets: a red figure, a ceiling and walls of known size are printed on them, in ten layouts (print in colour, at 100 %). Score them like drawings, then check them on the Results screen with the calibration key.',
+    sg_cal_key: 'Download calibration key',
+    sg_cal_done: '{n} calibration sheets ({template}). Keep the calibration key: it holds the printed lengths.',
+    cal_title: 'Calibration check',
+    cal_help: 'For printed calibration sheets: load the calibration key from the Sheets screen; the measured lengths are compared with the printed ones (at most 0.3 mm or 1 % off).',
+    cal_load: 'Load calibration key…',
+    cal_bad: '{name} is not a calibration key.',
+    cal_summary: '{passed} of {n} calibration sheets within 0.3 mm or 1 % on all three lengths.',
+    cal_not_scored: 'Not scored yet: {list}.',
+    cal_t_rater: 'Rater',
+    cal_t_layout: 'Layout',
+    cal_t_figure_mm: 'Figure (mm), measured / printed',
+    cal_t_ceiling_mm: 'Ceiling (mm), measured / printed',
+    cal_t_distance_mm: 'Distance (mm), measured / printed',
+    cal_t_diff: 'Difference',
+    cal_t_result: 'Result',
+    cal_pass: 'within',
+    cal_fail: 'outside',
+
+    // Compare screen (spec 8.7) and subsample lists (spec 5.4, 8.1)
     tab_compare: 'Compare',
     cmp_title: 'Compare two raters',
     cmp_intro: 'Read only: the records of two raters side by side. Add their CSV files (or one merged CSV holding both), then choose the two raters.',
