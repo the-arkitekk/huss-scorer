@@ -1,0 +1,28 @@
+# Citation metadata (https://citation-file-format.github.io/).
+# To complete before the first public release: the ORCID and affiliation of the author, the
+# repository URL and, after the Zenodo release, the DOI.
+cff-version: 1.2.0
+message: "If you use HuSS Scorer, please cite it as below."
+title: "HuSS Scorer"
+abstract: >-
+  Semi-automatic, offline scorer for HuSS (Human-Scaled Section) drawings: a person drawn to a
+  reference height and the remembered section of a space give estimates of ceiling height and
+  depth. The tool aligns scanned sheets, suggests the figure, ceiling and wall, and lets a rater
+  confirm or correct; it merges, reports and compares the results.
+type: software
+authors:
+  - family-names: "Yıldırım"
+    given-names: "Erdem"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+    # affiliation: ""
+version: "0.1.0"
+license: MIT
+keywords:
+  - spatial cognition
+  - architectural scale
+  - drawing task
+  - section drawing
+  - image analysis
+  - research software
+# repository-code: "https://github.com/<account>/huss-scorer"
+# doi: "10.5281/zenodo.<id>"

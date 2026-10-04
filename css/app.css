@@ -267,3 +267,8 @@ table.grid td.ok-mark { color: var(--ok); font-size: 12px; }
 .res-report .rp-section h2 { text-transform: none; letter-spacing: 0; font-size: 16px; color: var(--ink); margin: 0 0 10px; }
 .res-report .rp-section h3 { font-size: 13px; }
 .ss-num { width: 72px; font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: var(--radius); }
+.guide-grid { grid-template-columns: minmax(320px, 760px); }
+.guide h2 { text-transform: none; letter-spacing: 0; font-size: 15px; color: var(--ink); margin: 18px 0 6px; }
+.guide p, .guide li { font-size: 13px; line-height: 1.5; }
+.guide ol, .guide ul { padding-left: 20px; margin: 4px 0; }
+.guide .cite { background: var(--surface-2); border-radius: var(--radius); padding: 8px 10px; font-size: 13px; }

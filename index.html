@@ -20,6 +20,7 @@
       <button type="button" class="tab" data-screen="results" data-s="tab_results"></button>
       <button type="button" class="tab" data-screen="compare" data-s="tab_compare"></button>
       <button type="button" class="tab" data-screen="project" data-s="tab_project"></button>
+      <button type="button" class="tab" data-screen="guide" data-s="tab_guide"></button>
     </nav>
     <div class="topbar-actions">
       <button type="button" class="btn" id="btn-open" data-s="open_scans"></button>
@@ -410,6 +411,12 @@
     </div>
   </main>
 
+  <main class="screen-page" id="screen-guide" hidden>
+    <div class="page-grid page-grid-narrow guide-grid">
+      <article class="page-card guide" id="guide"></article>
+    </div>
+  </main>
+
   <div id="print-root" aria-hidden="true"></div>
   <style id="print-page-style"></style>
 
@@ -462,6 +469,7 @@
   <script src="js/ui/tablesForm.js"></script>
   <script src="js/ui/results.js"></script>
   <script src="js/ui/compare.js"></script>
+  <script src="js/ui/guide.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -2,15 +2,17 @@
 
 Semi-automatic scorer for HuSS (Human-Scaled Section) drawings. The tool suggests, the rater confirms or corrects. Everything runs in the browser; images and data never leave the computer.
 
-Status: **v0.1.0, rules 1.3** — Phase 1 (alignment, red-figure suggestion, handles with snap), Phase 2a (project file, sheet generator, QR code), Phase 2b (folder sessions: queue, Blind/Open, exclusions, autosave, resume, Excel view) and Phase 2c (ceiling and wall suggestions, manual alignment). See `huss-scorer-sartname-v1.md` (technical specification, Turkish), section 13.
+Status: **v0.1.0, rules 1.3, pilot version** — Phases 1–3 of the specification (`huss-scorer-sartname-v1.md`, Turkish, section 13) are done: alignment, suggestions, folder sessions, own QR code, Results with merge and report, Compare, calibration, documents. Changes from the specification are collected in `docs/sartname-v1.1-taslak.md` (draft for the author). See `huss-scorer-sartname-v1.md` (technical specification, Turkish), section 13.
 
 ## Use
 
-The top bar has six screens: **Score**, **Sheets**, **Tables**, **Results**, **Compare** and **New project**.
+The top bar has seven screens: **Score**, **Sheets**, **Tables**, **Results**, **Compare**, **New project** and **Guide** (quick start, rules, keys, citation, version and licence).
+
+Documents: `docs/user-guide.md`, `docs/scoring-rules.md`, `docs/data-dictionary.md` (every CSV column), `docs/validation-plan.md`.
 
 **New project** (once, by the project owner): fill in the form and download `<project_code>.huss.json`; send it to the raters. It holds no personal data.
 
-**Sheets**: choose the number of sheets (and optionally codes not to use, e.g. an earlier code list), then **Print…** or **Download PDF**, and keep the code list CSV. Print at 100 % (actual size); on a printed sheet the centres of the two top corner squares are 277 mm apart (A3L: 400 mm). Optionally a back side for the desk coordinator is printed (participant and structure codes, date; double-sided, flip on short edge). The back is never scanned, so raters stay blind.
+**Sheets**: with **Calibration sheets** ticked, the sheets carry a red figure, a ceiling and walls of known size in ten layouts (spec 10.3; print in colour) and the key CSV holds the printed lengths; score them like drawings and load the key in the **Calibration check** on the Results screen (criterion 0.3 mm or 1 %). Otherwise: choose the number of sheets (and optionally codes not to use, e.g. an earlier code list), then **Print…** or **Download PDF**, and keep the code list CSV. Print at 100 % (actual size); on a printed sheet the centres of the two top corner squares are 277 mm apart (A3L: 400 mm). Optionally a back side for the desk coordinator is printed (participant and structure codes, date; double-sided, flip on short edge). The back is never scanned, so raters stay blind.
 
 **Tables**: the structures (code, name, true ceiling height, true distance in metres) and the key table (sheet code → participant code, structure code), entered by hand or imported. Sheet codes are checked while typing; download both as CSV or load them straight into Open mode.
 
@@ -109,6 +111,10 @@ npm test
 - `node tests/tools/inspect.js <scan>` runs the detection on a real scan and writes overlay images, including `<name>_lines.png` with the followed ceiling and wall lines and their averages (macOS: uses `sips` to decode).
 - All thresholds are named constants in `js/config.js`; all interface texts are in `js/strings.en.js`.
 
+## Citation and archive
+
+`CITATION.cff` and `.zenodo.json` hold the citation and archive metadata (the author's ORCID, affiliation, repository URL and DOI are to be filled in before the first public release). `.github/workflows/` runs the tests on every push and publishes the tool on GitHub Pages once Pages is enabled with "GitHub Actions" as source. `CHANGELOG.md` lists the changes.
+
 ## Licence
 
-Code: MIT (see `LICENSE`). Documents and the paper template: CC BY 4.0. Author: Erdem Yıldırım.
+Code: MIT (see `LICENSE`). Documents, specification, paper template and example data: CC BY 4.0 (see `LICENSE-docs`). Author: Erdem Yıldırım.

@@ -1,0 +1,13 @@
+Documents and paper template: Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+Copyright (c) 2026 Erdem Yıldırım
+
+The documents in docs/, the specification (huss-scorer-sartname-v1.md), the printed sheet
+template (the sheets, calibration sheets and back sides produced by the Sheets screen) and the
+example data in samples/ are licensed under the Creative Commons Attribution 4.0 International
+License. You may share and adapt them for any purpose, provided you give appropriate credit,
+link to the licence and indicate if changes were made.
+
+Full licence text: https://creativecommons.org/licenses/by/4.0/legalcode
+
+The source code (index.html, css/, js/, tests/, r/) is licensed under the MIT License (LICENSE).

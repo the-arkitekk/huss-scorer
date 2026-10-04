@@ -8,7 +8,7 @@
 
   HUSS.strings = {
     app_title: 'HuSS Scorer',
-    phase_badge: 'Phase 2 prototype',
+    phase_badge: 'Pilot version',
     open_image: 'Open image…',
 
     drop_title: 'Drop a folder of scanned HuSS drawings here',
@@ -436,6 +436,25 @@
     rp_method_red: 'figure to the lowest red point',
     rp_doc_title: 'HuSS report · {projects}',
     rp_footer: 'E = (estimate − true) / true. Descriptive statistics only; ICC and kappa are computed with r/icc_kappa.R.',
+
+    // Guide and About (spec 8.8). Lines separated by \n become list items.
+    tab_guide: 'Guide',
+    gd_title: 'Guide',
+    gd_intro: 'HuSS Scorer measures HuSS (Human-Scaled Section) drawings: the participant draws a standing person, 170 cm tall, then the section of a remembered space up to the opposite wall. The tool suggests, the rater confirms or corrects. Everything runs in this browser; images and data never leave the computer.',
+    gd_quick_title: 'Quick start',
+    gd_quick: 'New project: fill in the form, download the project file and give it to the raters.\nSheets: download the PDF and print it at 100 % (actual size). Keep the code list.\nTables: enter the structures (true dimensions) and the key table (sheet → participant, structure).\nScan the drawings in colour at 300 dpi into one folder.\nScore: load the project file, enter your rater code, choose Blind or Open, choose the folder. For each drawing tick “same as the printed code” (K) and press Enter when the suggested lines are right.\nDownload CSV; then Results for the merged table and the report, Compare for two raters.',
+    gd_rules_title: 'Scoring rules (rules {v})',
+    gd_rules: 'The middle of a line is measured.\nFigure height: from the foot to the head top (the highest point of the red trace).\nThe foot is always the floor line; a red trace ending more than the foot tolerance off the line is flagged.\nCeiling: the average of its line from the figure axis to 1 mm before the opposite wall.\nOpposite wall: the average of its line from 1 mm above the floor to 1 mm below the ceiling.\nThe axis passes through the middle of the figure; more than 5 mm from the start mark is flagged.\nWith double lines the inner face (nearer the figure) is measured; the rater decides in the end.\nNo ceiling above the figure: height not measurable. No opposite wall: distance not measurable.\nNo red figure: the rater places head and foot; flagged, not excluded.\nA figure below the minimum size is flagged, not excluded.',
+    gd_estimates: 'Estimate (m) = length (mm) ÷ (figure height (mm) ÷ reference height (m)). Error E = (estimate − true) ÷ true.',
+    gd_keys_title: 'Keys on the Score screen',
+    gd_keys: 'Enter: confirm and next · Shift+Enter: previous · D: review later\nK: tick “same as the printed code”\n1–4: select or place head, foot, ceiling, wall · Arrows: nudge (Shift ×10) · Alt while releasing: no snap\nWheel or + − 0: zoom · Space + drag: pan · C: contrast · R: red mask · H: guide lines',
+    gd_files_title: 'Files and privacy',
+    gd_files: 'The measurement CSV is the record: download it during and after a session. The browser’s autosave is only a safety net.\nNo file leaves the computer; the tool makes no network requests and works from a downloaded folder.\nEvery CSV column is explained in docs/data-dictionary.md; the rules in docs/scoring-rules.md.',
+    gd_cite_title: 'How to cite',
+    gd_cite: 'Yıldırım, E. ({year}). HuSS Scorer (version {version}, rules {rules}) [Computer software].',
+    gd_cite_note: 'A Zenodo DOI will be given with the first public release; see CITATION.cff.',
+    gd_about_title: 'About',
+    gd_about: 'Version {version} · rules {rules}\nAuthor: Erdem Yıldırım\nCode: MIT licence. Documents and the paper template: CC BY 4.0.\nNo libraries: the QR code, the printed-code reader and the charts are part of the tool.',
 
     // Calibration sheets and check (spec 10.3)
     sg_calibration: 'Calibration sheets: a red figure, a ceiling and walls of known size are printed on them, in ten layouts (print in colour, at 100 %). Score them like drawings, then check them on the Results screen with the calibration key.',
