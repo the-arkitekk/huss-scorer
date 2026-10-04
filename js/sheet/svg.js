@@ -24,7 +24,16 @@
 
   /** SVG markup for one sheet; width and height in mm, so it prints at true size. */
   function sheet(t, code, label) {
-    var W = t.width_mm, H = t.height_mm, its = HUSS.sheet.template.items(t, code, label);
+    return draw(t, HUSS.sheet.template.items(t, code, label));
+  }
+
+  /** SVG markup for the back side of a sheet (desk coordinator record). */
+  function back(t, code) {
+    return draw(t, HUSS.sheet.template.backItems(t, code));
+  }
+
+  function draw(t, its) {
+    var W = t.width_mm, H = t.height_mm;
     var fills = [], lines = [], texts = [];
     its.forEach(function (it) {
       if (it.k === 'rect') {
@@ -51,7 +60,7 @@
       '</svg>';
   }
 
-  var api = { sheet: sheet };
+  var api = { sheet: sheet, back: back };
   HUSS.sheet.svg = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -216,3 +216,7 @@ table { border-collapse: collapse; width: 100%; }
 .dup-option { border: 2px solid var(--line); border-radius: 8px; padding: 6px; cursor: pointer; text-align: center; font-size: 12px; }
 .dup-option.chosen { border-color: var(--accent); }
 .dup-option img { display: block; width: 220px; height: auto; margin-bottom: 4px; background: #fff; }
+
+.check-top { align-items: flex-start; font-size: 12px; margin: 8px 0 10px; }
+.check-top input { margin-top: 2px; }
+.page-preview svg + svg { margin-top: 14px; }

@@ -47,8 +47,8 @@
     if (!label || label.length > 20) { setStatus(HUSS.t('sg_bad_label'), 'bad'); return; }
     var T = template();
     var codes = HUSS.sheet.code.batch(n, excluded(), HUSS.sheet.code.secureRandom);
-    last = { template: T, label: label, codes: codes, generatedAt: new Date() };
-    els.preview.innerHTML = HUSS.sheet.svg.sheet(T, codes[0], label);
+    last = { template: T, label: label, codes: codes, generatedAt: new Date(), back: els.back.checked };
+    els.preview.innerHTML = HUSS.sheet.svg.sheet(T, codes[0], label) + (last.back ? HUSS.sheet.svg.back(T, codes[0]) : '');
     els.check.textContent = HUSS.t('sg_check', { mm: T.corners[1][0] - T.corners[0][0] });
     els.codes.textContent = HUSS.t('sg_codes', { list: codes.join(', ') });
     els.result.hidden = false;
@@ -58,7 +58,9 @@
   function print() {
     if (!last) return;
     var T = last.template;
-    els.printRoot.innerHTML = last.codes.map(function (c) { return HUSS.sheet.svg.sheet(T, c, last.label); }).join('');
+    els.printRoot.innerHTML = last.codes.map(function (c) {
+      return HUSS.sheet.svg.sheet(T, c, last.label) + (last.back ? HUSS.sheet.svg.back(T, c) : '');
+    }).join('');
     els.pageStyle.textContent = '@page { size: ' + T.width_mm + 'mm ' + T.height_mm + 'mm; margin: 0; }';
     window.print();
   }
@@ -69,7 +71,7 @@
 
   function downloadPdf() {
     if (!last) return;
-    HUSS.io.files.downloadBytes(baseName() + '.pdf', HUSS.sheet.pdf.sheets(last.template, last.codes, last.label), 'application/pdf');
+    HUSS.io.files.downloadBytes(baseName() + '.pdf', HUSS.sheet.pdf.sheets(last.template, last.codes, last.label, { back: last.back }), 'application/pdf');
   }
 
   function downloadCsv() {
@@ -100,7 +102,7 @@
     els = {
       template: $('sg-template'), templateNote: $('sg-template-note'), label: $('sg-label'), count: $('sg-count'),
       exclude: $('sg-exclude'), excludeInfo: $('sg-exclude-info'), loadList: $('sg-load-list'), listInput: $('sg-list-input'),
-      generate: $('sg-generate'), status: $('sg-status'), result: $('sg-result'), check: $('sg-check'),
+      generate: $('sg-generate'), back: $('sg-back'), status: $('sg-status'), result: $('sg-result'), check: $('sg-check'),
       print: $('sg-print'), pdf: $('sg-pdf'), csv: $('sg-csv'), codes: $('sg-codes'), preview: $('sg-preview'),
       printRoot: $('print-root'), pageStyle: $('print-page-style')
     };

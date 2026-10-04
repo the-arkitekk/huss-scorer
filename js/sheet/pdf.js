@@ -39,12 +39,12 @@
 
   function f3(v) { return v.toFixed(3); }
 
-  function pageContent(t, code, label) {
+  function pageContent(t, items) {
     var X = function (x) { return f3(x * PT); };
     var Y = function (y) { return f3((t.height_mm - y) * PT); };
     // White page first: a rasterised PDF must not come out transparent (QR readers see that as black).
     var ops = ['1 g', '0 0 ' + f3(t.width_mm * PT) + ' ' + f3(t.height_mm * PT) + ' re f', '0 g', '0 G'];
-    HUSS.sheet.template.items(t, code, label).forEach(function (it) {
+    items.forEach(function (it) {
       if (it.k === 'rect') {
         ops.push(X(it.x) + ' ' + Y(it.y + it.h) + ' ' + f3(it.w * PT) + ' ' + f3(it.h * PT) + ' re f');
       } else if (it.k === 'rects') {
@@ -66,8 +66,12 @@
     return ops.join('\n') + '\n';
   }
 
-  /** PDF bytes (Uint8Array) with one page per sheet code. */
-  function sheets(t, codes, label) {
+  /**
+   * PDF bytes (Uint8Array) with one page per sheet code; with opts.back each front page is
+   * followed by its back side (double-sided printing).
+   */
+  function sheets(t, codes, label, opts) {
+    var withBack = !!(opts && opts.back);
     var W = f3(t.width_mm * PT), H = f3(t.height_mm * PT);
     var objs = [];
     var add = function (s) { objs.push(s); return objs.length; };
@@ -75,11 +79,15 @@
     var f1 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
     var f2 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>');
     var kids = [];
-    codes.forEach(function (code) {
-      var content = pageContent(t, code, label);
+    var page = function (items) {
+      var content = pageContent(t, items);
       var cs = add('<< /Length ' + content.length + ' >>\nstream\n' + content + 'endstream');
       kids.push(add('<< /Type /Page /Parent ' + pages + ' 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 ' +
         f1 + ' 0 R /F2 ' + f2 + ' 0 R >> >> /Contents ' + cs + ' 0 R >>'));
+    };
+    codes.forEach(function (code) {
+      page(HUSS.sheet.template.items(t, code, label));
+      if (withBack) page(HUSS.sheet.template.backItems(t, code));
     });
     objs[catalog - 1] = '<< /Type /Catalog /Pages ' + pages + ' 0 R /ViewerPreferences << /PrintScaling /None >> >>';
     objs[pages - 1] = '<< /Type /Pages /Kids [' + kids.map(function (k) { return k + ' 0 R'; }).join(' ') + '] /Count ' + kids.length + ' >>';

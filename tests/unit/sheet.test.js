@@ -84,3 +84,23 @@ test('code batches are unique, valid and avoid the codes not to use', () => {
   const r = HUSS.sheet.code.secureRandom();
   assert.ok(r >= 0 && r < 1);
 });
+
+test('back side: coordinator box below the front floor band, QR area left free; PDF alternates pages', () => {
+  for (const t of [T4, T3]) {
+    const b = HUSS.sheet.template.backItems(t, '6QHJ4');
+    const texts = b.filter((i) => i.k === 'text').map((i) => i.text);
+    assert.ok(texts.includes('6QHJ4'));
+    assert.ok(texts.includes('Participant code') && texts.includes('Structure code'));
+    for (const i of b) {
+      const ys = i.k === 'text' ? [i.y] : [i.y1, i.y2];
+      const xs = i.k === 'text' ? [i.x] : [i.x1, i.x2];
+      for (const y of ys) assert.ok(y > t.floor.y && y < t.height_mm, 'inside the band below the floor line');
+      // with a short-edge flip, back x maps to W - x on the front: keep clear of the QR square
+      for (const x of xs) assert.ok(t.width_mm - x < t.qr.x - 1 || t.width_mm - x > t.qr.x + t.qr.size + 1);
+    }
+  }
+  assert.ok(HUSS.sheet.svg.back(T4, '6QHJ4').includes('desk coordinator'));
+  const s = Buffer.from(HUSS.sheet.pdf.sheets(T4, ['6QHJ4', 'CV94Y'], 'figure', { back: true })).toString('latin1');
+  assert.equal((s.match(/\/Type \/Page /g) || []).length, 4);
+  assert.ok(s.indexOf('(6QHJ4) Tj') < s.indexOf('desk coordinator'), 'front before its back');
+});

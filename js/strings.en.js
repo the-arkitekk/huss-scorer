@@ -241,7 +241,14 @@
     v_true_v: 'True ceiling height',
     v_true_h: 'True distance',
     v_e_v: 'E vertical',
-    v_e_h: 'E horizontal'
+    v_e_h: 'E horizontal',
+    back_title: 'HuSS · desk coordinator record · do not scan',
+    back_participant: 'Participant code',
+    back_structure: 'Structure code',
+    back_date: 'Date',
+    back_coordinator: 'Coordinator',
+    back_notes: 'Notes',
+    sg_back: 'Print a back side for the desk coordinator (participant and structure codes, date). Needs double-sided printing: choose “flip on short edge”. Scan the front only.',
   };
 
   /** Interface text by key, with {placeholders} filled from params. */

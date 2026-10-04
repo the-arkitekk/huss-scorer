@@ -113,7 +113,37 @@
     return out;
   }
 
-  var api = { TEMPLATES: TEMPLATES, get: get, markX: markX, markCentroid: markCentroid, groundHatch: groundHatch, items: items };
+  /**
+   * Back side for the desk coordinator (never scanned): a framed box with the sheet code and
+   * lines for participant code, structure code, date, coordinator and notes. With "flip on short
+   * edge" the box sits behind the band below the front's floor line (no pen marks behind the
+   * drawing area) and leaves the area behind the QR code free.
+   */
+  function backItems(t, code) {
+    var W = t.width_mm, Hh = t.height_mm, out = [];
+    var tr = function (k, fallback) { return HUSS.t ? HUSS.t(k) : fallback; };
+    var x0 = Math.round(W * 50 / 297), x1 = W - 10, y0 = t.floor.y + 1, y1 = Hh - 5;
+    var frame = 0.3, line = 0.2;
+    [[x0, y0, x1, y0], [x1, y0, x1, y1], [x1, y1, x0, y1], [x0, y1, x0, y0]].forEach(function (s) {
+      out.push({ k: 'line', x1: s[0], y1: s[1], x2: s[2], y2: s[3], w: frame, cap: 'round' });
+    });
+    var rowH = (y1 - y0) / 3.4, r1 = y0 + rowH * 1.0, r2 = y0 + rowH * 2.1, r3 = y0 + rowH * 3.1, pad = 4;
+    var text = function (x, y, s, size, font, anchor) {
+      out.push({ k: 'text', x: x, y: y, size_pt: size, font: font || 'sans', anchor: anchor || 'start', text: s });
+    };
+    var blank = function (xa, xb, y) { out.push({ k: 'line', x1: xa, y1: y + 0.6, x2: xb, y2: y + 0.6, w: line, cap: 'butt' }); };
+    var span = x1 - x0 - 2 * pad, X = function (f) { return x0 + pad + f * span; };
+    text(X(0), r1, tr('back_title', 'HuSS · desk coordinator record · do not scan'), 9);
+    text(x1 - pad, r1 + 0.6, code, 16, 'mono', 'end');
+    text(X(0), r2, tr('back_participant', 'Participant code'), 8); blank(X(0.15), X(0.47), r2);
+    text(X(0.52), r2, tr('back_structure', 'Structure code'), 8); blank(X(0.66), X(1), r2);
+    text(X(0), r3, tr('back_date', 'Date'), 8); blank(X(0.06), X(0.27), r3);
+    text(X(0.31), r3, tr('back_coordinator', 'Coordinator'), 8); blank(X(0.42), X(0.62), r3);
+    text(X(0.66), r3, tr('back_notes', 'Notes'), 8); blank(X(0.73), X(1), r3);
+    return out;
+  }
+
+  var api = { TEMPLATES: TEMPLATES, get: get, markX: markX, markCentroid: markCentroid, groundHatch: groundHatch, items: items, backItems: backItems };
   HUSS.sheet.template = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
