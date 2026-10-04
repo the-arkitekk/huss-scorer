@@ -1,6 +1,7 @@
 /* HuSS Scorer — js/ui/scorer.js
- * Scoring screen controller (spec 8.4, Phase 1): one image, handles, panel, keyboard,
- * confirmation and the one-row CSV download.
+ * Scoring screen for the current drawing of a session (spec 8.4): canvas, handles, panel,
+ * keyboard. The session (queue, CSV, autosave) is run by ui/queue.js, which opens drawings
+ * here with openItem() and asks for their record with recordFor().
  */
 (function (root) {
   'use strict';
@@ -8,12 +9,12 @@
   HUSS.ui = HUSS.ui || {};
 
   var H = function () { return HUSS.ui.handles; };
-  var cfg, view, s = null;
-  var lastFile = null, qrCode = null;
-  var ui = { guides: true, snap: true, selected: null, dragging: null, placing: null, confirmed: false, hoverPage: null, footLocked: true };
+  var cfg, view, s = null, ctx = null;
+  var ui = { guides: true, snap: true, selected: null, dragging: null, placing: null, hoverPage: null, footLocked: true, confirmTried: false };
   var els = {};
   var drag = null, pan = null, spaceDown = false, hintTimer = null;
-  var last = { csv: null, name: null };
+  var actions = { confirm: function () {}, previous: function () {}, later: function () {} };
+  var loadToken = 0;
 
   function $(id) { return document.getElementById(id); }
 
@@ -24,77 +25,107 @@
 
   // ------------------------------------------------------------ loading
 
-  function isImageFile(file) {
-    return /^image\/(jpeg|png)$/.test(file.type) || /\.(jpe?g|png)$/i.test(file.name);
+  function setBusy(text) {
+    els.busy.hidden = !text;
+    if (text) els.busyText.textContent = text;
   }
 
-  function showError(text) {
-    s = null;
+  /** Back to the empty drop zone (optionally with an error message). */
+  function clear(errorText) {
+    s = null; ctx = null;
     view.clear();
     setCardsVisible(false);
     els.dropzone.hidden = false;
-    els.dropError.textContent = text;
-    els.dropError.hidden = false;
-    els.imageInfo.textContent = HUSS.t('no_image');
-    els.imageAlign.textContent = '';
-    els.imageWarn.hidden = true;
+    els.dropError.hidden = !errorText;
+    els.dropError.textContent = errorText || '';
   }
 
-  function load(file) {
-    if (!file) return;
-    lastFile = file;
-    if (!isImageFile(file)) { showError(HUSS.t('err_type')); return; }
+  /**
+   * Opens one drawing of the session. c: {
+   *   mode, rater_code, project_code, title, chip, sheetCode, codeSource, saved (session.stateFromRecord or null),
+   *   lookup (Open mode tables, or null), fileName, onChange
+   * }. Resolves to true when shown, false when the image could not be used.
+   */
+  function openItem(file, c) {
+    var token = ++loadToken;
+    setBusy(HUSS.t('busy'));
     els.dropError.hidden = true;
-    els.busy.hidden = false;
-    HUSS.image.decode.decodeFile(file).then(function (img) {
-      // let the browser paint the busy overlay before the synchronous analysis
-      return new Promise(function (resolve) { setTimeout(function () { resolve(img); }, 30); });
-    }, function () {
-      throw { userMessage: HUSS.t('err_decode') };
+    return HUSS.image.decode.decodeFile(file).then(function (img) {
+      return new Promise(function (resolve) { setTimeout(function () { resolve(img); }, 20); });
     }).then(function (img) {
+      if (token !== loadToken) return false;
       var prm = HUSS.app.params();
       var a = HUSS.detect.pipeline.analyze(img, { template: prm.template, params: prm, config: cfg });
-      els.busy.hidden = true;
-      if (!a.ok) { showError(HUSS.t('err_' + a.error)); return; }
+      setBusy(null);
+      if (!a.ok) { showItemError(c, HUSS.t('err_' + a.error)); return false; }
       a.dark = null; // not needed after the analysis
-      start(file, a);
+      start(a, c, prm);
+      return true;
     }).catch(function (err) {
-      els.busy.hidden = true;
-      showError(err && err.userMessage ? err.userMessage : HUSS.t('err_internal', { msg: err && err.message ? err.message : String(err) }));
+      if (token !== loadToken) return false;
+      setBusy(null);
+      showItemError(c, HUSS.t('err_internal', { msg: err && err.message ? err.message : String(err) }));
+      return false;
     });
   }
 
-  function start(file, a) {
-    var prm = HUSS.app.params();
+  function showItemError(c, text) {
+    clear(text);
+    ctx = c;
+    els.cardSheet.hidden = false;
+    els.cardActions.hidden = false;
+    els.sheetTitle.textContent = c.title;
+  }
+
+  function start(a, c, prm) {
+    ctx = c;
     var sug = a.suggestions;
-    if (prm.suggestions && prm.suggestions.figure === false) {
-      sug = Object.assign({}, sug, { head_y: null, foot_y: null }); // project switched figure suggestions off
+    if (prm.suggestions && prm.suggestions.figure === false) sug = Object.assign({}, sug, { head_y: null, foot_y: null });
+    var saved = c.saved;
+    var handles = {
+      axis: { x: sug.axis_x, placement: 'auto' },
+      head: { y: sug.head_y, placement: sug.head_y != null ? 'suggested' : null },
+      foot: { y: sug.foot_y, placement: sug.foot_y != null ? 'suggested' : null },
+      ceiling: { y: null, placement: null },
+      wall: { x: null, placement: null }
+    };
+    var suggested = { head_y: sug.head_y, foot_y: sug.foot_y, ceiling_y: null, wall_x: null };
+    if (saved) {
+      // Saved handles take precedence over the suggestions; a missing axis keeps the detected one.
+      handles = JSON.parse(JSON.stringify(saved.handles));
+      if (handles.axis.x == null) handles.axis = { x: sug.axis_x, placement: 'auto' };
+      suggested = saved.suggested;
     }
-    // The sheet code comes from this sheet's QR code, never from the previous image.
-    qrCode = a.qr && a.qr.found ? a.qr.sheet_code : null;
-    els.inSheet.value = qrCode || '';
+    var m = saved ? saved.meta : {};
     s = {
       analysis: a,
       params: prm,
-      meta: { project_code: '', rater_code: '', sheet_code: '', mode: cfg.DEFAULTS.mode, file_name: file.name, color_noncompliant: false, note: '' },
-      handles: {
-        axis: { x: sug.axis_x, placement: 'auto' },
-        head: { y: sug.head_y, placement: sug.head_y != null ? 'suggested' : null },
-        foot: { y: sug.foot_y, placement: sug.foot_y != null ? 'suggested' : null },
-        ceiling: { y: null, placement: null },
-        wall: { x: null, placement: null }
+      meta: {
+        project_code: c.project_code, rater_code: c.rater_code, mode: c.mode, file_name: c.fileName,
+        sheet_code: '', code_source: null,
+        color_noncompliant: !!m.color_noncompliant, note: m.note || '',
+        exclusions: Object.assign({}, m.exclusions || {}),
+        vertical_not_measurable: !!m.vertical_not_measurable, horizontal_not_measurable: !!m.horizontal_not_measurable
       },
-      suggested: { head_y: sug.head_y, foot_y: sug.foot_y, ceiling_y: null, wall_x: null },
-      status: null, startedAt: Date.now(), confirmedAt: null
+      handles: handles,
+      suggested: suggested,
+      status: null
     };
+    // Sheet code: the QR of this sheet, or what was typed for it before; never the previous drawing's.
+    els.inSheet.value = c.sheetCode || '';
+    els.inSheet.readOnly = c.codeSource === 'qr';
+    els.chkColor.checked = s.meta.color_noncompliant;
+    els.inNote.value = s.meta.note;
+    els.chkNmV.checked = s.meta.vertical_not_measurable;
+    els.chkNmH.checked = s.meta.horizontal_not_measurable;
+    buildExclusions(prm);
     syncMeta();
-    els.chkColor.checked = false;
-    ui.confirmed = false; ui.footLocked = true; ui.dragging = null; ui.hoverPage = null;
-    ui.confirmTried = false; ui.changedAfterConfirm = false;
-    last.csv = null; last.name = null;
-    var first = H().isPlaced(s, 'head') ? 'ceiling' : 'head';
-    select(first);
-    ui.placing = H().isPlaced(s, first) ? null : first;
+
+    ui.footLocked = true; ui.dragging = null; ui.hoverPage = null; ui.confirmTried = false;
+    var first = !H().isPlaced(s, 'head') ? 'head' : !H().isPlaced(s, 'ceiling') && !s.meta.vertical_not_measurable ? 'ceiling'
+      : !H().isPlaced(s, 'wall') && !s.meta.horizontal_not_measurable ? 'wall' : null;
+    select(first || 'head');
+    ui.placing = first;
 
     els.dropzone.hidden = true;
     setCardsVisible(true);
@@ -102,8 +133,17 @@
     view.setContrast(els.chkContrast.checked);
     view.setShowMask(els.chkMask.checked);
 
+    els.sheetTitle.textContent = c.title;
+    if (c.chip) {
+      var chip = document.createElement('span');
+      chip.className = 'chip ' + c.chip;
+      chip.textContent = HUSS.t('st_item_' + c.chip);
+      els.sheetTitle.appendChild(chip);
+    }
+    var open = c.mode === 'open';
     var al = a.align;
-    els.imageInfo.textContent = file.name + ' · ' + a.image.width + ' × ' + a.image.height + ' px';
+    els.imageInfo.textContent = open ? HUSS.t('open_file', { file: c.fileName }) + ' · ' + a.image.width + ' × ' + a.image.height + ' px' : '';
+    els.imageInfo.hidden = !open;
     els.imageAlign.textContent = HUSS.t('align_summary', {
       r: a.R, res: al.residual_mm.toFixed(2), rot: al.rotation_deg.toFixed(1)
     }) + ' · ' + HUSS.t('timing', { ms: Math.round(a.timings.total) });
@@ -113,16 +153,47 @@
     } else {
       els.imageWarn.hidden = true;
     }
-    els.btnDownload.hidden = true;
+    renderOpenInfo();
     setConfirmStatus('', '');
     els.stage.focus({ preventScroll: true });
     refresh();
   }
 
   function setCardsVisible(on) {
-    ['cardHandles', 'cardValues', 'cardFlags', 'cardView', 'cardActions'].forEach(function (k) { els[k].hidden = !on; });
+    var open = ctx && ctx.mode === 'open';
+    ['cardSheet', 'cardHandles', 'cardFlags', 'cardExclusion', 'cardView', 'cardActions'].forEach(function (k) { els[k].hidden = !on; });
+    els.cardValues.hidden = !on || !open; // Blind mode: no computed numbers (spec 8.4)
     els.tools.hidden = !on;
     els.hint.hidden = !on;
+  }
+
+  function renderOpenInfo() {
+    var lk = ctx && ctx.mode === 'open' ? ctx.lookup : null;
+    if (!ctx || ctx.mode !== 'open' || !ctx.tablesLoaded) { els.openInfo.hidden = true; return; }
+    els.openInfo.hidden = false;
+    els.openInfo.textContent = lk
+      ? HUSS.t('open_structure', { name: lk.structure_name || '–', code: lk.structure_code, participant: lk.participant_code })
+      : HUSS.t('open_not_in_key');
+  }
+
+  // ------------------------------------------------------------ exclusion card
+
+  function buildExclusions(prm) {
+    els.exclList.textContent = '';
+    var criteria = (prm.exclusion_criteria || HUSS.io.project.DEFAULT_EXCLUSIONS).concat([{ id: 'excl_other', label: HUSS.t('excl_other_label') }]);
+    criteria.forEach(function (c) {
+      var lab = document.createElement('label');
+      lab.className = 'check excl-check';
+      var box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = !!s.meta.exclusions[c.id];
+      box.addEventListener('change', function () { s.meta.exclusions[c.id] = box.checked; changed(); });
+      var span = document.createElement('span');
+      span.textContent = c.label;
+      lab.appendChild(box);
+      lab.appendChild(span);
+      els.exclList.appendChild(lab);
+    });
   }
 
   // ------------------------------------------------------------ state changes
@@ -132,12 +203,8 @@
   }
 
   function changed() {
-    if (ui.confirmed) {
-      ui.confirmed = false;
-      ui.changedAfterConfirm = true;
-      s.status = null;
-    }
     refresh();
+    if (ctx && ctx.onChange) ctx.onChange();
   }
 
   function startPlacing(key) {
@@ -271,12 +338,17 @@
   }
 
   function onKeyDown(e) {
+    if (HUSS.app.state.screen !== 'score') return;
     if (inField(e)) {
-      if (e.key === 'Enter' && s) { e.preventDefault(); confirm(); }
+      // Enter confirms from the sheet code field; elsewhere (note, setup fields) it keeps its meaning.
+      if (e.key === 'Enter' && ctx && e.target === els.inSheet) { e.preventDefault(); actions.confirm(); }
       return;
     }
-    if (!s) return;
+    if (!ctx) return;
     var k = e.key;
+    if (k === 'Enter') { e.preventDefault(); if (e.shiftKey) actions.previous(); else actions.confirm(); return; }
+    if ((k === 'd' || k === 'D') && !e.metaKey && !e.ctrlKey) { e.preventDefault(); actions.later(); return; }
+    if (!s) return;
     if (k === ' ') { spaceDown = true; e.preventDefault(); return; }
     if (e.metaKey || e.ctrlKey) return;
     var handled = true;
@@ -297,7 +369,6 @@
       case 'c': case 'C': toggle(els.chkContrast); break;
       case 'r': case 'R': toggle(els.chkMask); break;
       case 'h': case 'H': toggle(els.chkGuides); break;
-      case 'Enter': confirm(); break;
       default: handled = false;
     }
     if (handled) e.preventDefault();
@@ -378,15 +449,24 @@
       tr.appendChild(el('td', 'num', val));
       tbl.appendChild(tr);
     };
+    var nmV = s.meta.vertical_not_measurable, nmH = s.meta.horizontal_not_measurable;
     row('v_figure', fmt(c.figure_mm, 2) + mm);
-    row('v_ceiling', fmt(c.ceiling_mm, 2) + mm);
-    row('v_distance', fmt(c.distance_mm, 2) + mm);
+    row('v_ceiling', (nmV ? '–' : fmt(c.ceiling_mm, 2)) + mm);
+    row('v_distance', (nmH ? '–' : fmt(c.distance_mm, 2)) + mm);
     row('v_scale', fmt(c.scale_mm_per_m, 2) + ' ' + HUSS.t('unit_mm_per_m'));
-    row('v_est_v', fmt(c.est_vertical_m, 3) + m, 'est');
-    row('v_est_h', fmt(c.est_horizontal_m, 3) + m, 'est');
+    row('v_est_v', (nmV ? '–' : fmt(c.est_vertical_m, 3)) + m, 'est');
+    row('v_est_h', (nmH ? '–' : fmt(c.est_horizontal_m, 3)) + m, 'est');
+    var lk = ctx && ctx.lookup;
+    if (lk) {
+      var E = HUSS.measure.compute.errorRatio;
+      row('v_true_v', fmt(lk.true_vertical_m, 3) + m);
+      row('v_e_v', nmV ? '–' : fmt(E(c.est_vertical_m, lk.true_vertical_m), 4), 'est');
+      row('v_true_h', fmt(lk.true_horizontal_m, 3) + m);
+      row('v_e_h', nmH ? '–' : fmt(E(c.est_horizontal_m, lk.true_horizontal_m), 4), 'est');
+    }
     row('v_figure_red', fmt(c.figure_red_mm, 2) + mm, 'alt', HUSS.t('v_backup_title'));
-    row({ text: HUSS.t('v_est_v') + ', ' + HUSS.t('v_backup') }, fmt(c.est_vertical_red_m, 3) + m, 'alt', HUSS.t('v_backup_title'));
-    row({ text: HUSS.t('v_est_h') + ', ' + HUSS.t('v_backup') }, fmt(c.est_horizontal_red_m, 3) + m, 'alt', HUSS.t('v_backup_title'));
+    row({ text: HUSS.t('v_est_v') + ', ' + HUSS.t('v_backup') }, (nmV ? '–' : fmt(c.est_vertical_red_m, 3)) + m, 'alt', HUSS.t('v_backup_title'));
+    row({ text: HUSS.t('v_est_h') + ', ' + HUSS.t('v_backup') }, (nmH ? '–' : fmt(c.est_horizontal_red_m, 3)) + m, 'alt', HUSS.t('v_backup_title'));
   }
 
   function renderFlags(d) {
@@ -406,27 +486,27 @@
   function syncMeta() {
     var st = sheetCodeState();
     els.inSheet.classList.toggle('invalid', st === 'bad');
-    var fromQr = st === 'ok' && qrCode !== null && HUSS.sheet.code.normalize(els.inSheet.value) === qrCode;
+    var fromQr = st === 'ok' && ctx && ctx.codeSource === 'qr';
     els.sheetStatus.className = 'small' + (st === 'ok' ? ' ok' : st === 'bad' ? ' bad' : ' muted');
     els.sheetStatus.textContent = HUSS.t(fromQr ? 'sheet_code_qr' : st === 'ok' ? 'sheet_code_ok' : st === 'bad' ? 'sheet_code_bad' : 'sheet_code_hint');
-    if (els.inRater.value.trim()) els.inRater.classList.remove('invalid');
     if (!s) return;
-    s.meta.project_code = els.inProject.value.trim().toUpperCase();
-    s.meta.rater_code = els.inRater.value.trim().toUpperCase();
     s.meta.sheet_code = st === 'ok' ? HUSS.sheet.code.normalize(els.inSheet.value) : '';
     s.meta.code_source = st === 'ok' ? (fromQr ? 'qr' : 'manual') : null;
     s.meta.color_noncompliant = els.chkColor.checked;
+    s.meta.note = els.inNote.value;
+    s.meta.vertical_not_measurable = els.chkNmV.checked;
+    s.meta.horizontal_not_measurable = els.chkNmH.checked;
   }
 
   function missingList() {
     var miss = HUSS.measure.record.missingForConfirm(s);
-    if (sheetCodeState() === 'bad') miss.push('sheet_code');
+    if (sheetCodeState() === 'bad' && miss.indexOf('sheet_code') < 0) miss.push('sheet_code');
     return miss;
   }
 
   function missingLabel(k) {
     if (k === 'rater_code') return HUSS.t('need_rater_code');
-    if (k === 'sheet_code') return HUSS.t('sheet_code');
+    if (k === 'sheet_code') return HUSS.t('need_sheet_code');
     return HUSS.t(H().DEF[k].label);
   }
 
@@ -439,13 +519,11 @@
     if (!s) return;
     var d = HUSS.measure.record.derive(s);
     renderHandleTable();
-    renderValues(d);
+    if (!els.cardValues.hidden) renderValues(d);
     renderFlags(d);
-    if (!ui.confirmed) {
-      var miss = missingList();
-      if (miss.length) setConfirmStatus(HUSS.t('missing', { list: miss.map(missingLabel).join(', ') }), ui.confirmTried ? 'bad' : '');
-      else setConfirmStatus(ui.changedAfterConfirm ? HUSS.t('changed_after_confirm') : '', ui.changedAfterConfirm ? 'bad' : '');
-    }
+    var miss = missingList();
+    if (miss.length) setConfirmStatus(HUSS.t('missing', { list: miss.map(missingLabel).join(', ') }), ui.confirmTried ? 'bad' : '');
+    else if (ui.confirmTried) setConfirmStatus('', '');
   }
 
   function updateHint() {
@@ -471,38 +549,38 @@
     updateHint();
   }
 
-  // ------------------------------------------------------------ confirm and download
+  // ------------------------------------------------------------ records for the session
 
-  function confirm() {
-    if (!s) return;
+  /**
+   * The record of the current drawing. kind 'confirm' checks the confirmation rule and gives
+   * status measured or excluded; kind 'later' gives status deferred (only the sheet code is
+   * needed), and kind 'draft' the in-progress state for autosave.
+   * Returns { record } or { missing: [...] } (and points at what is missing).
+   */
+  function recordFor(kind, durationS) {
+    if (!s) return { missing: ['image'] };
     syncMeta();
-    var miss = missingList();
-    if (miss.length) {
-      ui.confirmTried = true;
-      updatePanel();
-      // Point at the first thing the rater can type in.
-      var field = miss.indexOf('rater_code') >= 0 ? els.inRater : miss.indexOf('sheet_code') >= 0 ? els.inSheet : null;
-      if (field) {
-        field.classList.add('invalid');
-        field.scrollIntoView({ block: 'nearest' });
-        field.focus();
+    if (kind === 'confirm') {
+      var miss = missingList();
+      if (miss.length) {
+        ui.confirmTried = true;
+        updatePanel();
+        if (miss.indexOf('sheet_code') >= 0) { els.inSheet.classList.add('invalid'); els.inSheet.focus(); }
+        return { missing: miss };
       }
-      return;
+    } else if (!s.meta.sheet_code) {
+      return { missing: ['sheet_code'] };
     }
+    var status = kind === 'confirm' ? (HUSS.measure.record.isExcluded(s) ? 'excluded' : 'measured') : kind === 'later' ? 'deferred' : null;
+    var rec = HUSS.measure.record.buildRecord(Object.assign({}, s, {
+      status: status, confirmedAt: Date.now(), duration_s: durationS
+    }));
     ui.confirmTried = false;
-    ui.changedAfterConfirm = false;
-    s.status = 'measured';
-    s.confirmedAt = Date.now();
-    var rec = HUSS.measure.record.buildRecord(s);
-    last.csv = HUSS.io.csv.toCSV([rec]);
-    last.name = HUSS.measure.record.fileName(s.meta, new Date(s.confirmedAt), cfg.DEFAULTS.file_project_fallback);
-    HUSS.io.files.downloadText(last.name, last.csv);
-    ui.confirmed = true;
-    ui.placing = null;
-    els.btnDownload.hidden = false;
-    var t = new Date(s.confirmedAt);
-    setConfirmStatus(HUSS.t('confirmed', { time: t.toLocaleTimeString() }), 'ok');
-    refresh();
+    return { record: rec };
+  }
+
+  function showSaved(status) {
+    setConfirmStatus(HUSS.t('saved_status', { status: HUSS.t('st_item_' + status) }), 'ok');
   }
 
   // ------------------------------------------------------------ project
@@ -526,13 +604,12 @@
       els.inProject.readOnly = false;
       els.projectWarn.hidden = true;
     }
-    syncMeta();
   }
 
-  /** The loaded project changed: show it, and analyse the open image again with its settings. */
+  /** The loaded project changed (only possible before a session starts). */
   function projectChanged() {
     updateProjectCard();
-    if (s && lastFile) load(lastFile);
+    if (HUSS.ui.queue) HUSS.ui.queue.setupChanged();
   }
 
   function loadProjectFile(file) {
@@ -559,19 +636,21 @@
     cfg = config;
     els = {
       stage: $('stage'), canvas: $('view'), magnifier: $('magnifier'), dropzone: $('dropzone'), dropError: $('drop-error'),
-      busy: $('busy'), tools: $('stage-tools'), hint: $('hint'),
-      inProject: $('in-project'), inRater: $('in-rater'), inSheet: $('in-sheet'), sheetStatus: $('sheet-status'),
-      imageInfo: $('image-info'), imageAlign: $('image-align'), imageWarn: $('image-warn'),
+      busy: $('busy'), busyText: $('busy-text'), tools: $('stage-tools'), hint: $('hint'),
+      inProject: $('in-project'), inSheet: $('in-sheet'), sheetStatus: $('sheet-status'), sheetTitle: $('sheet-title'),
+      imageInfo: $('image-info'), imageAlign: $('image-align'), imageWarn: $('image-warn'), openInfo: $('open-info'),
       projectInfo: $('project-info'), projectWarn: $('project-warn'), projectInput: $('project-input'),
       btnLoadProject: $('btn-load-project'), btnNewProject: $('btn-new-project'),
-      cardHandles: $('card-handles'), cardValues: $('card-values'), cardFlags: $('card-flags'), cardView: $('card-view'), cardActions: $('card-actions'),
+      cardSheet: $('card-sheet'), cardHandles: $('card-handles'), cardValues: $('card-values'), cardFlags: $('card-flags'),
+      cardExclusion: $('card-exclusion'), cardView: $('card-view'), cardActions: $('card-actions'),
       handleTable: $('handle-table'), valueTable: $('value-table'), flagList: $('flag-list'),
+      exclList: $('excl-list'), chkNmV: $('chk-nm-v'), chkNmH: $('chk-nm-h'), inNote: $('in-note'),
       chkColor: $('chk-color'), chkContrast: $('chk-contrast'), chkMask: $('chk-mask'), chkGuides: $('chk-guides'), chkSnap: $('chk-snap'),
-      btnConfirm: $('btn-confirm'), btnDownload: $('btn-download'), confirmStatus: $('confirm-status'),
+      btnConfirm: $('btn-confirm'), btnPrev: $('btn-prev'), btnLater: $('btn-later'), confirmStatus: $('confirm-status'),
       btnFit: $('btn-fit'), btnZoomIn: $('btn-zoom-in'), btnZoomOut: $('btn-zoom-out')
     };
     view = HUSS.ui.canvasView.create(els.canvas, els.magnifier, cfg);
-    view.setOverlay(function (ctx, v) { if (s) H().draw(ctx, v, s, ui, cfg); });
+    view.setOverlay(function (c2d, v) { if (s) H().draw(c2d, v, s, ui, cfg); });
 
     els.canvas.addEventListener('pointerdown', onPointerDown);
     els.canvas.addEventListener('pointermove', onPointerMove);
@@ -592,25 +671,19 @@
     els.chkMask.addEventListener('change', function () { view.setShowMask(els.chkMask.checked); });
     els.chkGuides.addEventListener('change', function () { ui.guides = els.chkGuides.checked; view.render(); });
     els.chkSnap.addEventListener('change', function () { ui.snap = els.chkSnap.checked; });
-    els.chkColor.addEventListener('change', function () { if (s) { syncMeta(); changed(); } });
-    [els.inProject, els.inRater, els.inSheet].forEach(function (inp) {
-      inp.addEventListener('input', function () {
-        syncMeta();
-        if (s) {
-          if (ui.confirmed) changed();
-          else updatePanel();
-        }
-      });
+    [els.chkColor, els.chkNmV, els.chkNmH].forEach(function (chk) {
+      chk.addEventListener('change', function () { if (s) { syncMeta(); changed(); } });
     });
+    els.inNote.addEventListener('input', function () { if (s) { syncMeta(); if (ctx && ctx.onChange) ctx.onChange(); } });
+    els.inSheet.addEventListener('input', function () { syncMeta(); if (s) { updatePanel(); if (ctx && ctx.onChange) ctx.onChange(); } });
+    els.btnConfirm.addEventListener('click', function () { actions.confirm(); });
+    els.btnPrev.addEventListener('click', function () { actions.previous(); });
+    els.btnLater.addEventListener('click', function () { actions.later(); });
     els.btnLoadProject.addEventListener('click', function () { els.projectInput.value = ''; els.projectInput.click(); });
     els.projectInput.addEventListener('change', function () {
       if (els.projectInput.files && els.projectInput.files[0]) loadProjectFile(els.projectInput.files[0]);
     });
     els.btnNewProject.addEventListener('click', function () { HUSS.app.show('project'); });
-    els.btnConfirm.addEventListener('click', confirm);
-    els.btnDownload.addEventListener('click', function () {
-      if (last.csv) HUSS.io.files.downloadText(last.name, last.csv);
-    });
 
     if (typeof ResizeObserver !== 'undefined') {
       new ResizeObserver(function () { view.resize(); view.render(); }).observe(els.stage);
@@ -621,7 +694,14 @@
   }
 
   HUSS.ui.scorer = {
-    init: init, load: load, onShow: onShow, projectChanged: projectChanged, loadProjectFile: loadProjectFile,
-    get session() { return s; }
+    init: init, openItem: openItem, clear: clear, setBusy: setBusy, recordFor: recordFor, showSaved: showSaved,
+    onShow: onShow, projectChanged: projectChanged, loadProjectFile: loadProjectFile, updateProjectCard: updateProjectCard,
+    setActions: function (a) { actions = a; },
+    setProjectLocked: function (locked) {
+      els.btnLoadProject.disabled = locked;
+      els.btnNewProject.disabled = locked;
+    },
+    get session() { return s; },
+    get context() { return ctx; }
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -19,8 +19,12 @@
       <button type="button" class="tab" data-screen="project" data-s="tab_project"></button>
     </nav>
     <div class="topbar-actions">
-      <button type="button" class="btn" id="btn-open" data-s="open_image"></button>
-      <input type="file" id="file-input" accept="image/jpeg,image/png" hidden>
+      <button type="button" class="btn" id="btn-open" data-s="open_scans"></button>
+      <input type="file" id="folder-input" webkitdirectory directory multiple hidden>
+      <input type="file" id="files-input" accept="image/jpeg,image/png" multiple hidden>
+      <input type="file" id="csv-input" accept=".csv,text/csv" hidden>
+      <input type="file" id="key-input" accept=".csv,.txt,text/csv,text/plain" hidden>
+      <input type="file" id="structures-input" accept=".csv,.txt,text/csv,text/plain" hidden>
     </div>
   </header>
 
@@ -33,11 +37,22 @@
         <div class="dropzone-inner">
           <p class="dropzone-title" data-s="drop_title"></p>
           <p class="dropzone-sub" data-s="drop_sub"></p>
-          <button type="button" class="btn btn-primary" id="btn-choose" data-s="drop_button"></button>
+          <div class="btn-row center">
+            <button type="button" class="btn btn-primary" id="btn-choose" data-s="drop_button"></button>
+            <button type="button" class="btn" id="btn-choose-files" data-s="drop_button_files"></button>
+          </div>
           <p class="dropzone-error" id="drop-error" hidden></p>
         </div>
       </div>
-      <div class="busy" id="busy" hidden><span data-s="busy"></span></div>
+      <div class="busy" id="busy" hidden><span id="busy-text" data-s="busy"></span></div>
+      <div class="dialog-wrap" id="dup-dialog" hidden>
+        <div class="dialog">
+          <h2 data-s="dup_title"></h2>
+          <p class="small muted" data-s="dup_text"></p>
+          <div id="dup-list"></div>
+          <button type="button" class="btn btn-primary" id="dup-continue" data-s="dup_continue"></button>
+        </div>
+      </div>
 
       <div class="stage-tools" id="stage-tools" hidden>
         <button type="button" class="btn btn-small" id="btn-zoom-out" data-s-title="zoom_out">−</button>
@@ -59,18 +74,54 @@
         <input type="file" id="project-input" accept=".json,application/json" hidden>
       </section>
 
-      <section class="card">
+      <section class="card" id="card-session">
         <h2 data-s="sec_session"></h2>
         <label class="field"><span data-s="project_code"></span><input type="text" id="in-project" autocomplete="off" spellcheck="false"></label>
         <label class="field"><span data-s="rater_code"></span><input type="text" id="in-rater" autocomplete="off" spellcheck="false" required data-s-placeholder="rater_code_placeholder"></label>
         <p class="small muted rater-help" data-s="rater_code_help"></p>
-        <label class="field"><span data-s="sheet_code"></span><input type="text" id="in-sheet" autocomplete="off" spellcheck="false" maxlength="5" data-s-placeholder="sheet_code_placeholder"></label>
-        <p class="small" id="sheet-status" data-s="sheet_code_hint"></p>
+        <div class="field"><span data-s="mode"></span>
+          <div class="radio-row" id="mode-row">
+            <label class="check"><input type="radio" name="mode" value="blind" id="mode-blind"><span data-s="mode_blind"></span></label>
+            <label class="check"><input type="radio" name="mode" value="open" id="mode-open"><span data-s="mode_open"></span></label>
+          </div>
+        </div>
+        <p class="small muted field-help" data-s="mode_help"></p>
+        <div id="session-setup">
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary btn-xs" id="btn-folder" data-s="choose_folder"></button>
+            <button type="button" class="btn btn-xs" id="btn-files" data-s="choose_files"></button>
+            <button type="button" class="btn btn-xs" id="btn-resume-csv" data-s="load_csv"></button>
+          </div>
+          <p class="small" id="resume-status" hidden></p>
+          <label class="check" id="autosave-row" hidden><input type="checkbox" id="chk-autosave" checked><span id="autosave-text"></span></label>
+          <div id="open-tables" hidden>
+            <div class="btn-row">
+              <button type="button" class="btn btn-xs" id="btn-key" data-s="load_key"></button>
+              <button type="button" class="btn btn-xs" id="btn-structures" data-s="load_structures"></button>
+            </div>
+            <p class="small" id="tables-status"></p>
+          </div>
+          <p class="small bad" id="setup-error" hidden></p>
+        </div>
+        <div id="session-running" hidden>
+          <p class="small" id="session-summary"></p>
+          <p class="small muted" id="session-notes" hidden></p>
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary btn-xs" id="btn-download-csv" data-s="download_csv"></button>
+            <button type="button" class="btn btn-xs" id="btn-download-excel" data-s="download_excel"></button>
+            <button type="button" class="btn btn-xs" id="btn-new-session" data-s="new_session"></button>
+          </div>
+          <p class="reminder" id="reminder" hidden></p>
+          <p class="small ok" id="download-status" hidden></p>
+        </div>
       </section>
 
-      <section class="card">
-        <h2 data-s="sec_image"></h2>
-        <p class="small" id="image-info" data-s="no_image"></p>
+      <section class="card" id="card-sheet" hidden>
+        <h2 id="sheet-title"></h2>
+        <label class="field"><span data-s="sheet_code"></span><input type="text" id="in-sheet" autocomplete="off" spellcheck="false" maxlength="5" data-s-placeholder="sheet_code_placeholder"></label>
+        <p class="small" id="sheet-status" data-s="sheet_code_hint"></p>
+        <p class="small" id="open-info" hidden></p>
+        <p class="small" id="image-info"></p>
         <p class="small muted" id="image-align"></p>
         <p class="small bad" id="image-warn" hidden></p>
       </section>
@@ -91,6 +142,14 @@
         <label class="check"><input type="checkbox" id="chk-color"><span data-s="flag_color_noncompliant"></span></label>
       </section>
 
+      <section class="card" id="card-exclusion" hidden>
+        <h2 data-s="sec_exclusion"></h2>
+        <div id="excl-list"></div>
+        <label class="check"><input type="checkbox" id="chk-nm-v"><span data-s="nm_vertical"></span></label>
+        <label class="check"><input type="checkbox" id="chk-nm-h"><span data-s="nm_horizontal"></span></label>
+        <label class="field field-top"><span data-s="note"></span><textarea id="in-note" rows="2" class="keep-case"></textarea></label>
+      </section>
+
       <section class="card" id="card-view" hidden>
         <h2 data-s="sec_view"></h2>
         <label class="check"><input type="checkbox" id="chk-contrast"><span data-s="view_contrast"></span></label>
@@ -100,8 +159,11 @@
       </section>
 
       <section class="card card-actions" id="card-actions" hidden>
-        <button type="button" class="btn btn-primary btn-block" id="btn-confirm" data-s="confirm"></button>
-        <button type="button" class="btn btn-block" id="btn-download" data-s="download_again" hidden></button>
+        <div class="btn-row nav-row">
+          <button type="button" class="btn" id="btn-prev" data-s="previous"></button>
+          <button type="button" class="btn" id="btn-later" data-s="review_later"></button>
+        </div>
+        <button type="button" class="btn btn-primary btn-block" id="btn-confirm" data-s="confirm_next"></button>
         <p class="small" id="confirm-status"></p>
       </section>
     </aside>
@@ -194,6 +256,9 @@
   <script src="js/io/csv.js"></script>
   <script src="js/io/files.js"></script>
   <script src="js/io/project.js"></script>
+  <script src="js/io/session.js"></script>
+  <script src="js/io/autosave.js"></script>
+  <script src="js/io/tables.js"></script>
   <script src="js/detect/corners.js"></script>
   <script src="js/detect/floorline.js"></script>
   <script src="js/detect/redfigure.js"></script>
@@ -204,6 +269,7 @@
   <script src="js/ui/canvasView.js"></script>
   <script src="js/ui/handles.js"></script>
   <script src="js/ui/scorer.js"></script>
+  <script src="js/ui/queue.js"></script>
   <script src="js/ui/start.js"></script>
   <script src="js/ui/sheetgen.js"></script>
   <script src="js/ui/projectForm.js"></script>

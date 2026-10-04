@@ -50,6 +50,7 @@
     document.title = HUSS.t('app_title');
     document.getElementById('version').textContent = 'v' + HUSS.config.TOOL_VERSION + ' · rules ' + HUSS.config.RULES_VERSION;
     HUSS.ui.scorer.init(HUSS.config);
+    HUSS.ui.queue.init();
     HUSS.ui.start.init();
     HUSS.ui.sheetgen.init();
     HUSS.ui.projectForm.init();

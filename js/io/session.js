@@ -180,6 +180,17 @@
     return { matched: matched, orphans: orphans, conflicts: conflicts };
   }
 
+  /** Puts in-progress states (autosaved drafts, not yet confirmed) back on their scans. */
+  function applyDrafts(sess, drafts) {
+    (drafts || []).forEach(function (d) {
+      for (var i = 0; i < sess.items.length; i++) {
+        var it = sess.items[i];
+        var same = it.code_source === 'qr' ? it.sheet_code === d.sheet_code : (d.file_name && it.name === d.file_name);
+        if (same && !it.record) { it.draft = d; it.seconds = d.duration_s || it.seconds; return; }
+      }
+    });
+  }
+
   /** Handle state, suggestions and rater inputs of a saved record. */
   function stateFromRecord(rec) {
     var place = function (v, p) { return v == null ? null : (p || 'manual'); };
@@ -223,6 +234,7 @@
       total: sess.items.length,
       done: progress(sess).done,
       records: records(sess),
+      drafts: sess.items.filter(function (it) { return it.draft && !it.record; }).map(function (it) { return it.draft; }),
       current_sheet: (current(sess) || {}).sheet_code || null
     };
   }
@@ -236,7 +248,7 @@
     itemKey: itemKey, create: create, addItems: addItems, byKey: byKey, duplicates: duplicates,
     keepDuplicate: keepDuplicate, buildOrder: buildOrder, current: current, unreadNumber: unreadNumber,
     progress: progress, nextIndex: nextIndex, goTo: goTo, setRecord: setRecord, records: records,
-    columns: columns, markDownloaded: markDownloaded, applyRecords: applyRecords, stateFromRecord: stateFromRecord,
+    columns: columns, markDownloaded: markDownloaded, applyRecords: applyRecords, applyDrafts: applyDrafts, stateFromRecord: stateFromRecord,
     toSaved: toSaved, savedSummary: savedSummary
   };
   HUSS.io.session = api;

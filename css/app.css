@@ -192,3 +192,27 @@ table { border-collapse: collapse; width: 100%; }
   .page-grid { grid-template-columns: 1fr; }
   .tabs { margin-left: 8px; }
 }
+
+/* Session (Phase 2b) */
+.radio-row { display: flex; gap: 14px; }
+.radio-row .check { margin: 0; }
+.btn-row.center { justify-content: center; }
+.nav-row .btn { flex: 1; }
+.reminder { background: var(--warn-bg); color: var(--warn); border-radius: var(--radius); padding: 6px 8px; font-size: 12px; font-weight: 600; margin: 6px 0 0; }
+#card-session.running .field input, #card-session.running .radio-row input { pointer-events: none; }
+#card-session.running .field input { background: var(--surface-2); }
+.chip { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 9px; padding: 0 7px; margin-left: 6px; vertical-align: 1px; }
+.chip.measured { background: #e3f2e6; color: var(--ok); }
+.chip.excluded { background: #f1e8f8; color: #6b3fa0; }
+.chip.deferred { background: var(--warn-bg); color: var(--warn); }
+#card-sheet h2 { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); }
+.excl-check { margin-bottom: 4px; }
+.dialog-wrap { position: absolute; inset: 0; background: rgba(30, 34, 42, 0.45); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 5; }
+.dialog { background: var(--surface); border-radius: 10px; padding: 16px 18px; max-width: 760px; max-height: 100%; overflow: auto; }
+.dialog h2 { font-size: 15px; margin: 0 0 6px; }
+.dup-group { margin: 12px 0; }
+.dup-group h3 { font-size: 13px; margin: 0 0 6px; font-family: ui-monospace, Menlo, monospace; }
+.dup-options { display: flex; flex-wrap: wrap; gap: 10px; }
+.dup-option { border: 2px solid var(--line); border-radius: 8px; padding: 6px; cursor: pointer; text-align: center; font-size: 12px; }
+.dup-option.chosen { border-color: var(--accent); }
+.dup-option img { display: block; width: 220px; height: auto; margin-bottom: 4px; background: #fff; }
