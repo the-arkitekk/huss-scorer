@@ -86,7 +86,7 @@
     for (k = 0; k < w * h; k++) if (keep[cc.labels[k]]) regionMask[k] = 1;
 
     var result = {
-      found: false, multiple: false, head_y: null, raw_foot_y: null, axis_x: null, Ta: Ta,
+      found: false, multiple: false, head_y: null, raw_foot_y: null, axis_x: null, right_x: null, Ta: Ta,
       region: { x0: x0, y0: y0, w: w, h: h }, regionMask: regionMask, clusterMask: new Uint8Array(w * h),
       pageMask: pageMask(rect, Ta, cfg)
     };
@@ -101,12 +101,12 @@
     if (!order.length) return result;
 
     var fig = order[0], cm = result.clusterMask;
-    var top = -1, bottom = -1, sx = 0, n = 0;
+    var top = -1, bottom = -1, sx = 0, n = 0, maxX = -1;
     for (y = 0; y < h; y++) {
       var rowCount = 0;
       for (x = 0; x < w; x++) {
         k = y * w + x;
-        if (regionMask[k] && linked.labels[k] === fig) { cm[k] = 1; rowCount++; sx += x + 0.5; n++; }
+        if (regionMask[k] && linked.labels[k] === fig) { cm[k] = 1; rowCount++; sx += x + 0.5; n++; if (x > maxX) maxX = x; }
       }
       if (rowCount >= cfg.HEAD_MIN_PIXELS && top < 0) top = y;
       if (rowCount > 0) bottom = y;
@@ -118,6 +118,7 @@
     result.head_y = (y0 + top) / R;
     result.raw_foot_y = (y0 + bottom + 1) / R;
     result.axis_x = (x0 + sx / n) / R;
+    result.right_x = (x0 + maxX + 1) / R;
     return result;
   }
 

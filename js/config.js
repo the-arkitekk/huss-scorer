@@ -119,6 +119,31 @@
       PEAK_REL_PROMINENCE: 0.2
     },
 
+    // 7.9 Automatic suggestions for ceiling and opposite wall
+    SUGGEST: {
+      CONTINUITY_FRACTION: 0.5,    // 'dark' = darker than this share between paper and the line itself
+      TOP_MM: 13,                  // nothing is searched above this (corner marks)
+      CEILING_START_ABOVE_HEAD_MM: 1,
+      NO_HEAD_START_MM: 3,         // without a head: start this far above the floor line
+      CEILING_RUN_MM: 10,          // horizontal continuity checked over this length right of the axis
+      CEILING_RUN_MIN: 0.6,
+      CEILING_Y_TOLERANCE_MM: 0.5, // hand-drawn ceilings waver
+      CEILING_SLOPE_MAX: 0.15,     // ... and may rise or fall slightly (about 8 degrees)
+      WALL_START_RIGHT_OF_FIGURE_MM: 1,
+      WALL_SEARCH_FROM_MM: 0.5,    // drawn walls often stop short of the floor line: start at the
+      WALL_SEARCH_TO_MM: 6,        // lowest dark point between these heights above the floor
+      WALL_MIN_FRACTION: 0.5,      // of the ceiling height
+      WALL_MIN_MM: 10,             // when the ceiling is unknown
+      WALL_INNER_MM: 6,            // double-line wall: inner face within this distance
+      WALL_DRIFT_PER_MM: 0.75,     // a drawn wall may lean this much per mm of height
+      WALL_GAP_MM: 1               // pencil breaks tolerated
+    },
+
+    // 7.5 Manual alignment
+    MANUAL: {
+      REFINE_WINDOW_MM: 3          // a click is centred on the corner square within this radius
+    },
+
     // Scoring screen
     UI: {
       NUDGE_MM: 0.05,

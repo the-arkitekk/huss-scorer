@@ -28,6 +28,7 @@ const FILES = [
   'detect/profile.js',
   'detect/snap.js',
   'detect/qr.js',
+  'detect/suggest.js',
   'detect/pipeline.js'
 ];
 

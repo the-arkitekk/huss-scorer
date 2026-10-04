@@ -61,13 +61,23 @@
     t.profiles = now();
 
     var axisX = red.found ? red.axis_x : markX;
-    var sug = { axis_x: axisX, head_y: null, foot_y: null, foot_off_floor: false };
+    var sug = { axis_x: axisX, head_y: null, foot_y: null, foot_off_floor: false, ceiling_y: null, wall_x: null };
     if (red.found) {
       var fr = HUSS.measure.compute.footRule(red.raw_foot_y, D.floorline.yAt(floor, axisX), params.foot_tolerance_mm);
       sug.head_y = red.head_y;
       sug.foot_y = fr.foot_y;
       sug.foot_off_floor = fr.off_floor;
     }
+    var result = {
+      ok: true, template: T, config: cfg, R: R, dm: dm, floor: floor, wallProfile: wallProfile, ceilingCache: {}
+    };
+    var switches = params.suggestions || {};
+    if (switches.ceiling !== false) sug.ceiling_y = D.suggest.ceiling(result, axisX, sug.head_y);
+    if (switches.wall !== false) {
+      var ceilMm = sug.ceiling_y != null ? D.floorline.yAt(floor, axisX) - sug.ceiling_y : null;
+      sug.wall_x = D.suggest.wall(result, axisX, red.found ? red.right_x : null, ceilMm);
+    }
+    t.suggest = now();
 
     var c = orient.corners; // page order TL, TR, BR, BL
     return {
@@ -91,11 +101,12 @@
       red: red,
       redEdges: redEdges,
       wallProfile: wallProfile,
-      ceilingCache: {},
+      ceilingCache: result.ceilingCache,
       suggestions: sug,
       timings: {
         corners: t.corners - t.start, orientation: t.orientation - t.corners, rectify: t.rectify - t.orientation,
-        floor: t.floor - t.rectify, qr: t.qr - t.floor, red: t.red - t.qr, profiles: t.profiles - t.red, total: t.profiles - t.start
+        floor: t.floor - t.rectify, qr: t.qr - t.floor, red: t.red - t.qr, profiles: t.profiles - t.red,
+        suggest: t.suggest - t.profiles, total: t.suggest - t.start
       }
     };
   }
