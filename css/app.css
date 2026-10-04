@@ -85,6 +85,10 @@ body { background: var(--bg); display: flex; flex-direction: column; overflow: h
   text-transform: uppercase; min-width: 0;
 }
 .field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.field-stacked { grid-template-columns: 1fr; gap: 4px; }
+.field-stacked span { color: var(--ink); font-weight: 600; }
+.field-stacked input { padding: 7px 9px; font-size: 15px; }
+.rater-help { margin: 0 0 10px; }
 .field input.invalid { border-color: var(--warn); background: var(--warn-bg); outline: 2px solid var(--warn); outline-offset: -1px; }
 .field input::placeholder { text-transform: none; color: #9aa1ad; }
 .small { font-size: 12px; margin: 4px 0 0; line-height: 1.4; }

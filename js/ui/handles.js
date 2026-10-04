@@ -85,6 +85,19 @@
     return [a[0], a[1], b[0], b[1]];
   }
 
+  /**
+   * Ceiling and opposite wall are also drawn across the whole drawing area:
+   * the ceiling over the full page width, the wall from the top of the page down to the floor line.
+   */
+  function fullLine(view, s, key, v) {
+    if (v === undefined) v = value(s, key);
+    if (v == null || (key !== 'ceiling' && key !== 'wall')) return null;
+    var T = s.analysis.template, a, b;
+    if (key === 'ceiling') { a = view.toScreen(0, v); b = view.toScreen(T.width_mm, v); }
+    else { a = view.toScreen(v, 0); b = view.toScreen(v, floorY(s, v) + 0.8); }
+    return [a[0], a[1], b[0], b[1]];
+  }
+
   function distToSeg(px, py, x1, y1, x2, y2) {
     var vx = x2 - x1, vy = y2 - y1, L = vx * vx + vy * vy;
     var t = L > 0 ? ((px - x1) * vx + (py - y1) * vy) / L : 0;
@@ -96,7 +109,7 @@
   function hitTest(view, s, sx, sy, cfg) {
     var best = null, bestD = Infinity;
     KEYS.forEach(function (k) {
-      var g = segment(view, s, k, cfg);
+      var g = fullLine(view, s, k) || segment(view, s, k, cfg);
       if (!g) return;
       var d = distToSeg(sx, sy, g[0], g[1], g[2], g[3]);
       var lim = cfg.UI.HANDLE_HIT_PX + (k === 'axis' ? 5 : 0);
@@ -105,12 +118,12 @@
     return best;
   }
 
-  function strokeSeg(ctx, g, col, width, dashed) {
+  function strokeSeg(ctx, g, col, width, dashed, halo) {
     ctx.save();
     ctx.lineCap = 'round';
     ctx.setLineDash([]);
     ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-    ctx.lineWidth = width + 3;
+    ctx.lineWidth = width + (halo == null ? 3 : halo);
     ctx.beginPath(); ctx.moveTo(g[0], g[1]); ctx.lineTo(g[2], g[3]); ctx.stroke();
     ctx.strokeStyle = col;
     ctx.lineWidth = width;
@@ -163,17 +176,19 @@
         ctx.restore();
         return;
       }
-      strokeSeg(ctx, g, col, sel ? 3 : 2, dashed);
+      var full = fullLine(view, s, k);
+      if (full) strokeSeg(ctx, full, col, sel ? 2 : 1.25, dashed, 2);
+      strokeSeg(ctx, g, col, sel ? 3.5 : 2.5, dashed);
       var text = DEF[k].num + ' ' + HUSS.t(DEF[k].label);
       if (k === 'wall') label(ctx, text, g[0] + 6, g[1] + 2, col);
       else label(ctx, text, g[2] + 6, g[3], col);
     });
     if (ui.placing && ui.hoverPage) {
       var k = ui.placing, v = project(s, k, ui.hoverPage[0], ui.hoverPage[1]);
-      var pg = segment(view, s, k, cfg, v);
+      var pg = fullLine(view, s, k, v) || segment(view, s, k, cfg, v);
       if (pg) {
         ctx.save(); ctx.globalAlpha = 0.6;
-        strokeSeg(ctx, pg, color(k), 2, true);
+        strokeSeg(ctx, pg, color(k), 1.5, true, 2);
         ctx.restore();
       }
     }
