@@ -65,11 +65,12 @@ test('flag_foot_off_floor follows the red trace and the final foot handle', () =
     red: { found: true, raw_foot_y: rawFoot, multiple: false },
     align: { method: 'auto', warning: false }
   });
-  const s = { axis_x: 40, axis_placement: 'auto', foot_y: 180, figure_mm: 20 };
-  assert.equal(toolFlags(analysis(180.2), s, p, HUSS.config).flag_foot_off_floor, false);
-  assert.equal(toolFlags(analysis(181.3), s, p, HUSS.config).flag_foot_off_floor, true, 'drawn through the line');
-  assert.equal(toolFlags(analysis(178.5), s, p, HUSS.config).flag_foot_off_floor, true, 'floating, moved to floor by rater');
-  assert.equal(toolFlags(analysis(180.0), { ...s, foot_y: 178.0 }, p, HUSS.config).flag_foot_off_floor, true, 'handle moved off');
+  const s = { axis_x: 40, axis_placement: 'auto', foot_y: 180, figure_mm: 20 }, tol = p.foot_tolerance_mm;
+  assert.equal(toolFlags(analysis(180 + tol - 0.3), s, p, HUSS.config).flag_foot_off_floor, false, 'within the tolerance below');
+  assert.equal(toolFlags(analysis(180 - tol + 0.3), s, p, HUSS.config).flag_foot_off_floor, false, 'within the tolerance above');
+  assert.equal(toolFlags(analysis(180 + tol + 0.8), s, p, HUSS.config).flag_foot_off_floor, true, 'drawn through the line');
+  assert.equal(toolFlags(analysis(180 - tol - 1.5), s, p, HUSS.config).flag_foot_off_floor, true, 'floating, moved to floor by rater');
+  assert.equal(toolFlags(analysis(180.0), { ...s, foot_y: 180 - tol - 2 }, p, HUSS.config).flag_foot_off_floor, true, 'handle moved off');
 });
 
 test('alt values use the figure measured from the floor line', () => {

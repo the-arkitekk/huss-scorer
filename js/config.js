@@ -21,7 +21,7 @@
       sheet_label: 'figure',
       ref_height_m: 1.70,
       min_figure_mm: 10,
-      foot_tolerance_mm: 0.5,
+      foot_tolerance_mm: 4,          // spec 0.5; trial 3: freehand figures end 0-3 mm above the line, a floating one 5.8 mm
       snap_radius_mm: 1.5,
       mode: 'open',
       file_project_fallback: 'HUSS'

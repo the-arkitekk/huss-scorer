@@ -124,7 +124,7 @@ test('S7: figure 8 mm off the mark -> axis follows the figure, flag_figure_off_m
   checkSnapAndEstimates('S7', r.t, m);
 });
 
-test('S8: figure 1.5 mm above the floor -> foot on the floor line (rules 1.2), red bottom kept, flag_foot_off_floor', () => {
+test('S8: figure 5 mm above the floor -> foot on the floor line (rules 1.2), red bottom kept, flag_foot_off_floor', () => {
   const r = run('S8');
   checkCommon('S8', r);
   checkRedFigure('S8', r.a, r.t);

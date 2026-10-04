@@ -51,7 +51,7 @@ const SCENES = {
   S5: { description: 'Faint pencil (grey 180)', pencil: 180 },
   S6: { description: 'No red: figure drawn in grey', figure: { color: 'grey' } },
   S7: { description: 'Figure 8 mm off the start mark', figure: { dx: 8 } },
-  S8: { description: 'Figure floating 1.5 mm above the floor', figure: { lift: 1.5 } },
+  S8: { description: 'Figure floating 5 mm above the floor', figure: { lift: 5 } },
   S12: { description: '600 dpi', dpi: 600 },
   S13: { description: 'Figure 6 mm tall', figure: { height: 6 } },
   S15: { description: 'A3L template', template: 'A3L' },
