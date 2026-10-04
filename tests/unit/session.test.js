@@ -197,3 +197,23 @@ test('fast sheet code reading for the queue (no rectification)', () => {
     assert.equal(r.template_mismatch, false);
   }
 });
+
+test('tables screen helpers: write, read back, row problems', () => {
+  const T = HUSS.io.tables;
+  const st = [{ structure_code: 'ST1', structure_name: 'Atrium, "east"', true_vertical_m: 4, true_horizontal_m: 7.25 }];
+  const back = T.parseStructures(T.structuresToCSV(st));
+  assert.equal(back.ok, true);
+  assert.deepEqual(back.rows.ST1, { structure_name: 'Atrium, "east"', true_vertical_m: 4, true_horizontal_m: 7.25 });
+  const rows = [
+    { sheet_code: 'CV94Y', participant_code: 'P01', structure_code: 'ST1' },
+    { sheet_code: 'cv94y', participant_code: 'P02', structure_code: 'ST1' },
+    { sheet_code: 'CV94Z', participant_code: 'P03', structure_code: 'ST9' },
+    { sheet_code: '6QHJ4', participant_code: '', structure_code: 'ST1' }
+  ];
+  assert.deepEqual(T.keyRowProblems(rows[0], rows, ['ST1']), ['duplicate']);
+  assert.deepEqual(T.keyRowProblems(rows[2], rows, ['ST1']), ['bad_sheet_code', 'unknown_structure']);
+  assert.deepEqual(T.keyRowProblems(rows[3], rows, ['ST1']), ['empty']);
+  const k = T.parseKey(T.keyToCSV([rows[0]]));
+  assert.equal(k.ok, true);
+  assert.equal(k.rows.CV94Y.participant_code, 'P01');
+});

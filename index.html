@@ -16,6 +16,7 @@
     <nav class="tabs" id="tabs">
       <button type="button" class="tab active" data-screen="score" data-s="tab_score"></button>
       <button type="button" class="tab" data-screen="sheets" data-s="tab_sheets"></button>
+      <button type="button" class="tab" data-screen="tables" data-s="tab_tables"></button>
       <button type="button" class="tab" data-screen="project" data-s="tab_project"></button>
     </nav>
     <div class="topbar-actions">
@@ -120,6 +121,8 @@
         <h2 id="sheet-title"></h2>
         <label class="field"><span data-s="sheet_code"></span><input type="text" id="in-sheet" autocomplete="off" spellcheck="false" maxlength="5" data-s-placeholder="sheet_code_placeholder"></label>
         <p class="small" id="sheet-status" data-s="sheet_code_hint"></p>
+        <div class="code-pic"><canvas id="code-pic" data-s-title="code_picture"></canvas></div>
+        <label class="check"><input type="checkbox" id="chk-code"><span data-s="code_check"></span></label>
         <p class="small" id="open-info" hidden></p>
         <p class="small" id="image-info"></p>
         <p class="small muted" id="image-align"></p>
@@ -236,6 +239,47 @@
     </div>
   </main>
 
+  <main class="screen-page" id="screen-tables" hidden>
+    <div class="page-grid page-grid-tables">
+      <section class="page-card">
+        <h1 data-s="tb_structures_title"></h1>
+        <p class="small muted" data-s="tb_structures_intro"></p>
+        <table class="grid" id="tb-structures">
+          <thead><tr><th data-s="tb_col_code"></th><th data-s="tb_col_name"></th><th data-s="tb_col_true_v"></th><th data-s="tb_col_true_h"></th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="btn-row">
+          <button type="button" class="btn btn-xs" id="tb-st-add" data-s="tb_add_structure"></button>
+          <button type="button" class="btn btn-xs" id="tb-st-import" data-s="tb_import"></button>
+          <button type="button" class="btn btn-xs" id="tb-st-download" data-s="tb_download"></button>
+          <input type="file" id="tb-st-input" accept=".csv,.txt,text/csv,text/plain" hidden>
+        </div>
+        <p class="small" id="tb-st-status"></p>
+      </section>
+      <section class="page-card">
+        <h1 data-s="tb_key_title"></h1>
+        <p class="small muted" data-s="tb_key_intro"></p>
+        <table class="grid" id="tb-key">
+          <thead><tr><th data-s="tb_col_sheet"></th><th data-s="tb_col_participant"></th><th data-s="tb_col_structure"></th><th></th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <datalist id="tb-structure-codes"></datalist>
+        <div class="btn-row">
+          <button type="button" class="btn btn-xs" id="tb-key-add" data-s="tb_add_row"></button>
+          <button type="button" class="btn btn-xs" id="tb-key-import" data-s="tb_import"></button>
+          <button type="button" class="btn btn-xs" id="tb-key-download" data-s="tb_download"></button>
+          <input type="file" id="tb-key-input" accept=".csv,.txt,text/csv,text/plain" hidden>
+        </div>
+        <p class="small" id="tb-key-status"></p>
+      </section>
+      <section class="page-card tb-actions">
+        <button type="button" class="btn btn-primary" id="tb-use" data-s="tb_use"></button>
+        <p class="small" id="tb-use-status"></p>
+        <p class="small muted" data-s="tb_kept"></p>
+      </section>
+    </div>
+  </main>
+
   <div id="print-root" aria-hidden="true"></div>
   <style id="print-page-style"></style>
 
@@ -274,6 +318,7 @@
   <script src="js/ui/start.js"></script>
   <script src="js/ui/sheetgen.js"></script>
   <script src="js/ui/projectForm.js"></script>
+  <script src="js/ui/tablesForm.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

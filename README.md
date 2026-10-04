@@ -6,18 +6,20 @@ Status: **v0.1.0, rules 1.2** — Phase 1 (alignment, red-figure suggestion, han
 
 ## Use
 
-The top bar has three screens: **Score**, **Sheets** and **New project**.
+The top bar has four screens: **Score**, **Sheets**, **Tables** and **New project**.
 
 **New project** (once, by the project owner): fill in the form and download `<project_code>.huss.json`; send it to the raters. It holds no personal data.
 
 **Sheets**: choose the number of sheets (and optionally codes not to use, e.g. an earlier code list), then **Print…** or **Download PDF**, and keep the code list CSV. Print at 100 % (actual size); on a printed sheet the centres of the two top corner squares are 277 mm apart (A3L: 400 mm). Optionally a back side for the desk coordinator is printed (participant and structure codes, date; double-sided, flip on short edge). The back is never scanned, so raters stay blind.
+
+**Tables**: the structures (code, name, true ceiling height, true distance in metres) and the key table (sheet code → participant code, structure code), entered by hand or imported. Sheet codes are checked while typing; download both as CSV or load them straight into Open mode.
 
 **Score**:
 
 1. Open `index.html` (double-click; no installation, no internet needed). Load the project file (**Load project file…**).
 2. Enter your rater code and choose **Blind** or **Open** (fixed for the session). In Open mode the key table and structures table can be loaded to show structures and E.
 3. Choose the folder of scans (or drop it on the page). The sheet codes are read from the QR codes and the drawings come in ascending sheet-code order. Repeated codes are resolved by choosing one scan; scans without a readable code come last and their code is typed.
-4. Head and foot are suggested from the red figure. Place the ceiling (key `3`) and the opposite wall (key `4`) by clicking near the line; a handle released within 1.5 mm of a line jumps to its centre. Tick exclusion criteria or "not measurable" where needed, add a note.
+4. Compare the sheet code (read from the QR code) with the picture of the printed code and tick **Same as the code printed on the sheet** (`K`). Head and foot are suggested from the red figure. Click near the ceiling line, then near the opposite wall (the tool moves on by itself); a handle released within 1.5 mm of a line jumps to its centre. Tick exclusion criteria or "not measurable" where needed, add a note.
 5. **Confirm and next** (`Enter`), **Previous** (`Shift+Enter`), **Review later** (`D`). **Download CSV** saves the session; **Download for Excel** gives a semicolon / decimal-comma view that cannot be loaded back.
 6. To continue later: the browser keeps an autosave (offered when the same project, rater and mode are chosen), and **Resume from CSV…** with the folder restores everything on any computer. The downloaded CSV is the real record.
 
@@ -32,6 +34,7 @@ The top bar has three screens: **Score**, **Sheets** and **New project**.
 | Alt (held while releasing) | No snap |
 | Enter / Shift+Enter | Confirm and next / previous |
 | D | Review later |
+| K | Tick "same as the printed code" |
 
 The foot handle is locked by default (rule 3 decides it); unlock it in the panel to move it.
 

@@ -114,6 +114,8 @@
     // Sheet code: the QR of this sheet, or what was typed for it before; never the previous drawing's.
     els.inSheet.value = c.sheetCode || '';
     els.inSheet.readOnly = c.codeSource === 'qr';
+    // The sheet code must be compared with the printed code (a tick): confirmed records keep it.
+    els.chkCode.checked = !!(saved && c.chip && c.chip !== 'deferred');
     els.chkColor.checked = s.meta.color_noncompliant;
     els.inNote.value = s.meta.note;
     els.chkNmV.checked = s.meta.vertical_not_measurable;
@@ -154,6 +156,8 @@
       els.imageWarn.hidden = true;
     }
     renderOpenInfo();
+    drawCodePicture(a);
+    setFinishMode(!!c.finished);
     setConfirmStatus('', '');
     els.stage.focus({ preventScroll: true });
     refresh();
@@ -174,6 +178,28 @@
     els.openInfo.textContent = lk
       ? HUSS.t('open_structure', { name: lk.structure_name || '–', code: lk.structure_code, participant: lk.participant_code })
       : HUSS.t('open_not_in_key');
+  }
+
+  /** The printed code and QR of this sheet, cut from the aligned page, next to the code field. */
+  function drawCodePicture(a) {
+    var T = a.template, R = a.R, rect = a.rect;
+    var x0 = T.code_text.right - 26, x1 = T.qr.x + T.qr.size + 1, y0 = T.qr.y - 1, y1 = T.qr.y + T.qr.size + 1;
+    var px0 = Math.max(0, Math.floor(x0 * R)), py0 = Math.max(0, Math.floor(y0 * R));
+    var w = Math.min(rect.width, Math.ceil(x1 * R)) - px0, h = Math.min(rect.height, Math.ceil(y1 * R)) - py0;
+    var c = els.codePic;
+    c.width = w; c.height = h;
+    var img = new ImageData(w, h), d = rect.data;
+    for (var y = 0; y < h; y++) {
+      img.data.set(d.subarray(((py0 + y) * rect.width + px0) * 4, ((py0 + y) * rect.width + px0 + w) * 4), y * w * 4);
+    }
+    c.getContext('2d').putImageData(img, 0, 0);
+  }
+
+  /** After everything is scored the main button downloads the CSV instead of confirming. */
+  function setFinishMode(on) {
+    ui.finish = !!on;
+    els.btnConfirm.textContent = HUSS.t(on ? 'finish_download' : 'confirm_next');
+    els.btnConfirm.classList.toggle('btn-finish', !!on);
   }
 
   // ------------------------------------------------------------ exclusion card
@@ -203,8 +229,21 @@
   }
 
   function changed() {
+    if (ui.finish) setFinishMode(false); // a change on a scored drawing must be confirmed again
     refresh();
     if (ctx && ctx.onChange) ctx.onChange();
+  }
+
+  /** The next handle still to place (head, foot, ceiling, wall), skipping axes marked not measurable. */
+  function nextToPlace() {
+    var order = ['head', 'foot', 'ceiling', 'wall'];
+    for (var i = 0; i < order.length; i++) {
+      var k = order[i];
+      if (k === 'ceiling' && s.meta.vertical_not_measurable) continue;
+      if (k === 'wall' && s.meta.horizontal_not_measurable) continue;
+      if (!H().isPlaced(s, k)) return k;
+    }
+    return null;
   }
 
   function startPlacing(key) {
@@ -218,7 +257,9 @@
     var p = view.toPage(sx, sy);
     var v = H().project(s, key, p[0], p[1]);
     finishMove(key, v, noSnap);
-    ui.placing = null;
+    // Go straight on to the next handle that is not placed yet (e.g. ceiling, then wall).
+    ui.placing = nextToPlace();
+    if (ui.placing) select(ui.placing);
     changed();
   }
 
@@ -369,6 +410,7 @@
       case 'c': case 'C': toggle(els.chkContrast); break;
       case 'r': case 'R': toggle(els.chkMask); break;
       case 'h': case 'H': toggle(els.chkGuides); break;
+      case 'k': case 'K': toggle(els.chkCode); break;
       default: handled = false;
     }
     if (handled) e.preventDefault();
@@ -501,12 +543,14 @@
   function missingList() {
     var miss = HUSS.measure.record.missingForConfirm(s);
     if (sheetCodeState() === 'bad' && miss.indexOf('sheet_code') < 0) miss.push('sheet_code');
+    if (!els.chkCode.checked) miss.push('code_check');
     return miss;
   }
 
   function missingLabel(k) {
     if (k === 'rater_code') return HUSS.t('need_rater_code');
     if (k === 'sheet_code') return HUSS.t('need_sheet_code');
+    if (k === 'code_check') return HUSS.t('need_code_check');
     return HUSS.t(H().DEF[k].label);
   }
 
@@ -644,7 +688,7 @@
       cardSheet: $('card-sheet'), cardHandles: $('card-handles'), cardValues: $('card-values'), cardFlags: $('card-flags'),
       cardExclusion: $('card-exclusion'), cardView: $('card-view'), cardActions: $('card-actions'),
       handleTable: $('handle-table'), valueTable: $('value-table'), flagList: $('flag-list'),
-      exclList: $('excl-list'), chkNmV: $('chk-nm-v'), chkNmH: $('chk-nm-h'), inNote: $('in-note'),
+      exclList: $('excl-list'), chkCode: $('chk-code'), codePic: $('code-pic'), chkNmV: $('chk-nm-v'), chkNmH: $('chk-nm-h'), inNote: $('in-note'),
       chkColor: $('chk-color'), chkContrast: $('chk-contrast'), chkMask: $('chk-mask'), chkGuides: $('chk-guides'), chkSnap: $('chk-snap'),
       btnConfirm: $('btn-confirm'), btnPrev: $('btn-prev'), btnLater: $('btn-later'), confirmStatus: $('confirm-status'),
       btnFit: $('btn-fit'), btnZoomIn: $('btn-zoom-in'), btnZoomOut: $('btn-zoom-out')
@@ -675,7 +719,12 @@
       chk.addEventListener('change', function () { if (s) { syncMeta(); changed(); } });
     });
     els.inNote.addEventListener('input', function () { if (s) { syncMeta(); if (ctx && ctx.onChange) ctx.onChange(); } });
-    els.inSheet.addEventListener('input', function () { syncMeta(); if (s) { updatePanel(); if (ctx && ctx.onChange) ctx.onChange(); } });
+    els.inSheet.addEventListener('input', function () {
+      els.chkCode.checked = false; // a changed code has to be compared again
+      syncMeta();
+      if (s) { updatePanel(); if (ctx && ctx.onChange) ctx.onChange(); }
+    });
+    els.chkCode.addEventListener('change', function () { if (s) changed(); });
     els.btnConfirm.addEventListener('click', function () { actions.confirm(); });
     els.btnPrev.addEventListener('click', function () { actions.previous(); });
     els.btnLater.addEventListener('click', function () { actions.later(); });
@@ -697,6 +746,8 @@
     init: init, openItem: openItem, clear: clear, setBusy: setBusy, recordFor: recordFor, showSaved: showSaved,
     onShow: onShow, projectChanged: projectChanged, loadProjectFile: loadProjectFile, updateProjectCard: updateProjectCard,
     setActions: function (a) { actions = a; },
+    setFinishMode: setFinishMode,
+    get finishMode() { return !!ui.finish; },
     setProjectLocked: function (locked) {
       els.btnLoadProject.disabled = locked;
       els.btnNewProject.disabled = locked;

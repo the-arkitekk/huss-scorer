@@ -6,7 +6,7 @@
   var HUSS = root.HUSS = root.HUSS || {};
 
   var state = { project: null, screen: 'score' };
-  var SCREENS = { score: 'screen-score', sheets: 'screen-sheets', project: 'screen-project' };
+  var SCREENS = { score: 'screen-score', sheets: 'screen-sheets', tables: 'screen-tables', project: 'screen-project' };
 
   function applyStrings(scope) {
     Array.prototype.forEach.call(scope.querySelectorAll('[data-s]'), function (el) {
@@ -37,6 +37,7 @@
     });
     document.getElementById('btn-open').hidden = name !== 'score';
     if (name === 'sheets') HUSS.ui.sheetgen.onShow();
+    if (name === 'tables') HUSS.ui.tablesForm.onShow();
     if (name === 'score') HUSS.ui.scorer.onShow();
   }
 
@@ -54,6 +55,7 @@
     HUSS.ui.start.init();
     HUSS.ui.sheetgen.init();
     HUSS.ui.projectForm.init();
+    HUSS.ui.tablesForm.init();
     Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
       b.addEventListener('click', function () { show(b.getAttribute('data-screen')); });
     });

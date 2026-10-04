@@ -178,6 +178,11 @@
     return BOM + joinLines(rows, ';');
   }
 
+  /** Plain table (array of string arrays) as CSV text: comma, CRLF, quoting as needed. */
+  function toText(rows) {
+    return joinLines(rows.map(function (r) { return r.map(function (c) { return c == null ? '' : String(c); }); }), ',');
+  }
+
   /** RFC 4180 parser. Returns an array of rows (arrays of strings). */
   function parse(text, sep) {
     sep = sep || ',';
@@ -247,7 +252,7 @@
     TYPES: TYPES, COLUMNS: COLUMNS, COLUMN_TYPE: COLUMN_TYPE, DEFAULT_EXCLUSIONS: DEFAULT_EXCLUSIONS,
     columnsFor: columnsFor, typeOf: typeOf,
     formatValue: formatValue, parseValue: parseValue, formatRow: formatRow, parseRow: parseRow,
-    toCSV: toCSV, toExcelView: toExcelView, parse: parse, isExcelView: isExcelView,
+    toCSV: toCSV, toExcelView: toExcelView, toText: toText, parse: parse, isExcelView: isExcelView,
     readMeasurements: readMeasurements
   };
   HUSS.io.csv = api;

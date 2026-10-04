@@ -220,3 +220,21 @@ table { border-collapse: collapse; width: 100%; }
 .check-top { align-items: flex-start; font-size: 12px; margin: 8px 0 10px; }
 .check-top input { margin-top: 2px; }
 .page-preview svg + svg { margin-top: 14px; }
+
+.code-pic { margin: 4px 0 6px; }
+.code-pic canvas { display: block; width: 100%; max-width: 300px; height: auto; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
+.btn-finish { background: var(--ok); border-color: var(--ok); }
+.btn-finish:hover { background: #22653a; }
+
+/* Tables screen */
+.page-grid-tables { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.page-grid-tables .tb-actions { grid-column: 1 / -1; }
+table.grid { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+table.grid th { text-align: left; font-size: 11px; font-weight: 600; color: var(--ink-2); padding: 4px; border-bottom: 1px solid var(--line); }
+table.grid td { padding: 3px 4px; vertical-align: middle; }
+table.grid input { width: 100%; font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; min-width: 0; }
+table.grid input.upper { text-transform: uppercase; font-family: ui-monospace, Menlo, monospace; }
+table.grid input.invalid { border-color: var(--warn); background: var(--warn-bg); }
+table.grid td.problem { font-size: 11px; color: var(--warn); white-space: nowrap; }
+table.grid td.ok-mark { color: var(--ok); font-size: 12px; }
+@media (max-width: 1100px) { .page-grid-tables { grid-template-columns: 1fr; } }

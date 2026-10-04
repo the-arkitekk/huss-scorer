@@ -82,7 +82,38 @@
     };
   }
 
-  var api = { parseKey: parseKey, parseStructures: parseStructures, lookup: lookup };
+  function fmtNum(v) {
+    return v == null || !isFinite(v) ? '' : String(Math.round(v * 1000) / 1000);
+  }
+
+  /** Structures table text from rows [{ structure_code, structure_name, true_vertical_m, true_horizontal_m }]. */
+  function structuresToCSV(rows) {
+    return HUSS.io.csv.toText([['structure_code', 'structure_name', 'true_vertical_m', 'true_horizontal_m']].concat(rows.map(function (r) {
+      return [r.structure_code, r.structure_name, fmtNum(r.true_vertical_m), fmtNum(r.true_horizontal_m)];
+    })));
+  }
+
+  /** Key table text from rows [{ sheet_code, participant_code, structure_code }]. */
+  function keyToCSV(rows) {
+    return HUSS.io.csv.toText([['sheet_code', 'participant_code', 'structure_code']].concat(rows.map(function (r) {
+      return [r.sheet_code, r.participant_code, r.structure_code];
+    })));
+  }
+
+  /** Problems of one key row: [] or codes bad_sheet_code, duplicate, empty, unknown_structure. */
+  function keyRowProblems(row, allRows, structureCodes) {
+    var out = [], code = HUSS.sheet.code.normalize(row.sheet_code);
+    if (code && !HUSS.sheet.code.isValid(code)) out.push('bad_sheet_code');
+    if (code && allRows.filter(function (r) { return HUSS.sheet.code.normalize(r.sheet_code) === code; }).length > 1) out.push('duplicate');
+    if (!code || !row.participant_code || !row.structure_code) out.push('empty');
+    if (row.structure_code && structureCodes && structureCodes.length && structureCodes.indexOf(row.structure_code) < 0) out.push('unknown_structure');
+    return out;
+  }
+
+  var api = {
+    parseKey: parseKey, parseStructures: parseStructures, lookup: lookup,
+    structuresToCSV: structuresToCSV, keyToCSV: keyToCSV, keyRowProblems: keyRowProblems, num: num
+  };
   HUSS.io.tables = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

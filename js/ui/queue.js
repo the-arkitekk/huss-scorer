@@ -177,6 +177,7 @@
       return;
     }
     var list = Array.prototype.filter.call(fileList, isImage);
+    var ignored = fileList.length - list.length;
     if (!list.length) { HUSS.ui.scorer.clear(HUSS.t('no_scans')); return; }
     list.sort(function (a, b) { return a.name < b.name ? -1 : 1; });
     showSetupError('');
@@ -195,7 +196,8 @@
       var dups = S().duplicates(sess);
       return dups.length ? resolveDuplicates(dups) : null;
     }).then(function () {
-      var notes = [];
+      var notes = [HUSS.t('files_found', { n: list.length })];
+      if (ignored > 0) notes.push(HUSS.t('files_ignored', { n: ignored }));
       if (pendingCsv) {
         var res = S().applyRecords(sess, pendingCsv.records);
         notes.push(HUSS.t('resume_applied', { n: res.matched }));
@@ -238,7 +240,8 @@
       mode: sess.mode, rater_code: sess.rater_code, project_code: sess.project_code,
       title: title, chip: item.status, sheetCode: code, codeSource: item.code_source, saved: saved,
       lookup: sess.mode === 'open' && tables.key ? HUSS.io.tables.lookup(tables.key, tables.structures, code) : null,
-      tablesLoaded: !!tables.key, fileName: item.name, onChange: scheduleAutosave
+      tablesLoaded: !!tables.key, fileName: item.name, onChange: scheduleAutosave,
+      finished: isComplete() && (item.status === 'measured' || item.status === 'excluded')
     };
   }
 
@@ -264,8 +267,14 @@
     if (r.record) item.draft = r.record;
   }
 
+  function isComplete() {
+    var p = S().progress(sess);
+    return p.total > 0 && p.done === p.total;
+  }
+
   function confirm() {
     if (!running) return;
+    if (HUSS.ui.scorer.finishMode) { downloadCsv(); return; }
     var item = clock();
     var r = HUSS.ui.scorer.recordFor('confirm', item.seconds);
     if (!r.record) return;
@@ -299,7 +308,8 @@
     if (i < 0) {
       updateSummary();
       reminders();
-      // Everything scored: stay on this drawing so it can still be reviewed.
+      // Everything scored: stay on this drawing; the main button now downloads the CSV.
+      if (isComplete()) HUSS.ui.scorer.setFinishMode(true);
       return;
     }
     S().goTo(sess, i);
