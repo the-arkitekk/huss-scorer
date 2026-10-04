@@ -238,8 +238,26 @@ test('S11: JPEG quality 60 and noise -> alignment, QR, figure, snap and estimate
   checkSnapAndEstimates('S11', r.t, m);
 });
 
-test('S14: a corner mark is missing -> automatic alignment asks for manual alignment', () => {
+test('S14: one corner mark missing -> completed from the other three; alignment, QR and estimates as usual', () => {
+  const r = run('S14');
+  checkCommon('S14', r);
+  assert.equal(r.a.align.method, 'auto_three_corners');
+  checkRedFigure('S14', r.a, r.t);
+  const m = measure(r.a, r.t);
+  checkSnapAndEstimates('S14', r.t, m);
+  assert.equal(m.flags.flag_manual_alignment, false);
+  assert.equal(P.readCode(r.g.img, { template: r.g.template }).sheet_code, r.t.sheet_code);
+});
+
+test('two corner marks missing -> automatic alignment asks for manual alignment', () => {
   const g = generate('S14');
+  // paint the top-left mark white as well
+  const [cx, cy] = g.truth.corners_px[0], rad = 6 * g.pxPerMm, d = g.img.data;
+  for (let y = Math.max(0, Math.floor(cy - rad)); y < Math.min(g.img.height, cy + rad); y++) {
+    for (let x = Math.max(0, Math.floor(cx - rad)); x < Math.min(g.img.width, cx + rad); x++) {
+      const o = (y * g.img.width + x) * 4; d[o] = d[o + 1] = d[o + 2] = 250;
+    }
+  }
   const a = P.analyze(g.img, { template: g.template });
   assert.equal(a.ok, false);
   assert.equal(a.error, 'corners_not_found');

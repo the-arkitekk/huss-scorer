@@ -36,7 +36,11 @@
       SIZE_TOL_MIN: 0.6,           // candidate side / expected side
       SIZE_TOL_MAX: 1.6,
       CENTROID_PAD_FRAC: 0.5,      // window padding around a mark, as a fraction of its side
-      CENTROID_DEAD_ZONE: 0.1      // weights below this fraction of contrast are ignored
+      CENTROID_DEAD_ZONE: 0.1,     // weights below this fraction of contrast are ignored
+      // One corner mark missing (torn, blotted): it is completed from the other three when they
+      // make a right angle and the sheet's side ratio within these tolerances (a flatbed scan).
+      THREE_ANGLE_TOL_DEG: 1.5,
+      THREE_RATIO_TOL: 0.03
     },
     ORIENTATION: {
       SAMPLE_STEP_MM: 1,
@@ -71,7 +75,7 @@
 
     // 7.7 Red figure
     RED: {
-      SEARCH_HALF_WIDTH_MM: 20,
+      SEARCH_HALF_WIDTH_MM: 35,      // figures drawn 2-3 cm beside the start mark are still found (trial 3)
       SEARCH_TOP_MM: 13,
       SEARCH_BELOW_FLOOR_MM: 8,
       A_PRESELECT: 5,
@@ -150,12 +154,12 @@
       FOLLOW_FRACTION: 0.35,       // a sample is on the line when darker than this share of the way from paper to it
       MIN_CONTRAST: 15,            // a start stretch less dark than this above the paper has no line to follow
       PAGE_MARGIN_MM: 8,           // a ceiling without a wall is followed at most this close to the page edge
-      CANDIDATE_EXTRA_MM: 10,      // lines crossing the axis (ceiling) or the floor band (wall) this much beyond the snap
+      CANDIDATE_EXTRA_MM: 40,      // lines crossing the axis (ceiling) or the floor band (wall) this much beyond the snap
                                    // radius are candidates too: a slanted line crosses there away from its average
       FOLLOW_UP_EXTRA_MM: 3,       // a suggested/snapped handle is averaged again within snap radius + this when the other moves
       TURN_SLOPE: 1,               // a line turning steeper than this (45 degrees) over TURN_RUN_MM ends there (a corner)
       TURN_RUN_MM: 0.5,
-      TURN_SLACK_MM: 0.15,         // allowance for pencil texture in that test
+      TURN_SLACK_MM: 0.3,          // allowance for pencil texture in that test
       UNEVEN_MM: 5                 // flag_ceiling_uneven / flag_wall_uneven above this largest deviation
                                    // (freehand ceilings in the trial scans deviate 2-4 mm; 5 marks a clearly slanted line)
     },

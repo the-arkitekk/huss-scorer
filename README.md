@@ -41,20 +41,25 @@ The foot handle is locked by default (rule 3 decides it); unlock it in the panel
 
 ### Suggestions (spec 7.9)
 
-- **Ceiling:** going up from 1 mm above the head, the first line that really runs horizontally: on its row, at least 60 % of the 10 mm right of the figure axis is dark (±0.5 mm, a slight slope allowed). None found: no suggestion. With a double ceiling line the inner face (nearer the figure) comes first. The handle is then put on the line's average (rules 1.3).
+- **Ceiling:** going up from 1 mm above the head, the first line that really runs horizontally: on its row, at least 60 % of the 10 mm right of the figure axis is dark (±0.5 mm, a slight slope allowed). A wavy freehand ceiling also counts when the line can be followed over at least 60 % of those 10 mm. None found: no suggestion. With a double ceiling line the inner face (nearer the figure) comes first. The handle is then put on the line's average (rules 1.3).
 - **Opposite wall:** among the lines right of the figure, the rightmost one that rises from the floor for at least half the ceiling height (10 mm without a ceiling); it is followed upwards row by row, so slightly slanted lines and pencil breaks up to 1 mm still count. If another such line lies within 6 mm to its left, that one (the inner face of a double-line wall). The handle is then put on the line's average.
-- **Following a line:** column by column (ceiling) or row by row (wall), bridging pencil breaks up to 1 mm and stopping where the line runs into another line or turns by more than 45° (a corner, also a rounded one). Because the ceiling is averaged up to the wall and the wall up to the ceiling, moving one of them (or the axis) averages the other again if it came from a line (suggested or snapped); a handle placed by hand stays put.
+- **Following a line:** column by column (ceiling) or row by row (wall), bridging pencil breaks up to 1 mm and stopping where the line runs into another line or turns by more than 45° (a corner, also a rounded one). Broad, grainy strokes and strongly slanted lines are followed too (trial 3). Because the ceiling is averaged up to the wall and the wall up to the ceiling, moving one of them (or the axis) averages the other again if it came from a line (suggested or snapped); a handle placed by hand stays put.
 - "Dark" means darker than halfway between the paper and the line itself, so faint pencil is treated like dark pencil. All values are in `js/config.js` (`SUGGEST`).
 - The first position of every suggestion is written to the CSV (`*_suggested_*` columns, at handle precision), together with how each handle ended up (`suggested`, `snapped`, `manual`), so the share of suggestions accepted unchanged can be reported.
 
 ### Manual alignment (spec 7.5)
 
-Alignment is automatic. Only when the corner marks of a scan cannot be found (a corner cut off or blotted) does the scan open as it is, for alignment by hand (wheel to zoom, drag to pan, a magnifier follows the pointer):
+Alignment is automatic. When one corner mark is missing (a torn or blotted corner), its place is completed from the other three, which must make a right angle and the sheet's side ratio (`align_method = auto_three_corners`, no flag). Only when two or more marks cannot be found does the scan open as it is, for alignment by hand (wheel to zoom, drag to pan, a magnifier follows the pointer):
 
 - **4 corner squares** (recommended): click the four black squares in any order. Each click is centred on its square and the page orientation is found as in automatic alignment, so the result is as accurate as automatic alignment.
 - **2 floor line ends** (when a square is missing or damaged): click the two ends of the printed floor line, the end at the triangle first. If the QR code reads only the other way round, the tool turns the page itself. This is coarser (a similarity, about 0.5 mm), but estimates are ratios, so the effect stays small.
 
 Afterwards everything runs as usual: QR code (the scan gets its code if it can be read now), suggestions, scoring. The CSV gets `align_method = manual_corners` or `manual_floorline` and `flag_manual_alignment`; reopening the scan later repeats the alignment from the corners kept in the record.
+
+## Detection settings changed after the trials
+
+- The red figure is looked for within 35 mm of the start mark (spec 7.7: 20 mm): figures drawn 2–3 cm beside the mark were missed in trial 3.
+- One missing corner mark is completed from the other three (see Manual alignment).
 
 ## Rule changes since the specification (rules 1.0)
 

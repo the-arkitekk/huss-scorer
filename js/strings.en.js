@@ -38,6 +38,7 @@
     sec_image: 'Image',
     no_image: 'No image loaded.',
     align_summary: 'Aligned automatically · {r} px/mm · residual {res} mm · rotation {rot}°',
+    align_summary_auto_three_corners: 'Aligned automatically from three corner marks (one is missing) · {r} px/mm · residual {res} mm · rotation {rot}°',
     align_summary_manual_corners: 'Aligned by hand (corner squares) · {r} px/mm · residual {res} mm · rotation {rot}°',
     align_summary_manual_floorline: 'Aligned by hand (floor line ends) · {r} px/mm · rotation {rot}°',
 

@@ -2,7 +2,8 @@
  * Automatic suggestions for the ceiling and the opposite wall (spec 7.9).
  *
  * Ceiling: going up from 1 mm above the head top, the first line in the ceiling profile that
- * runs horizontally: on its row, at least 60 % of the 10 mm to the right of the axis is dark.
+ * runs horizontally: on its row, at least 60 % of the 10 mm to the right of the axis is dark, or
+ * (a wavy freehand line) the line can be followed over at least 60 % of those 10 mm.
  * Wall: among the lines right of the figure, the rightmost one that rises from the floor for at
  * least half the ceiling height (10 mm without a ceiling); if another such line lies within
  * 6 mm to its left, that one (the inner face of a double-line wall).
@@ -84,6 +85,14 @@
     return Math.max(0, floorY - lastDark / R);
   }
 
+  /** Share of the CEILING_RUN_MM right of the axis over which the line through (axisX, y) is followed. */
+  function followedShare(a, axisX, y) {
+    var S = a.config.SUGGEST, l = HUSS.detect.line.ceilingLine(a, axisX, y, null);
+    if (!l.followed) return 0;
+    var n = l.pts.filter(function (p) { return p[0] <= axisX + S.CEILING_RUN_MM; }).length;
+    return n / (S.CEILING_RUN_MM * a.R);
+  }
+
   /** Suggested ceiling line y (mm) above the head, or null. */
   function ceiling(a, axisX, headY) {
     var cfg = a.config, S = cfg.SUGGEST, R = a.R, P = HUSS.detect.pipeline;
@@ -97,6 +106,7 @@
       var thr = threshold(paper, prof[peaks[i].index], S.CONTINUITY_FRACTION);
       var run = horizontalRun(a.dm, R, y, axisX, axisX + S.CEILING_RUN_MM, S.CEILING_Y_TOLERANCE_MM, S.CEILING_SLOPE_MAX, thr);
       if (run >= S.CEILING_RUN_MIN) return y;
+      if (followedShare(a, axisX, y) >= S.CEILING_RUN_MIN) return y;
     }
     return null;
   }

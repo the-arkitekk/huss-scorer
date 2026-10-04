@@ -32,7 +32,7 @@
       flag_foot_off_floor: redOff || handleOff,
       flag_multiple_red: !!a.red.multiple,
       flag_axis_moved: s.axis_placement === 'manual',
-      flag_manual_alignment: a.align.method !== 'auto',
+      flag_manual_alignment: String(a.align.method).indexOf('manual') === 0,
       flag_alignment_warning: !!a.align.warning,
       flag_ceiling_uneven: isNum(s.ceiling_spread) && s.ceiling_spread > config.LINE.UNEVEN_MM,
       flag_wall_uneven: isNum(s.wall_spread) && s.wall_spread > config.LINE.UNEVEN_MM

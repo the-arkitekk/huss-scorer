@@ -33,7 +33,7 @@
     t.orientation = now();
     if (!orient.ok) return { ok: false, stage: 'orientation', error: orient.error };
     return analyzeAligned(img, {
-      H: orient.H, method: 'auto', corners: orient.corners, quarter: orient.quarter, tie: orient.tie,
+      H: orient.H, method: corners.completed == null ? 'auto' : 'auto_three_corners', corners: orient.corners, quarter: orient.quarter, tie: orient.tie,
       tieBreak: orient.tieBreak, qr: orient.qr, floorRatio: orient.floorRatio, markRatio: orient.markRatio
     }, opts, t);
   }

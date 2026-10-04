@@ -64,8 +64,27 @@
   }
 
   /**
-   * Finds one corner mark per image quadrant.
-   * Returns { ok, points: [TL, TR, BR, BL] in image px (image quadrants), threshold, error }.
+   * One corner mark missing: its centre is where the other three put it (a flatbed scan maps the
+   * sheet's rectangle to a parallelogram). Only when the three make a right angle and the sheet's
+   * side ratio; returns the point or null.
+   */
+  function completeCorner(points, q, template, cfg) {
+    var a = points[(q + 1) % 4], o = points[(q + 2) % 4], b = points[(q + 3) % 4];
+    var ux = a[0] - o[0], uy = a[1] - o[1], vx = b[0] - o[0], vy = b[1] - o[1];
+    var lu = Math.hypot(ux, uy), lv = Math.hypot(vx, vy);
+    if (!(lu > 0 && lv > 0)) return null;
+    var angle = Math.acos(Math.max(-1, Math.min(1, (ux * vx + uy * vy) / (lu * lv)))) * 180 / Math.PI;
+    if (Math.abs(angle - 90) > cfg.THREE_ANGLE_TOL_DEG) return null;
+    var c = template.corners, W = c[1][0] - c[0][0], H = c[3][1] - c[0][1], want = W / H, ratio = lu / lv;
+    var fits = function (r) { return Math.abs(r / want - 1) <= cfg.THREE_RATIO_TOL; };
+    if (!fits(ratio) && !fits(1 / ratio)) return null;
+    return [a[0] + b[0] - o[0], a[1] + b[1] - o[1]];
+  }
+
+  /**
+   * Finds one corner mark per image quadrant; a single missing one is completed from the others.
+   * Returns { ok, points: [TL, TR, BR, BL] in image px (image quadrants), threshold, completed
+   * (quadrant index or null), error }.
    */
   function findCorners(img, template, config) {
     var cfg = config.CORNERS, C = HUSS.image.components;
@@ -111,8 +130,12 @@
       var p = refineCentre(img, best.x0 * k - pad, best.y0 * k - pad, (best.x1 + 1) * k + pad, (best.y1 + 1) * k + pad, cfg);
       points.push(p || [(best.sx / best.area + 0.5) * k, (best.sy / best.area + 0.5) * k]);
     }
+    if (missing.length === 1) {
+      var done = completeCorner(points, missing[0], template, cfg);
+      if (done) { points[missing[0]] = done; return { ok: true, points: points, threshold: T, completed: missing[0] }; }
+    }
     if (missing.length) return { ok: false, error: 'corners_not_found', missing: missing, points: points, threshold: T };
-    return { ok: true, points: points, threshold: T };
+    return { ok: true, points: points, threshold: T, completed: null };
   }
 
   /** The dark/paper threshold used by findCorners (Otsu on the downscaled grey copy). */
@@ -192,7 +215,7 @@
 
   var api = {
     downscaleGray: downscaleGray, sampleLuma: sampleLuma, refineCentre: refineCentre, findCorners: findCorners,
-    chooseOrientation: chooseOrientation, darkThreshold: darkThreshold
+    chooseOrientation: chooseOrientation, darkThreshold: darkThreshold, completeCorner: completeCorner
   };
   HUSS.detect.corners = api;
   if (typeof module === 'object' && module.exports) module.exports = api;

@@ -18,12 +18,19 @@
   /**
    * Follows a line from along index a0 towards a1 (inclusive; columns when horizontal, rows
    * otherwise), starting at cross position c0 (px, continuous: pixel i spans [i, i + 1)).
-   * Returns { pts: [[along, cross]] (px, sample centres), junction }.
+   * Returns { pts: [[along, cross, darkest]] (px, sample centres), junction }.
    */
   function follow(dm, horizontal, a0, a1, c0, thr, o) {
     var W = dm.width, H = dm.height, d = dm.data, paper = dm.paper;
     var crossMax = (horizontal ? H : W) - 1, alongMax = (horizontal ? W : H) - 1;
-    var get = horizontal ? function (a, c) { return d[c * W + a]; } : function (a, c) { return d[a * W + c]; };
+    var raw = horizontal ? function (a, c) { return d[c * W + a]; } : function (a, c) { return d[a * W + c]; };
+    // Across the line, values are averaged over 3 px so the grain of a broad pencil stroke does not split it.
+    var get = function (a, c) { return (raw(a, Math.max(0, c - 1)) + raw(a, c) + raw(a, Math.min(crossMax, c + 1))) / 3; };
+    var mean3 = function (k) {
+      var n = 0, t = 0;
+      for (var q = Math.max(0, k - 1); q <= Math.min(pts.length - 1, k + 1); q++) { t += pts[q][1]; n++; }
+      return t / n;
+    };
     var step = a1 >= a0 ? 1 : -1, cross = c0, pts = [], gap = 0, junction = false;
     for (var a = a0; step > 0 ? a <= a1 : a >= a1; a += step) {
       if (a < 0 || a > alongMax) break;
@@ -41,10 +48,14 @@
       var sw = 0, s = 0;
       for (j = j0; j <= j1; j++) { var w = get(a, j) - level; sw += w; s += w * (j + 0.5); }
       var c = s / sw, back = pts.length - o.turnRun;
-      // A line turning more than TURN_SLOPE (45 degrees) against the samples a little before is a corner.
-      if (back >= 0 && Math.abs(c - pts[back][1]) > o.turnSlope * Math.abs(a + 0.5 - pts[back][0]) + o.turnSlack) { junction = true; break; }
+      // A line turning more than TURN_SLOPE (45 degrees) against the samples a little before is a corner
+      // (both ends averaged over three samples against pencil grain).
+      if (back >= 1) {
+        var now = pts.length >= 2 ? (c + pts[pts.length - 1][1] + pts[pts.length - 2][1]) / 3 : c;
+        if (Math.abs(now - mean3(back)) > o.turnSlope * Math.abs(a + 0.5 - pts[back][0]) + o.turnSlack) { junction = true; break; }
+      }
       cross = c;
-      pts.push([a + 0.5, cross]);
+      pts.push([a + 0.5, cross, m]);
       gap = 0;
     }
     if (junction && pts.length) {
@@ -56,23 +67,18 @@
 
   /**
    * Threshold for "this sample is on the line": a fraction of the way from the paper to the
-   * line's typical darkness, the median of its darkest value per sample over a stretch at its
-   * start (pencil grain makes single samples vary a lot). null when that stretch shows no line.
+   * line's typical darkness. The line is first followed loosely over a stretch at its start (so a
+   * slanted line is not lost) and its typical darkness is the median of its darkest value per
+   * sample there (pencil grain makes single samples vary a lot). null when there is no line.
    */
-  function threshold(dm, horizontal, a0, a1, c0, half, L) {
-    var W = dm.width, H = dm.height, d = dm.data, maxima = [];
-    var crossMax = (horizontal ? H : W) - 1, alongMax = (horizontal ? W : H) - 1;
-    var ci = Math.floor(c0), lo = Math.max(0, ci - half), hi = Math.min(crossMax, ci + half);
-    for (var a = Math.max(0, Math.min(a0, a1)); a <= Math.min(alongMax, Math.max(a0, a1)); a++) {
-      var m = 0;
-      for (var j = lo; j <= hi; j++) { var v = horizontal ? d[j * W + a] : d[a * W + j]; if (v > m) m = v; }
-      maxima.push(m);
-    }
-    if (!maxima.length) return null;
-    maxima.sort(function (p, q) { return p - q; });
+  function threshold(dm, horizontal, a0, a1, c0, o, L) {
+    var floorThr = dm.paper + L.MIN_CONTRAST;
+    var pre = follow(dm, horizontal, a0, a1, c0, floorThr, o);
+    if (pre.pts.length < 3) return null;
+    var maxima = pre.pts.map(function (p) { return p[2]; }).sort(function (p, q) { return p - q; });
     var typical = maxima[Math.floor(maxima.length / 2)];
     if (typical - dm.paper < L.MIN_CONTRAST) return null;
-    return dm.paper + L.FOLLOW_FRACTION * (typical - dm.paper);
+    return Math.max(floorThr, dm.paper + L.FOLLOW_FRACTION * (typical - dm.paper));
   }
 
   function options(a) {
@@ -120,7 +126,7 @@
       var R = a.R, L = a.config.LINE, o = options(a);
       var end = wallX != null ? wallX - L.END_MM : a.template.width_mm - L.PAGE_MARGIN_MM;
       var a0 = Math.floor(axisX * R), a1 = Math.max(a0, Math.floor(end * R));
-      var thr = threshold(a.dm, true, a0, Math.min(a1, a0 + Math.round(L.STRENGTH_RUN_MM * R)), yAtAxis * R, Math.round(0.5 * R), L);
+      var thr = threshold(a.dm, true, a0, Math.min(a1, a0 + Math.round(L.STRENGTH_RUN_MM * R)), yAtAxis * R, o, L);
       var f = thr == null ? { pts: [], junction: false } : follow(a.dm, true, a0, a1, yAtAxis * R, thr, o);
       var r = summarize(a, f, true, yAtAxis);
       r.at_axis = yAtAxis;
@@ -141,7 +147,7 @@
       // Drawn walls often stop short of the floor line: the start may lie up to WALL_SEARCH_TO_MM above it.
       o.startGap = Math.round((S.WALL_SEARCH_TO_MM - L.END_MM) * R);
       var a0 = Math.floor((floorY - L.END_MM) * R), a1 = Math.min(a0, Math.floor(top * R));
-      var thr = threshold(a.dm, false, a0, Math.max(a1, Math.floor((floorY - S.WALL_SEARCH_TO_MM - L.STRENGTH_RUN_MM) * R)), xAtFloor * R, Math.round(0.5 * R), L);
+      var thr = threshold(a.dm, false, a0, Math.max(a1, Math.floor((floorY - S.WALL_SEARCH_TO_MM - L.STRENGTH_RUN_MM) * R)), xAtFloor * R, o, L);
       var f = thr == null ? { pts: [], junction: false } : follow(a.dm, false, a0, a1, xAtFloor * R, thr, o);
       var r = summarize(a, f, false, xAtFloor);
       r.at_floor = xAtFloor;
