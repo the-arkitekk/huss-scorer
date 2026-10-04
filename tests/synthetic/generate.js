@@ -132,7 +132,8 @@ function templateGroups(T) {
   const text = (x, baseline, height, n, glyphW, gap) => {
     for (let i = 0; i < n; i++) shapes.push(rect(x + i * (glyphW + gap), baseline - height, x + i * (glyphW + gap) + glyphW, baseline));
   };
-  text(T.label.x, T.label.baseline, 2.0, 6, 1.1, 0.35);                   // "figure"
+  const labelW = 6 * 1.1 + 5 * 0.35;
+  text(T.label.anchor === 'middle' ? T.label.x - labelW / 2 : T.label.x, T.label.baseline, 2.0, 6, 1.1, 0.35); // "figure"
   text(T.code_text.right - 5 * 2.6 + 0.6, T.code_text.baseline, 3.0, 5, 2.0, 0.6); // sheet code
   text(T.template_id.x, T.template_id.baseline, 1.4, 11, 0.7, 0.25);    // "HuSS A4L v1"
 

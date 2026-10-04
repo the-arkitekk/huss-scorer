@@ -17,11 +17,11 @@
       corners: [[10, 10], [287, 10], [287, 200], [10, 200]],
       floor: { y: 180, x0: 8, x1: 289, width: 0.35 },
       mark: { apex: [40, 180.4], base: [[38, 184.4], [42, 184.4]] },
-      label: { x: 45, baseline: 185.5, size_pt: 8 },
+      label: { x: 40, anchor: 'middle', baseline: 187.4, size_pt: 8 },   // centred under the start mark
       qr: { x: 262, y: 185, size: 15 },
       code_text: { right: 257, baseline: 196, size_pt: 12 },
       template_id: { x: 18, baseline: 201, size_pt: 6 },
-      ground: { gap_mm: 0.7, stroke_mm: 0.25, depth_mm: [2.2, 2.8], lean_deg: [48, 58], spacing_mm: [2.2, 3.6], start_x: 9, end_x: 288, skip: [[35, 57]], seed: 3005 }
+      ground: { gap_mm: 0.7, stroke_mm: 0.25, depth_mm: [2.2, 2.8], lean_deg: [48, 58], spacing_mm: [2.2, 3.6], start_x: 9, end_x: 288, skip: [[37, 43]], seed: 3005 }
     },
     A3L: {
       id: 'A3L',
@@ -32,11 +32,11 @@
       corners: [[10, 10], [410, 10], [410, 287], [10, 287]],
       floor: { y: 255, x0: 8, x1: 412, width: 0.35 },
       mark: { apex: [57, 255.4], base: [[55, 259.4], [59, 259.4]] },
-      label: { x: 62, baseline: 260.5, size_pt: 8 },
+      label: { x: 57, anchor: 'middle', baseline: 262.4, size_pt: 8 },
       qr: { x: 385, y: 262, size: 15 },
       code_text: { right: 380, baseline: 273, size_pt: 12 },
       template_id: { x: 18, baseline: 288, size_pt: 6 },
-      ground: { gap_mm: 0.7, stroke_mm: 0.25, depth_mm: [2.2, 2.8], lean_deg: [48, 58], spacing_mm: [2.2, 3.6], start_x: 9, end_x: 411, skip: [[52, 74]], seed: 3005 }
+      ground: { gap_mm: 0.7, stroke_mm: 0.25, depth_mm: [2.2, 2.8], lean_deg: [48, 58], spacing_mm: [2.2, 3.6], start_x: 9, end_x: 411, skip: [[54, 60]], seed: 3005 }
     }
   };
 

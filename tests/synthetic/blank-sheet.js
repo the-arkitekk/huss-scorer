@@ -11,6 +11,10 @@ const { qrStandIn } = require('./generate.js');
 
 const PT = 72 / 25.4; // points per mm
 
+// Helvetica advance widths (1/1000 em) for the characters a sheet label may use.
+const HELV = { a: 556, b: 556, c: 500, d: 556, e: 556, f: 278, g: 556, h: 556, i: 222, j: 222, k: 500, l: 222, m: 833, n: 556, o: 556, p: 556, q: 556, r: 333, s: 500, t: 278, u: 556, v: 500, w: 722, x: 500, y: 500, z: 500, ' ': 278, '\u00fc': 556, '\u00f6': 556, '\u00e7': 500 };
+const textWidthPt = (s, size) => [...s].reduce((w, ch) => w + (HELV[ch] || 556), 0) * size / 1000;
+
 function pageContent(T, sheetCode) {
   const Y = (y) => ((T.height_mm - y) * PT).toFixed(3);
   const X = (x) => (x * PT).toFixed(3);
@@ -28,7 +32,9 @@ function pageContent(T, sheetCode) {
   for (const s of qrStandIn(T)) ops.push(rectOp(s.x0, s.y0, s.x1, s.y1));
 
   const esc = (s) => s.replace(/[\\()]/g, (m) => '\\' + m);
-  ops.push(`BT /F1 8 Tf ${X(T.label.x)} ${Y(T.label.baseline)} Td (${esc(HUSS.config.DEFAULTS.sheet_label)}) Tj ET`);
+  const label = HUSS.config.DEFAULTS.sheet_label;
+  const lx = T.label.x * PT - (T.label.anchor === 'middle' ? textWidthPt(label, T.label.size_pt) / 2 : 0);
+  ops.push(`BT /F1 ${T.label.size_pt} Tf ${lx.toFixed(3)} ${Y(T.label.baseline)} Td (${esc(label)}) Tj ET`);
   const codeWidthPt = sheetCode.length * 0.6 * 12; // Courier: 600/1000 em per glyph
   ops.push(`BT /F2 12 Tf ${(T.code_text.right * PT - codeWidthPt).toFixed(3)} ${Y(T.code_text.baseline)} Td (${sheetCode}) Tj ET`);
   ops.push(`BT /F1 6 Tf ${X(T.template_id.x)} ${Y(T.template_id.baseline)} Td (${esc(T.name)}) Tj ET`);
@@ -40,7 +46,7 @@ function buildPdf(T, codes) {
   const objs = [];
   const add = (s) => { objs.push(s); return objs.length; };
   const catalog = add(null), pages = add(null);
-  const f1 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  const f1 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
   const f2 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>');
   const kids = [];
   for (const code of codes) {
