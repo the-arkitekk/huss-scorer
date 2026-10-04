@@ -30,6 +30,8 @@ const FILES = [
   'detect/qr.js',
   'detect/suggest.js',
   'detect/line.js',
+  'detect/glyphs.js',
+  'detect/ocr.js',
   'detect/pipeline.js'
 ];
 

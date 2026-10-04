@@ -125,6 +125,7 @@
     var floor = D.floorline.refine(dark, R, T, cfg);
     t.floor = now();
     var qr = al.qr || D.qr.read(D.qr.rectSampler(dark, R), T, cfg);
+    var ocr = qr.found ? null : D.ocr.read(D.qr.rectSampler(dark, R), T, cfg);
     if (qr.found) qr.template_mismatch = qr.template !== T.id;
     t.qr = now();
     var markX = HUSS.sheet.template.markX(T);
@@ -183,6 +184,7 @@
       },
       floor: floor,
       qr: qr,
+      ocr: ocr,
       red: red,
       redEdges: redEdges,
       wallProfile: wallProfile,
@@ -198,8 +200,9 @@
   }
 
   /**
-   * Fast sheet code reading for the queue (no rectification): corner marks, orientation, QR.
-   * Returns { ok: true, sheet_code, template, template_mismatch } or { ok: false, reason }.
+   * Fast sheet code reading for the queue (no rectification): corner marks, orientation, QR code,
+   * else the printed characters. Returns { ok: true, source: 'qr' | 'ocr', sheet_code, template,
+   * template_mismatch } or { ok: false, reason }.
    */
   function readCode(img, opts) {
     opts = opts || {};
@@ -212,8 +215,11 @@
     var orient = D.corners.chooseOrientation(img, corners.points, T, corners.threshold, cfg);
     if (!orient.ok) return { ok: false, reason: 'orientation' };
     var qr = orient.qr || D.qr.read(D.qr.imageSampler(img, orient.H), T, cfg);
-    if (!qr.found) return { ok: false, reason: 'qr' };
-    return { ok: true, sheet_code: qr.sheet_code, template: qr.template, template_mismatch: qr.template !== T.id };
+    if (qr.found) return { ok: true, source: 'qr', sheet_code: qr.sheet_code, template: qr.template, template_mismatch: qr.template !== T.id };
+    // No QR code (blotted, torn): the printed characters next to it.
+    var ocr = D.ocr.read(D.qr.imageSampler(img, orient.H), T, cfg);
+    if (ocr.found) return { ok: true, source: 'ocr', sheet_code: ocr.sheet_code, template: T.id, template_mismatch: false };
+    return { ok: false, reason: 'qr' };
   }
 
   function floorY(a, x) {

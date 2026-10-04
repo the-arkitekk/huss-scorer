@@ -87,6 +87,7 @@ body { background: var(--bg); display: flex; flex-direction: column; overflow: h
 .field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .rater-help { margin: -2px 0 8px; }
 .field input.invalid { border-color: var(--warn); background: var(--warn-bg); outline: 2px solid var(--warn); outline-offset: -1px; }
+.check.invalid { background: var(--warn-bg); outline: 2px solid var(--warn); outline-offset: 1px; border-radius: var(--radius); color: var(--warn); }
 .field input::placeholder { text-transform: none; color: #9aa1ad; }
 .small { font-size: 12px; margin: 4px 0 0; line-height: 1.4; }
 .muted { color: var(--ink-2); }

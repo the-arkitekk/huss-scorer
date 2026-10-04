@@ -100,7 +100,7 @@
           var r = HUSS.detect.pipeline.readCode(img, { template: params.template, params: params });
           return r.ok ? r : null;
         }).catch(function () { return null; }).then(function (r) {
-          results.push({ name: f.name, size: f.size, lastModified: f.lastModified, sheet_code: r ? r.sheet_code : null, template: r ? r.template : null });
+          results.push({ name: f.name, size: f.size, lastModified: f.lastModified, sheet_code: r ? r.sheet_code : null, code_source: r ? r.source : null, template: r ? r.template : null });
           files[S().itemKey(f.name, f.size, f.lastModified)] = f;
           i++;
           setTimeout(step, 0);
@@ -232,7 +232,7 @@
   function itemContext(item) {
     var saved = item.record ? S().stateFromRecord(item.record) : item.draft ? S().stateFromRecord(item.draft) : null;
     var p = S().progress(sess);
-    var title = item.code_source === 'qr'
+    var title = S().isRead(item)
       ? HUSS.t('sheet_title', { code: item.sheet_code, pos: sess.index + 1, total: p.total })
       : HUSS.t('sheet_title_unread', { n: S().unreadNumber(sess, item), pos: sess.index + 1, total: p.total });
     var code = item.sheet_code || (saved && saved.meta.sheet_code) || '';
@@ -241,21 +241,22 @@
       title: title, chip: item.status, sheetCode: code, codeSource: item.code_source, saved: saved,
       lookup: sess.mode === 'open' && tables.key ? HUSS.io.tables.lookup(tables.key, tables.structures, code) : null,
       tablesLoaded: !!tables.key, fileName: item.name, onChange: scheduleAutosave,
-      onAligned: function (code) { return adoptCode(item, code); },
+      onAligned: function (code, source) { return adoptCode(item, code, source); },
       finished: isComplete() && (item.status === 'measured' || item.status === 'excluded')
     };
   }
 
   /**
-   * The QR code was read only after manual alignment (spec 7.5): the scan gets that code,
-   * unless another scan of this session already has it. Returns the changed context fields.
+   * The code was read only after manual alignment (spec 7.5), from the QR code or the printed
+   * characters: the scan gets it, unless another scan of this session already has it.
+   * Returns the changed context fields.
    */
-  function adoptCode(item, code) {
-    if (!code || item.code_source === 'qr') return null;
-    var taken = sess.items.some(function (o) { return o !== item && o.code_source === 'qr' && o.sheet_code === code; });
+  function adoptCode(item, code, source) {
+    if (!code || S().isRead(item)) return null;
+    var taken = sess.items.some(function (o) { return o !== item && S().isRead(o) && o.sheet_code === code; });
     if (taken) return { qrTaken: code };
     item.sheet_code = code;
-    item.code_source = 'qr';
+    item.code_source = source || 'qr';
     sess.dirty = true;
     updateSummary();
     var c = itemContext(item);

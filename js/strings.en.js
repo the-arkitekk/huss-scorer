@@ -58,7 +58,7 @@
     manual_confirm_first: 'Align the sheet first (or press D to score it later).',
     hint_manual_corners: 'Click the corner squares ({n} of 4) · Wheel: zoom · Drag: pan · Backspace: undo',
     hint_manual_floorline: 'Click the floor line ends, triangle end first ({n} of 2) · Wheel: zoom · Drag: pan · Backspace: undo',
-    qr_after_manual: 'QR code read after manual alignment.',
+    qr_after_manual: 'Sheet code read after manual alignment.',
     qr_code_taken: 'The QR code says {code}, but another scan in this session already has that code. Check the printed code.',
     timing: 'Processed in {ms} ms',
 
@@ -144,6 +144,7 @@
     project_rules_mismatch: 'This project file says scoring rules {file}; this tool uses rules {tool}.',
     project_bad_file: 'This is not a valid project file: {list}',
     sheet_code_qr: 'Read from the QR code on the sheet.',
+    sheet_code_ocr: 'Read from the printed characters (the QR code could not be read). Compare it with the picture; correct it if needed.',
     qr_template_mismatch: 'The QR code says template {qr}, but {used} is in use. Load the matching project file.',
 
     // Sheet generator

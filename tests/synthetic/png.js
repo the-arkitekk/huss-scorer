@@ -66,4 +66,38 @@ function encode(img, dpi) {
   ]);
 }
 
-module.exports = { encode, crc32 };
+/** PNG Buffer (8-bit grey, RGB or RGBA, not interlaced) -> { width, height, data: RGBA } */
+function decode(buf) {
+  if (buf.readUInt32BE(0) !== 0x89504E47) throw new Error('not a PNG');
+  let off = 8, width = 0, height = 0, type = 0;
+  const idat = [];
+  while (off < buf.length) {
+    const len = buf.readUInt32BE(off), kind = buf.toString('ascii', off + 4, off + 8), body = buf.subarray(off + 8, off + 8 + len);
+    if (kind === 'IHDR') {
+      width = body.readUInt32BE(0); height = body.readUInt32BE(4); type = body[9];
+      if (body[8] !== 8 || body[12] !== 0) throw new Error('unsupported PNG');
+    } else if (kind === 'IDAT') idat.push(body);
+    off += 12 + len;
+  }
+  const bpp = { 0: 1, 2: 3, 6: 4 }[type];
+  if (!bpp) throw new Error('unsupported PNG colour type ' + type);
+  const raw = zlib.inflateSync(Buffer.concat(idat)), stride = width * bpp;
+  const px = Buffer.alloc(stride * height);
+  const paeth = (a, b, c) => { const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c); return pa <= pb && pa <= pc ? a : pb <= pc ? b : c; };
+  for (let y = 0; y < height; y++) {
+    const ft = raw[y * (stride + 1)], src = y * (stride + 1) + 1, dst = y * stride;
+    for (let i = 0; i < stride; i++) {
+      const a = i >= bpp ? px[dst + i - bpp] : 0, b = y > 0 ? px[dst - stride + i] : 0, c = i >= bpp && y > 0 ? px[dst - stride + i - bpp] : 0;
+      const x = raw[src + i];
+      px[dst + i] = (ft === 0 ? x : ft === 1 ? x + a : ft === 2 ? x + b : ft === 3 ? x + ((a + b) >> 1) : x + paeth(a, b, c)) & 0xFF;
+    }
+  }
+  const data = new Uint8ClampedArray(width * height * 4);
+  for (let k = 0; k < width * height; k++) {
+    for (let ch = 0; ch < 3; ch++) data[k * 4 + ch] = px[k * bpp + (bpp === 1 ? 0 : ch)];
+    data[k * 4 + 3] = bpp === 4 ? px[k * 4 + 3] : 255;
+  }
+  return { width, height, data };
+}
+
+module.exports = { encode, decode, crc32 };

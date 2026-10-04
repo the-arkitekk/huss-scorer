@@ -33,12 +33,17 @@
     };
   }
 
-  /** Adds scans after their codes were read: [{ name, size, lastModified, sheet_code|null, template|null, thumb? }] */
+  /** The sheet code came from the scan itself: its QR code or its printed characters. */
+  function isRead(it) {
+    return it.code_source === 'qr' || it.code_source === 'ocr';
+  }
+
+  /** Adds scans after their codes were read: [{ name, size, lastModified, sheet_code|null, code_source, template|null, thumb? }] */
   function addItems(sess, list) {
     list.forEach(function (f) {
       sess.items.push({
         key: itemKey(f.name, f.size, f.lastModified), name: f.name, size: f.size, lastModified: f.lastModified,
-        sheet_code: f.sheet_code || null, code_source: f.sheet_code ? 'qr' : null, template: f.template || null,
+        sheet_code: f.sheet_code || null, code_source: f.sheet_code ? (f.code_source || 'qr') : null, template: f.template || null,
         thumb: f.thumb || null, status: null, record: null, seconds: 0
       });
     });
@@ -54,7 +59,7 @@
   function duplicates(sess) {
     var groups = {}, out = [];
     sess.items.forEach(function (it) {
-      if (!it.sheet_code || it.code_source !== 'qr') return;
+      if (!it.sheet_code || !isRead(it)) return;
       (groups[it.sheet_code] = groups[it.sheet_code] || []).push(it);
     });
     Object.keys(groups).sort().forEach(function (c) { if (groups[c].length > 1) out.push({ sheet_code: c, items: groups[c] }); });
@@ -64,7 +69,7 @@
   /** Keeps one scan of a duplicated code; the others are set aside (reported, not scored). */
   function keepDuplicate(sess, code, keepKey) {
     sess.items = sess.items.filter(function (it) {
-      if (it.sheet_code === code && it.code_source === 'qr' && it.key !== keepKey) {
+      if (it.sheet_code === code && isRead(it) && it.key !== keepKey) {
         sess.setAside.push({ name: it.name, sheet_code: code });
         return false;
       }
@@ -76,8 +81,8 @@
   /** Queue order: readable codes ascending, then unreadable scans by file name. */
   function buildOrder(sess) {
     var cur = sess.order[sess.index];
-    var coded = sess.items.filter(function (it) { return it.code_source === 'qr'; });
-    var rest = sess.items.filter(function (it) { return it.code_source !== 'qr'; });
+    var coded = sess.items.filter(function (it) { return isRead(it); });
+    var rest = sess.items.filter(function (it) { return !isRead(it); });
     coded.sort(function (a, b) { return a.sheet_code < b.sheet_code ? -1 : a.sheet_code > b.sheet_code ? 1 : 0; });
     rest.sort(function (a, b) { return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; });
     sess.order = coded.concat(rest).map(function (it) { return it.key; });
@@ -94,7 +99,7 @@
     var n = 0;
     for (var i = 0; i < sess.order.length; i++) {
       var it = byKey(sess, sess.order[i]);
-      if (it.code_source !== 'qr') n++;
+      if (!isRead(it)) n++;
       if (it === item) return n;
     }
     return 0;
@@ -131,7 +136,7 @@
   function setRecord(sess, item, record) {
     item.record = record;
     item.status = record.status;
-    if (record.sheet_code && item.code_source !== 'qr') { item.sheet_code = record.sheet_code; item.code_source = 'manual'; }
+    if (record.sheet_code && !isRead(item)) { item.sheet_code = record.sheet_code; item.code_source = 'manual'; }
     if (DONE[record.status]) sess.confirmsSinceDownload++;
     sess.dirty = true;
   }
@@ -163,17 +168,17 @@
       var it = null;
       for (var i = 0; i < sess.items.length && !it; i++) {
         var c = sess.items[i];
-        if (c.code_source === 'qr' && c.sheet_code === rec.sheet_code) it = c;
+        if (isRead(c) && c.sheet_code === rec.sheet_code) it = c;
       }
       for (i = 0; i < sess.items.length && !it; i++) {
         c = sess.items[i];
-        if (c.code_source !== 'qr' && rec.file_name && c.name === rec.file_name) it = c;
+        if (!isRead(c) && rec.file_name && c.name === rec.file_name) it = c;
       }
       if (!it) { sess.orphans.push(rec); orphans++; return; }
       it.record = rec;
       it.status = rec.status;
       it.seconds = rec.duration_s || 0;
-      if (it.code_source !== 'qr' && rec.sheet_code) { it.sheet_code = rec.sheet_code; it.code_source = 'manual'; }
+      if (!isRead(it) && rec.sheet_code) { it.sheet_code = rec.sheet_code; it.code_source = 'manual'; }
       matched++;
     });
     buildOrder(sess);
@@ -185,7 +190,7 @@
     (drafts || []).forEach(function (d) {
       for (var i = 0; i < sess.items.length; i++) {
         var it = sess.items[i];
-        var same = it.code_source === 'qr' ? it.sheet_code === d.sheet_code : (d.file_name && it.name === d.file_name);
+        var same = isRead(it) ? it.sheet_code === d.sheet_code : (d.file_name && it.name === d.file_name);
         if (same && !it.record) { it.draft = d; it.seconds = d.duration_s || it.seconds; return; }
       }
     });
@@ -254,7 +259,7 @@
     itemKey: itemKey, create: create, addItems: addItems, byKey: byKey, duplicates: duplicates,
     keepDuplicate: keepDuplicate, buildOrder: buildOrder, current: current, unreadNumber: unreadNumber,
     progress: progress, nextIndex: nextIndex, goTo: goTo, setRecord: setRecord, records: records,
-    columns: columns, markDownloaded: markDownloaded, applyRecords: applyRecords, applyDrafts: applyDrafts, stateFromRecord: stateFromRecord,
+    isRead: isRead, columns: columns, markDownloaded: markDownloaded, applyRecords: applyRecords, applyDrafts: applyDrafts, stateFromRecord: stateFromRecord,
     toSaved: toSaved, savedSummary: savedSummary
   };
   HUSS.io.session = api;

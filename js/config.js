@@ -159,6 +159,24 @@
       UNEVEN_MM: 5                 // flag_ceiling_uneven / flag_wall_uneven above this largest deviation
                                    // (freehand ceilings in the trial scans deviate 2-4 mm; 5 marks a clearly slanted line)
     },
+    // Printed sheet code read from its characters when the QR code cannot be read (js/detect/ocr.js)
+    OCR: {
+      LENGTH: 5,
+      ADVANCE_EM: 0.6,             // Courier: every character is 0.6 em wide
+      TOP_EM: 0.85,                // the characters are looked for from this far above the baseline
+      BOTTOM_EM: 0.3,              // to this far below it (the tail of Q)
+      STEP_MM: 0.0625,             // sampling step (16 per mm)
+      SUB: 3,                      // samples per grid cell side when a character is averaged onto the grid
+      MAX_SHIFT_MM: 0.8,           // the row of characters may sit this far off its printed place
+      MIN_SPECK_MM2: 0.02,         // smaller dark spots are dirt, not ink of a character
+      MIN_CONTRAST: 40,            // darkness above the paper needed to call it printed text
+      ASPECT_WEIGHT: 0.5,          // score penalty per unit of |ln(width/height ratio)| difference
+      TOP_K: 3,                    // characters per position tried with the check character
+      MIN_CHAR_SCORE: 0.5,         // every character of a reading must match at least this well
+      MIN_MARGIN: 0.15,            // and the reading must beat the next valid reading by this much (summed)
+      SOLVE_MIN_SCORE: 0.8,        // one lost character is worked out from the check character only when
+      SOLVE_MIN_GAP: 0.2           // the other four match this well and this far ahead of their next candidate
+    },
     MANUAL: {
       REFINE_WINDOW_MM: 3,         // a click is centred on the corner square within this radius
       CLICK_SLOP_PX: 5             // a press that moves further than this pans instead of placing a point

@@ -128,6 +128,7 @@
     els.inSheet.readOnly = c.codeSource === 'qr';
     // The sheet code must be compared with the printed code (a tick): confirmed records keep it.
     els.chkCode.checked = !!(saved && c.chip && c.chip !== 'deferred');
+    els.chkCode.parentNode.classList.remove('invalid');
     els.chkColor.checked = s.meta.color_noncompliant;
     els.inNote.value = s.meta.note;
     els.chkNmV.checked = s.meta.vertical_not_measurable;
@@ -589,12 +590,14 @@
   function syncMeta() {
     var st = sheetCodeState();
     els.inSheet.classList.toggle('invalid', st === 'bad');
+    var code = HUSS.sheet.code.normalize(els.inSheet.value);
     var fromQr = st === 'ok' && ctx && ctx.codeSource === 'qr';
+    var fromOcr = st === 'ok' && ctx && ctx.codeSource === 'ocr' && code === ctx.sheetCode; // printed characters, untouched
     els.sheetStatus.className = 'small' + (st === 'ok' ? ' ok' : st === 'bad' ? ' bad' : ' muted');
-    els.sheetStatus.textContent = HUSS.t(fromQr ? 'sheet_code_qr' : st === 'ok' ? 'sheet_code_ok' : st === 'bad' ? 'sheet_code_bad' : 'sheet_code_hint');
+    els.sheetStatus.textContent = HUSS.t(fromQr ? 'sheet_code_qr' : fromOcr ? 'sheet_code_ocr' : st === 'ok' ? 'sheet_code_ok' : st === 'bad' ? 'sheet_code_bad' : 'sheet_code_hint');
     if (!s) return;
     s.meta.sheet_code = st === 'ok' ? HUSS.sheet.code.normalize(els.inSheet.value) : '';
-    s.meta.code_source = st === 'ok' ? (fromQr ? 'qr' : 'manual') : null;
+    s.meta.code_source = st === 'ok' ? (fromQr ? 'qr' : fromOcr ? 'ocr' : 'manual') : null;
     s.meta.color_noncompliant = els.chkColor.checked;
     s.meta.note = els.inNote.value;
     s.meta.vertical_not_measurable = els.chkNmV.checked;
@@ -760,9 +763,10 @@
       }
       a.dark = null;
       var c = ctx;
-      // The QR code can be read now: the scan gets its code from it (unless another scan has it).
-      if (a.qr && a.qr.found && c.onAligned) {
-        var r = c.onAligned(a.qr.sheet_code) || {};
+      // The code can be read now (QR code, else printed characters): the scan gets it (unless another scan has it).
+      var read = a.qr && a.qr.found ? { code: a.qr.sheet_code, source: 'qr' } : a.ocr && a.ocr.found ? { code: a.ocr.sheet_code, source: 'ocr' } : null;
+      if (read && c.onAligned) {
+        var r = c.onAligned(read.code, read.source) || {};
         c = Object.assign({}, c);
         ['title', 'sheetCode', 'codeSource', 'lookup', 'qrTaken', 'qrAfterManual'].forEach(function (k) { if (k in r) c[k] = r[k]; });
       }
@@ -843,6 +847,7 @@
         ui.confirmTried = true;
         updatePanel();
         if (miss.indexOf('sheet_code') >= 0) { els.inSheet.classList.add('invalid'); els.inSheet.focus(); }
+        if (miss.indexOf('code_check') >= 0) els.chkCode.parentNode.classList.add('invalid');
         return { missing: miss };
       }
     } else if (!s.meta.sheet_code) {
@@ -969,7 +974,10 @@
       syncMeta();
       if (s) { updatePanel(); if (ctx && ctx.onChange) ctx.onChange(); }
     });
-    els.chkCode.addEventListener('change', function () { if (s) changed(); });
+    els.chkCode.addEventListener('change', function () {
+      if (els.chkCode.checked) els.chkCode.parentNode.classList.remove('invalid');
+      if (s) changed();
+    });
     els.btnConfirm.addEventListener('click', function () { actions.confirm(); });
     els.btnPrev.addEventListener('click', function () { actions.previous(); });
     els.btnLater.addEventListener('click', function () { actions.later(); });
