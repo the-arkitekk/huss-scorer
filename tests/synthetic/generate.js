@@ -126,6 +126,7 @@ function templateGroups(T) {
   for (const [cx, cy] of T.corners) shapes.push(rect(cx - h, cy - h, cx + h, cy + h));
   shapes.push(seg([T.floor.x0, T.floor.y], [T.floor.x1, T.floor.y], T.floor.width));
   shapes.push(poly([T.mark.apex, T.mark.base[1], T.mark.base[0]]));
+  for (const [b, t] of HUSS.sheet.template.groundHatch(T)) shapes.push(seg(b, t, T.ground.stroke_mm));
 
   // Text stand-ins: rows of small blocks with the size of the printed glyphs.
   const text = (x, baseline, height, n, glyphW, gap) => {
@@ -192,21 +193,14 @@ function buildPage(p) {
   const floorY = T.floor.y;
   const groups = templateGroups(T);
 
-  // Pencil section: left wall, ceiling, opposite wall, a door and a window as clutter.
+  // Pencil section: only what the section cuts — ceiling, back wall behind the viewer, opposite wall.
   const pw = PENCIL_STROKE_MM, left = 14;
   groups.push({
     color: grey(p.pencil),
     shapes: [
       seg([left, p.ceilingY], [p.wallX + 0.6, p.ceilingY], pw),
       seg([left, p.ceilingY], [left, floorY], pw),
-      seg([p.wallX, p.ceilingY], [p.wallX, floorY], pw),
-      seg([92, floorY], [92, floorY - 26], pw),
-      seg([92, floorY - 26], [103, floorY - 26], pw),
-      seg([103, floorY - 26], [103, floorY], pw),
-      seg([125, p.ceilingY + 18], [140, p.ceilingY + 18], pw),
-      seg([125, p.ceilingY + 30], [140, p.ceilingY + 30], pw),
-      seg([125, p.ceilingY + 18], [125, p.ceilingY + 30], pw),
-      seg([140, p.ceilingY + 18], [140, p.ceilingY + 30], pw)
+      seg([p.wallX, p.ceilingY], [p.wallX, floorY], pw)
     ]
   });
 

@@ -50,8 +50,8 @@
   function refine(dark, R, template, config) {
     var cfg = config.FLOOR;
     var y0 = template.floor.y, W = dark.width, H = dark.height, d = dark.data;
-    var top = Math.max(0, Math.floor((y0 - cfg.HALF_WINDOW_MM) * R));
-    var bot = Math.min(H - 1, Math.ceil((y0 + cfg.HALF_WINDOW_MM) * R));
+    var top = Math.max(0, Math.floor((y0 - cfg.WINDOW_ABOVE_MM) * R));
+    var bot = Math.min(H - 1, Math.ceil((y0 + cfg.WINDOW_BELOW_MM) * R));
     var vals = new Array(bot - top + 1);
     var pts = [], samples = 0;
     for (var x = template.floor.x0 + cfg.END_MARGIN_MM; x <= template.floor.x1 - cfg.END_MARGIN_MM; x += cfg.STEP_MM) {

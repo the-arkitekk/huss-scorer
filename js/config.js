@@ -60,7 +60,8 @@
     // 7.4 Floor line refinement
     FLOOR: {
       STEP_MM: 1,
-      HALF_WINDOW_MM: 1.5,
+      WINDOW_ABOVE_MM: 1.5,
+      WINDOW_BELOW_MM: 0.6,        // ground hatching starts ~0.9 mm below the line centre
       END_MARGIN_MM: 2,
       MIN_PEAK_CONTRAST: 30,       // grey levels above the window baseline
       MIN_INLIER_FRACTION: 0.5,

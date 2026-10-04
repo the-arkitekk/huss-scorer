@@ -23,6 +23,8 @@ function pageContent(T, sheetCode) {
   ops.push(`${X(T.floor.x0)} ${Y(T.floor.y)} m ${X(T.floor.x1)} ${Y(T.floor.y)} l S`);
   const [a, b, c] = [T.mark.apex, T.mark.base[0], T.mark.base[1]];
   ops.push(`${X(a[0])} ${Y(a[1])} m ${X(b[0])} ${Y(b[1])} l ${X(c[0])} ${Y(c[1])} l h f`);
+  ops.push(`${(T.ground.stroke_mm * PT).toFixed(3)} w 1 J`);
+  for (const [p, q] of HUSS.sheet.template.groundHatch(T)) ops.push(`${X(p[0])} ${Y(p[1])} m ${X(q[0])} ${Y(q[1])} l S`);
   for (const s of qrStandIn(T)) ops.push(rectOp(s.x0, s.y0, s.x1, s.y1));
 
   const esc = (s) => s.replace(/[\\()]/g, (m) => '\\' + m);
