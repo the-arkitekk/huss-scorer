@@ -574,5 +574,197 @@
         ]
       ]
     }
+  },
+  "S9": {
+    "description": "Double-line opposite wall (3 mm)",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "JCLXJ",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "S10": {
+    "description": "No ceiling above the figure",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "XEY62",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "S11": {
+    "description": "JPEG quality 60 and noise",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "QNJAL",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "S14": {
+    "description": "One corner mark missing",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "VXABL",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
   }
 }

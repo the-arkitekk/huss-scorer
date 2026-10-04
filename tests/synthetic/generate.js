@@ -31,7 +31,12 @@ const BASE = {
   figure: { dx: 0, height: 20, lift: 0, color: 'red' },
   ceilingRel: 60,           // ceiling line, mm above the floor line
   wallRel: 120,             // opposite wall, mm right of the start mark
-  tieDecoy: false           // draw a mirrored floor line and start mark (orientation tie, QR decides)
+  tieDecoy: false,          // draw a mirrored floor line and start mark (orientation tie, QR decides)
+  wallDouble: 0,            // > 0: a second wall line this far right (inner face is the wall)
+  ceilingFromX: null,       // ceiling line starts here (S10: nothing above the figure)
+  missingCorner: -1,        // index of a corner mark left out (0 TL, 1 TR, 2 BR, 3 BL)
+  jpegQuality: 0,           // > 0: JPEG degradation of this quality
+  noise: 0                  // Gaussian noise sigma (grey levels), before JPEG
 };
 
 const SCENES = {
@@ -46,7 +51,11 @@ const SCENES = {
   S12: { description: '600 dpi', dpi: 600 },
   S13: { description: 'Figure 6 mm tall', figure: { height: 6 } },
   S15: { description: 'A3L template', template: 'A3L' },
-  T1: { description: 'Orientation tie: mirrored floor line and start mark drawn by hand; the QR decides', tieDecoy: true, quarterTurns: 2 }
+  T1: { description: 'Orientation tie: mirrored floor line and start mark drawn by hand; the QR decides', tieDecoy: true, quarterTurns: 2 },
+  S9: { description: 'Double-line opposite wall (3 mm)', wallDouble: 3 },
+  S10: { description: 'No ceiling above the figure', ceilingFromX: 60 },
+  S11: { description: 'JPEG quality 60 and noise', jpegQuality: 60, noise: 4 },
+  S14: { description: 'One corner mark missing', missingCorner: 2 }
 };
 
 /** Deterministic, valid sheet code for a scene. */
@@ -135,11 +144,15 @@ function mulberry32(seed) {
  * Printed template, drawn from the same items as the PDF and the print view
  * (HUSS.sheet.template.items). Text becomes one block per glyph (glyph width, cap height).
  */
-function templateGroups(T, code) {
+function templateGroups(T, code, missingCorner) {
   const shapes = [], PT = 72 / 25.4, label = HUSS.config.DEFAULTS.sheet_label;
+  const skip = missingCorner >= 0 ? T.corners[missingCorner] : null;
   const glyphW = (ch, it) => HUSS.sheet.pdf.widthPt(ch, it.font, it.size_pt) / PT;
   for (const it of HUSS.sheet.template.items(T, code, label)) {
-    if (it.k === 'rect') shapes.push(rect(it.x, it.y, it.x + it.w, it.y + it.h));
+    if (it.k === 'rect') {
+      if (skip && Math.abs(it.x + it.w / 2 - skip[0]) < 1e-6 && Math.abs(it.y + it.h / 2 - skip[1]) < 1e-6) continue;
+      shapes.push(rect(it.x, it.y, it.x + it.w, it.y + it.h));
+    }
     else if (it.k === 'rects') for (const r of it.rects) shapes.push(rect(r.x, r.y, r.x + r.w, r.y + r.h));
     else if (it.k === 'line') shapes.push(seg([it.x1, it.y1], [it.x2, it.y2], it.w));
     else if (it.k === 'poly') shapes.push(poly(it.pts));
@@ -184,7 +197,7 @@ function figureShapes(cx, footBottom, height) {
 function buildPage(p) {
   const T = HUSS.sheet.template.get(p.template);
   const floorY = T.floor.y;
-  const groups = templateGroups(T, p.code);
+  const groups = templateGroups(T, p.code, p.missingCorner);
   p = Object.assign({}, p, { ceilingY: floorY - p.ceilingRel, wallX: HUSS.sheet.template.markX(T) + p.wallRel });
 
   // Pencil section: only what the section cuts — ceiling, back wall behind the viewer, opposite wall.
@@ -192,10 +205,10 @@ function buildPage(p) {
   groups.push({
     color: grey(p.pencil),
     shapes: [
-      seg([left, p.ceilingY], [p.wallX + 0.6, p.ceilingY], pw),
+      seg([p.ceilingFromX != null ? p.ceilingFromX : left, p.ceilingY], [p.wallX + p.wallDouble + 0.6, p.ceilingY], pw),
       seg([left, p.ceilingY], [left, floorY], pw),
       seg([p.wallX, p.ceilingY], [p.wallX, floorY], pw)
-    ]
+    ].concat(p.wallDouble > 0 ? [seg([p.wallX + p.wallDouble, p.ceilingY], [p.wallX + p.wallDouble, floorY], pw)] : [])
   });
   if (p.tieDecoy) {
     // What the floor line and start mark look like when the page is turned 180 degrees.
@@ -316,6 +329,8 @@ function render(p, page) {
   }
 
   let img = { width: W, height: H, data };
+  if (p.noise > 0) require('./jpeg.js').addNoise(img, p.noise, 4242);
+  if (p.jpegQuality > 0) img = require('./jpeg.js').degrade(img, p.jpegQuality);
   let map = fwd;
   for (let q = 0; q < p.quarterTurns; q++) {
     const prev = map, hPrev = img.height;

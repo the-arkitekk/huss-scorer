@@ -203,3 +203,45 @@ test('QR is still read with a stray pencil stroke on it, and when printed 3 mm o
     assert.equal(moved.sheet_code, t.sheet_code);
   }
 });
+
+// ---------------------------------------------------------------- Phase 2c
+
+test('7.9 suggestions: ceiling and wall within 0.3 mm (S1-S5, S9, S11, S12, S15)', () => {
+  for (const id of ['S1', 'S2', 'S3', 'S4', 'S5', 'S9', 'S11', 'S12', 'S15']) {
+    const { a, t } = run(id);
+    assert.equal(a.ok, true, id);
+    near(a.suggestions.ceiling_y, t.ceiling_y, 0.3, `${id} ceiling suggestion`);
+    near(a.suggestions.wall_x, t.wall_x, 0.3, `${id} wall suggestion`);
+  }
+});
+
+test('S9: double-line wall -> the inner face is suggested and snapped to', () => {
+  const r = run('S9');
+  checkCommon('S9', r);
+  near(r.a.suggestions.wall_x, r.t.wall_x, 0.3, 'S9 inner face');
+  const m = measure(r.a, r.t);
+  checkSnapAndEstimates('S9', r.t, m);
+});
+
+test('S10: no ceiling above the figure -> no ceiling suggestion; wall still suggested', () => {
+  const r = run('S10');
+  checkCommon('S10', r);
+  assert.equal(r.a.suggestions.ceiling_y, null);
+  near(r.a.suggestions.wall_x, r.t.wall_x, 0.3, 'S10 wall');
+});
+
+test('S11: JPEG quality 60 and noise -> alignment, QR, figure, snap and estimates hold', () => {
+  const r = run('S11');
+  checkCommon('S11', r);
+  checkRedFigure('S11', r.a, r.t);
+  const m = measure(r.a, r.t);
+  checkSnapAndEstimates('S11', r.t, m);
+});
+
+test('S14: a corner mark is missing -> automatic alignment asks for manual alignment', () => {
+  const g = generate('S14');
+  const a = P.analyze(g.img, { template: g.template });
+  assert.equal(a.ok, false);
+  assert.equal(a.error, 'corners_not_found');
+  assert.equal(P.readCode(g.img, { template: g.template }).ok, false);
+});
