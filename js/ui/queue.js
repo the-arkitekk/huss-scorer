@@ -10,7 +10,7 @@
 
   var S = function () { return HUSS.io.session; };
   var A = function () { return HUSS.io.autosave; };
-  var sess = null, files = {}, tables = { key: null, structures: null }, pendingCsv = null;
+  var sess = null, files = {}, tables = { key: null, structures: null }, pendingCsv = null, subsample = null;
   var openedAt = null, saveTimer = null, running = false, els = {}, setup = null;
 
   function $(id) { return document.getElementById(id); }
@@ -69,6 +69,17 @@
     else msg = HUSS.t('resume_bad', { msg: r.detail || r.error });
     els.resumeStatus.textContent = msg;
     els.resumeStatus.className = 'small ' + cls;
+    els.resumeStatus.hidden = false;
+  }
+
+  /** A subsample list for this session (spec 8.1): only its codes are scored. */
+  function setSubsample(text, fileName) {
+    var r = HUSS.io.subsample.parse(text);
+    subsample = r.codes.length ? r.codes : null;
+    var parts = [HUSS.t('subsample_loaded', { file: fileName, n: r.codes.length })];
+    if (r.invalid.length) parts.push(HUSS.t('subsample_bad', { file: fileName, n: r.invalid.length }));
+    els.resumeStatus.textContent = parts.join(' ');
+    els.resumeStatus.className = 'small ' + (r.codes.length ? 'ok' : 'bad');
     els.resumeStatus.hidden = false;
   }
 
@@ -193,11 +204,17 @@
     });
     readCodes(list, params).then(function (results) {
       S().addItems(sess, results);
+      if (subsample) sess.subsampleResult = S().restrictTo(sess, subsample);
       var dups = S().duplicates(sess);
       return dups.length ? resolveDuplicates(dups) : null;
     }).then(function () {
       var notes = [HUSS.t('files_found', { n: list.length })];
       if (ignored > 0) notes.push(HUSS.t('files_ignored', { n: ignored }));
+      if (sess.subsampleResult) {
+        var sr = sess.subsampleResult;
+        notes.push(HUSS.t('subsample_applied', { found: sr.found, n: subsample.length, left: sr.left }));
+        if (sr.missing.length) notes.push(HUSS.t('subsample_missing', { list: sr.missing.join(', ') }));
+      }
       if (pendingCsv) {
         var res = S().applyRecords(sess, pendingCsv.records);
         notes.push(HUSS.t('resume_applied', { n: res.matched }));
@@ -430,7 +447,7 @@
   }
 
   HUSS.ui.queue = {
-    init: init, begin: begin, setPendingCsv: setPendingCsv, setTable: setTable, setupChanged: setupChanged,
+    init: init, begin: begin, setPendingCsv: setPendingCsv, setSubsample: setSubsample, setTable: setTable, setupChanged: setupChanged,
     confirm: confirm, previous: previous, later: later, downloadCsv: downloadCsv, downloadExcel: downloadExcel,
     get session() { return sess; }, get running() { return running; }
   };

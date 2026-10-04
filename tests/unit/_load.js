@@ -23,6 +23,8 @@ const FILES = [
   'io/autosave.js',
   'io/tables.js',
   'io/merge.js',
+  'io/compare.js',
+  'io/subsample.js',
   'detect/corners.js',
   'detect/floorline.js',
   'detect/redfigure.js',

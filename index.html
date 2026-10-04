@@ -18,6 +18,7 @@
       <button type="button" class="tab" data-screen="sheets" data-s="tab_sheets"></button>
       <button type="button" class="tab" data-screen="tables" data-s="tab_tables"></button>
       <button type="button" class="tab" data-screen="results" data-s="tab_results"></button>
+      <button type="button" class="tab" data-screen="compare" data-s="tab_compare"></button>
       <button type="button" class="tab" data-screen="project" data-s="tab_project"></button>
     </nav>
     <div class="topbar-actions">
@@ -25,6 +26,7 @@
       <input type="file" id="folder-input" webkitdirectory directory multiple hidden>
       <input type="file" id="files-input" accept="image/jpeg,image/png" multiple hidden>
       <input type="file" id="csv-input" accept=".csv,text/csv" hidden>
+      <input type="file" id="subsample-input" accept=".txt,.csv,text/plain,text/csv" hidden>
       <input type="file" id="key-input" accept=".csv,.txt,text/csv,text/plain" hidden>
       <input type="file" id="structures-input" accept=".csv,.txt,text/csv,text/plain" hidden>
     </div>
@@ -93,6 +95,7 @@
             <button type="button" class="btn btn-primary btn-xs" id="btn-folder" data-s="choose_folder"></button>
             <button type="button" class="btn btn-xs" id="btn-files" data-s="choose_files"></button>
             <button type="button" class="btn btn-xs" id="btn-resume-csv" data-s="load_csv"></button>
+            <button type="button" class="btn btn-xs" id="btn-subsample" data-s="load_subsample"></button>
           </div>
           <p class="small" id="resume-status" hidden></p>
           <label class="check" id="autosave-row" hidden><input type="checkbox" id="chk-autosave" checked><span id="autosave-text"></span></label>
@@ -353,6 +356,50 @@
     </div>
   </main>
 
+  <main class="screen-page" id="screen-compare" hidden>
+    <div class="res-wrap">
+      <p class="res-warning" data-s="res_warning"></p>
+      <div class="res-controls">
+        <section class="page-card">
+          <h1 data-s="cmp_title"></h1>
+          <p class="small muted" data-s="cmp_intro"></p>
+          <ul class="res-files" id="cmp-files"></ul>
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary btn-xs" id="cmp-add" data-s="res_add"></button>
+            <button type="button" class="btn btn-xs" id="cmp-clear" data-s="res_clear"></button>
+            <input type="file" id="cmp-input" accept=".csv,text/csv" multiple hidden>
+          </div>
+          <p class="small bad" id="cmp-file-errors" hidden></p>
+          <div class="btn-row">
+            <label class="res-select"><span data-s="cmp_r1"></span><select id="cmp-r1"></select></label>
+            <label class="res-select"><span data-s="cmp_r2"></span><select id="cmp-r2"></select></label>
+          </div>
+          <p class="small muted" data-s="cmp_tables_note"></p>
+        </section>
+        <section class="page-card">
+          <h1 data-s="ss_title"></h1>
+          <p class="small muted" data-s="ss_intro"></p>
+          <div class="btn-row">
+            <label class="res-select"><span data-s="ss_count"></span><input type="number" id="ss-n" min="1" step="1" class="ss-num"></label>
+            <label class="res-select"><span data-s="ss_percent"></span><input type="number" id="ss-pct" min="1" max="100" step="1" class="ss-num"></label>
+          </div>
+          <label class="check"><input type="checkbox" id="ss-by-structure" checked><span data-s="ss_by_structure"></span></label>
+          <div class="btn-row"><button type="button" class="btn btn-xs" id="ss-make" data-s="ss_make"></button></div>
+          <p class="small" id="ss-status"></p>
+        </section>
+      </div>
+      <section class="page-card res-report-card">
+        <div class="res-report-bar">
+          <h1 data-s="tab_compare"></h1>
+          <span class="res-spacer"></span>
+          <button type="button" class="btn btn-xs" id="cmp-dl-wide" data-s="cmp_dl_wide" disabled></button>
+          <button type="button" class="btn btn-xs" id="cmp-dl-html" data-s="cmp_dl_html" disabled></button>
+        </div>
+        <div id="cmp-report" class="res-report"><p class="small muted" data-s="cmp_need_two"></p></div>
+      </section>
+    </div>
+  </main>
+
   <div id="print-root" aria-hidden="true"></div>
   <style id="print-page-style"></style>
 
@@ -389,6 +436,8 @@
   <script src="js/detect/ocr.js"></script>
   <script src="js/detect/pipeline.js"></script>
   <script src="js/io/merge.js"></script>
+  <script src="js/io/compare.js"></script>
+  <script src="js/io/subsample.js"></script>
   <script src="js/report/stats.js"></script>
   <script src="js/report/charts.js"></script>
   <script src="js/report/build.js"></script>
@@ -401,6 +450,7 @@
   <script src="js/ui/projectForm.js"></script>
   <script src="js/ui/tablesForm.js"></script>
   <script src="js/ui/results.js"></script>
+  <script src="js/ui/compare.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -78,6 +78,23 @@
     buildOrder(sess);
   }
 
+  /**
+   * Subsample (spec 8.1): only scans whose code is on the list stay in the queue (scans without a
+   * readable code cannot be matched and leave too). Returns { found, missing: [codes], left }.
+   */
+  function restrictTo(sess, codes) {
+    var want = {}, seen = {};
+    codes.forEach(function (c) { want[c] = true; });
+    var before = sess.items.length;
+    sess.items = sess.items.filter(function (it) {
+      var keep = !!(it.sheet_code && want[it.sheet_code]);
+      if (keep) seen[it.sheet_code] = true;
+      return keep;
+    });
+    buildOrder(sess);
+    return { found: Object.keys(seen).length, missing: codes.filter(function (c) { return !seen[c]; }), left: before - sess.items.length };
+  }
+
   /** Queue order: readable codes ascending, then unreadable scans by file name. */
   function buildOrder(sess) {
     var cur = sess.order[sess.index];
@@ -259,7 +276,7 @@
     itemKey: itemKey, create: create, addItems: addItems, byKey: byKey, duplicates: duplicates,
     keepDuplicate: keepDuplicate, buildOrder: buildOrder, current: current, unreadNumber: unreadNumber,
     progress: progress, nextIndex: nextIndex, goTo: goTo, setRecord: setRecord, records: records,
-    isRead: isRead, columns: columns, markDownloaded: markDownloaded, applyRecords: applyRecords, applyDrafts: applyDrafts, stateFromRecord: stateFromRecord,
+    isRead: isRead, restrictTo: restrictTo, columns: columns, markDownloaded: markDownloaded, applyRecords: applyRecords, applyDrafts: applyDrafts, stateFromRecord: stateFromRecord,
     toSaved: toSaved, savedSummary: savedSummary
   };
   HUSS.io.session = api;

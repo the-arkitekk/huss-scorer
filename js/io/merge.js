@@ -60,6 +60,11 @@
     rows.forEach(function (row) {
       measuredCodes[row.sheet_code] = true;
       var k = key && key.rows ? key.rows[row.sheet_code] : null;
+      if (!(key && key.rows) && row.true_vertical_m !== undefined && (row.structure_code || row.true_vertical_m != null)) {
+        // An already merged CSV and no key table: its participant, structure and true values stay.
+        E_PAIRS.forEach(function (p) { row[p[0]] = row.status === 'measured' ? E(row[p[1]], row[p[2]]) : null; });
+        return;
+      }
       if (k) {
         row.participant_code = k.participant_code;
         row.structure_code = k.structure_code;
@@ -92,8 +97,9 @@
       if (projects.indexOf(r.project_code) < 0) projects.push(r.project_code);
     });
     problems.mixed_projects = projects.length > 1;
-    problems.no_key = !(key && key.rows);
-    problems.no_structures = !(structures && structures.rows);
+    var carried = rows.some(function (r) { return r.structure_code; }); // read from an already merged CSV
+    problems.no_key = !(key && key.rows) && !carried;
+    problems.no_structures = !(structures && structures.rows) && !rows.some(function (r) { return r.true_vertical_m != null || r.true_horizontal_m != null; });
     var columns = csv.columnsFor(exclIds.length ? exclIds : null).concat(csv.MERGED_COLUMNS,
       keyExtra.map(function (x) { return { name: x, type: 'str' }; }));
     return {

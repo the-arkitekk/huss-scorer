@@ -252,7 +252,7 @@
   /**
    * Agreement of two raters (Bland-Altman form, descriptive): mean of the two against their
    * difference, with the mean difference and the 95 % limits of agreement (mean +- 1.96 SD).
-   * o: { title, xLabel, yLabel, points: [{ x: mean, y: diff }], percent, width, height }
+   * o: { title, xLabel, yLabel, points: [{ x: mean, y: diff }], percent (both axes) or xPercent / yPercent, width, height }
    */
   function blandAltman(o) {
     var w = o.width || 560, h = o.height || 340, L = 64, R = w - 96, T = 40, B = h - 52;
@@ -262,14 +262,15 @@
     var loa = s.sd != null ? [s.mean - 1.96 * s.sd, s.mean + 1.96 * s.sd] : [s.mean, s.mean];
     var dy = extent(pts.map(function (p) { return p.y; }), [0, loa[0], loa[1]]), dx = extent(pts.map(function (p) { return p.x; }));
     var py = (dy[1] - dy[0]) * 0.1 || 0.01, px = (dx[1] - dx[0]) * 0.08 || 0.05;
-    var ya = yAxis([dy[0] - py, dy[1] + py], T, B, L, R, o.percent, o.yLabel);
-    var xa = xAxis([dx[0] - px, dx[1] + px], L, R, T, B, o.percent, o.xLabel);
+    var xp = o.xPercent != null ? o.xPercent : o.percent, yp = o.yPercent != null ? o.yPercent : o.percent;
+    var ya = yAxis([dy[0] - py, dy[1] + py], T, B, L, R, yp, o.yLabel);
+    var xa = xAxis([dx[0] - px, dx[1] + px], L, R, T, B, xp, o.xLabel);
     var svg = open(w, h, o.title) + ya.svg + xa.svg + line(L, ya.y(0), R, ya.y(0), AXIS, 1.2);
-    svg += line(L, ya.y(s.mean), R, ya.y(s.mean), PALETTE[3], 1.6) + text(R + 6, ya.y(s.mean) + 3, 'mean ' + fmt(s.mean, o.percent, 1), { fill: PALETTE[3] });
+    svg += line(L, ya.y(s.mean), R, ya.y(s.mean), PALETTE[3], 1.6) + text(R + 6, ya.y(s.mean) + 3, 'mean ' + fmt(s.mean, yp, 1), { fill: PALETTE[3] });
     if (s.sd != null) {
       [0, 1].forEach(function (k) {
         svg += line(L, ya.y(loa[k]), R, ya.y(loa[k]), PALETTE[0], 1.2, '5 4') +
-          text(R + 6, ya.y(loa[k]) + 3, (k ? '+' : '−') + '1.96 SD ' + fmt(loa[k], o.percent, 1), { fill: PALETTE[0] });
+          text(R + 6, ya.y(loa[k]) + 3, (k ? '+' : '−') + '1.96 SD ' + fmt(loa[k], yp, 1), { fill: PALETTE[0] });
       });
     }
     pts.forEach(function (p) {

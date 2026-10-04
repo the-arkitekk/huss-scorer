@@ -6,7 +6,7 @@
   var HUSS = root.HUSS = root.HUSS || {};
 
   var state = { project: null, screen: 'score' };
-  var SCREENS = { score: 'screen-score', sheets: 'screen-sheets', tables: 'screen-tables', results: 'screen-results', project: 'screen-project' };
+  var SCREENS = { score: 'screen-score', sheets: 'screen-sheets', tables: 'screen-tables', results: 'screen-results', compare: 'screen-compare', project: 'screen-project' };
 
   function applyStrings(scope) {
     Array.prototype.forEach.call(scope.querySelectorAll('[data-s]'), function (el) {
@@ -39,6 +39,7 @@
     if (name === 'sheets') HUSS.ui.sheetgen.onShow();
     if (name === 'tables') HUSS.ui.tablesForm.onShow();
     if (name === 'results') HUSS.ui.results.onShow();
+    if (name === 'compare') HUSS.ui.compare.onShow();
     if (name === 'score') HUSS.ui.scorer.onShow();
   }
 
@@ -58,6 +59,7 @@
     HUSS.ui.projectForm.init();
     HUSS.ui.tablesForm.init();
     HUSS.ui.results.init();
+    HUSS.ui.compare.init();
     Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
       b.addEventListener('click', function () { show(b.getAttribute('data-screen')); });
     });

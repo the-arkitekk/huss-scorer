@@ -239,5 +239,5 @@
     });
   }
 
-  HUSS.ui.results = { init: init, onShow: onShow, get merged() { return merged; }, get files() { return files; } };
+  HUSS.ui.results = { init: init, onShow: onShow, screenTables: screenTables, currentTables: currentTables, get merged() { return merged; }, get files() { return files; } };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

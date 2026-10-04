@@ -179,6 +179,8 @@
     '.rp-table{border-collapse:collapse;font-size:12px;width:100%}.rp-table th,.rp-table td{border-bottom:1px solid #e9ecef;padding:4px 8px;text-align:left}',
     '.rp-table.num td:not(:first-child),.rp-table.num th:not(:first-child){text-align:right}.rp-table th{background:#f4f6f8;font-weight:600}',
     '.rp-checks ul{margin:0;padding-left:18px;color:#8a4a12}.rp-ok{color:#2b7a3d}.rp-note{color:#8a4a12}',
+    '.rp-table tr.rp-mismatch td{background:#fff4e5}',
+    '.rp-table.rp-cmp td:nth-child(-n+3),.rp-table.rp-cmp th:nth-child(-n+3){text-align:left}',
     '@media print{.rp-grid{grid-template-columns:1fr 1fr}.rp-fig{page-break-inside:avoid}}'
   ].join('\n');
   var DOC_CSS = 'body{font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1f2430;background:#fff;margin:0;padding:24px;}' +
@@ -202,11 +204,68 @@
       fragment(m) + '<footer class="rp-head"><p>' + esc(T('rp_footer')) + '</p></footer></body></html>';
   }
 
+  /** Compare (spec 8.7): summary cards, agreement charts and the side-by-side table. */
+  function compareFragment(cmp) {
+    var C = HUSS.report.charts, s = cmp.summary;
+    var pm = function (x) { return x.n ? pct(x.mean, true) + ' ± ' + pct(x.sd, false) : '–'; };
+    var agreeTxt = function (a) { return a.n ? a.agree + ' / ' + a.n : '–'; };
+    var head = '<div class="rp-cards">' +
+      card(String(s.matched), T('cp_card_matched'), T('cp_card_only', { a: cmp.r1, na: cmp.onlyA.length, b: cmp.r2, nb: cmp.onlyB.length })) +
+      card(pm(s.d_est_v), T('cp_card_d_v'), T('cp_card_d_sub', { n: s.d_est_v.n })) +
+      card(pm(s.d_est_h), T('cp_card_d_h'), T('cp_card_d_sub', { n: s.d_est_h.n })) +
+      card(agreeTxt(s.excluded), T('cp_card_excl'), T('cp_card_nm', { v: agreeTxt(s.nm_v), h: agreeTxt(s.nm_h) })) +
+      '</div>';
+    var useE = s.d_E_v.n > 0 || s.d_E_h.n > 0;
+    var ba = function (axis) {
+      var pts = cmp.pairs.map(function (p) {
+        if (useE) {
+          var e1 = axis === 'v' ? p.a.E_vertical : p.a.E_horizontal, e2 = axis === 'v' ? p.b.E_vertical : p.b.E_horizontal;
+          return { x: e1 != null && e2 != null ? (e1 + e2) / 2 : null, y: axis === 'v' ? p.d_E_v : p.d_E_h };
+        }
+        var a = axis === 'v' ? p.a.est_vertical_m : p.a.est_horizontal_m, b = axis === 'v' ? p.b.est_vertical_m : p.b.est_horizontal_m;
+        return { x: a != null && b != null ? (a + b) / 2 : null, y: axis === 'v' ? p.d_est_v : p.d_est_h };
+      });
+      return C.blandAltman({
+        title: T(axis === 'v' ? 'cp_ch_ba_v' : 'cp_ch_ba_h'), points: pts, xPercent: useE, yPercent: true,
+        xLabel: T(useE ? (axis === 'v' ? 'cp_ax_mean_e_v' : 'cp_ax_mean_e_h') : (axis === 'v' ? 'cp_ax_mean_est_v' : 'cp_ax_mean_est_h')),
+        yLabel: T(useE ? 'cp_ax_diff_e' : 'cp_ax_reldiff', { r1: cmp.r1, r2: cmp.r2 })
+      });
+    };
+    var charts = '<div class="rp-grid">' + figure('ba-v', ba('v'), T(useE ? 'cp_cap_ba_e' : 'cp_cap_ba_est', { r1: cmp.r1, r2: cmp.r2 })) +
+      figure('ba-h', ba('h'), T(useE ? 'cp_cap_ba_e' : 'cp_cap_ba_est', { r1: cmp.r1, r2: cmp.r2 })) + '</div>';
+    var dec = function (d) { return T('cp_dec_' + d.replace(' ', '_')); };
+    var rows = cmp.pairs.map(function (p) {
+      return [p.sheet_code, p.participant_code || '', p.structure_name || p.structure_code || '',
+        num(p.a.est_vertical_m), num(p.b.est_vertical_m), pct(p.d_est_v, true),
+        num(p.a.est_horizontal_m), num(p.b.est_horizontal_m), pct(p.d_est_h, true),
+        dec(p.decision_a), dec(p.decision_b)];
+    });
+    var tableHtml = '<table class="rp-table num rp-cmp"><thead><tr>' +
+      [T('cp_t_sheet'), T('cp_t_participant'), T('rp_t_structure'), T('cp_t_v', { r: cmp.r1 }), T('cp_t_v', { r: cmp.r2 }), T('cp_t_diff'),
+        T('cp_t_h', { r: cmp.r1 }), T('cp_t_h', { r: cmp.r2 }), T('cp_t_diff'), T('cp_t_dec', { r: cmp.r1 }), T('cp_t_dec', { r: cmp.r2 })]
+        .map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      cmp.pairs.map(function (p, i) {
+        return '<tr' + (p.decision_a !== p.decision_b ? ' class="rp-mismatch"' : '') + '>' + rows[i].map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>';
+      }).join('') + '</tbody></table>';
+    var only = cmp.onlyA.length || cmp.onlyB.length ? '<p class="rp-note">' + esc(T('cp_only_list', { a: cmp.r1, la: cmp.onlyA.join(', ') || '–', b: cmp.r2, lb: cmp.onlyB.join(', ') || '–' })) + '</p>' : '';
+    return head + '<section class="rp-section"><h2>' + esc(T('cp_sec_agreement')) + '</h2>' + charts + '<p class="rp-note">' + esc(T('cp_icc_note')) + '</p></section>' +
+      '<section class="rp-section"><h2>' + esc(T('cp_sec_table')) + '</h2>' + only + tableHtml + '</section>';
+  }
+
   function headerHtml(m) {
     return '<header class="rp-head"><h1>' + esc(title(m)) + '</h1><p>' + esc(metaLine(m)) + '</p></header>';
   }
 
-  var api = { model: model, fragment: fragment, headerHtml: headerHtml, documentHtml: documentHtml, CSS: CSS, pct: pct };
+  function compareDocumentHtml(cmp, projects) {
+    var t = T('cp_doc_title', { r1: cmp.r1, r2: cmp.r2 });
+    var meta = T('rp_meta', { projects: (projects || []).join(', ') || '–', rater: cmp.r1 + ', ' + cmp.r2, method: T('rp_method_main'),
+      date: HUSS.measure.record.isoLocal(new Date()), tool: HUSS.config.TOOL_VERSION, rules: HUSS.config.RULES_VERSION });
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<title>' + esc(t) + '</title><style>' + DOC_CSS + '</style></head><body><header class="rp-head"><h1>' + esc(t) + '</h1><p>' + esc(meta) + '</p></header>' +
+      compareFragment(cmp) + '<footer class="rp-head"><p>' + esc(T('cp_icc_note')) + '</p></footer></body></html>';
+  }
+
+  var api = { model: model, fragment: fragment, compareFragment: compareFragment, compareDocumentHtml: compareDocumentHtml, headerHtml: headerHtml, documentHtml: documentHtml, CSS: CSS, pct: pct };
   HUSS.report.build = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

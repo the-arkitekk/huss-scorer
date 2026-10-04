@@ -266,3 +266,4 @@ table.grid td.ok-mark { color: var(--ok); font-size: 12px; }
 @media (max-width: 1000px) { .res-controls { grid-template-columns: 1fr; } }
 .res-report .rp-section h2 { text-transform: none; letter-spacing: 0; font-size: 16px; color: var(--ink); margin: 0 0 10px; }
 .res-report .rp-section h3 { font-size: 13px; }
+.ss-num { width: 72px; font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: var(--radius); }

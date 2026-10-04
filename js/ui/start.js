@@ -42,11 +42,16 @@
 
   function init() {
     var folderInput = $('folder-input'), filesInput = $('files-input'), csvInput = $('csv-input');
-    var keyInput = $('key-input'), structuresInput = $('structures-input');
+    var keyInput = $('key-input'), structuresInput = $('structures-input'), subsampleInput = $('subsample-input');
     var Q = HUSS.ui.queue;
     [$('btn-open'), $('btn-choose'), $('btn-folder')].forEach(function (b) { b.addEventListener('click', function () { pick(folderInput); }); });
     [$('btn-choose-files'), $('btn-files')].forEach(function (b) { b.addEventListener('click', function () { pick(filesInput); }); });
     $('btn-resume-csv').addEventListener('click', function () { pick(csvInput); });
+    $('btn-subsample').addEventListener('click', function () { pick(subsampleInput); });
+    subsampleInput.addEventListener('change', function () {
+      var f = subsampleInput.files[0];
+      if (f) HUSS.io.files.readText(f).then(function (t) { Q.setSubsample(t, f.name); });
+    });
     $('btn-key').addEventListener('click', function () { pick(keyInput); });
     $('btn-structures').addEventListener('click', function () { pick(structuresInput); });
 

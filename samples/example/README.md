@@ -8,5 +8,7 @@ Made with `node tests/tools/make-example.js` from the 19 trial scans in `samples
 | `HUSS-TRIALS_key.csv`, `HUSS-TRIALS_structures.csv` | Key table (participant codes P01–P19 are placeholders) and structures table. |
 | `HUSS-TRIALS_merged.csv` | The Merge output: the measurement CSV with participant, structure, true dimensions and E columns. |
 | `HUSS-TRIALS_report.html` | The Report as a self-contained HTML file. Open it in any browser. |
+| `HUSS-TRIALS_subsample.txt`, `HUSS-TRIALS_DEMO2_blind.csv` | A subsample of 8 sheets and a **simulated** second rater on it: the same suggestions with the head, ceiling and wall moved by small random amounts. For trying Compare only. |
+| `HUSS-TRIALS_compare_DEMO_DEMO2.csv`, `.html` | The Compare output (wide CSV for `r/icc_kappa.R`) and the comparison as HTML. |
 
-To try the Results screen: Results → Add CSV files… → `HUSS-TRIALS_DEMO_blind.csv`, then Load key CSV… and Load structures CSV….
+To try the Results screen: Results → Add CSV files… → `HUSS-TRIALS_DEMO_blind.csv`, then Load key CSV… and Load structures CSV…. To try Compare: Compare → Add CSV files… → both DEMO files.

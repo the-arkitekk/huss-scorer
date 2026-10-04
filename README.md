@@ -6,7 +6,7 @@ Status: **v0.1.0, rules 1.3** — Phase 1 (alignment, red-figure suggestion, han
 
 ## Use
 
-The top bar has five screens: **Score**, **Sheets**, **Tables**, **Results** and **New project**.
+The top bar has six screens: **Score**, **Sheets**, **Tables**, **Results**, **Compare** and **New project**.
 
 **New project** (once, by the project owner): fill in the form and download `<project_code>.huss.json`; send it to the raters. It holds no personal data.
 
@@ -23,6 +23,10 @@ The top bar has five screens: **Score**, **Sheets**, **Tables**, **Results** and
 - exports: each chart as SVG or PNG, **Print / save as PDF**, and **Download report (HTML)**, one self-contained file that opens offline.
 
 The charts are drawn by the tool itself (`js/report/charts.js`), no chart library. Only descriptive statistics are computed; ICC and kappa stay in R. Example data from the trial scans, with an example report: `samples/example/`.
+
+**Compare** (spec 8.7, read only): add the CSVs of two raters (or one merged CSV holding both) and choose the raters. Summary cards (drawings scored by both, mean ± SD of the relative differences of the estimates, agreement of the exclusion and "not measurable" decisions), two agreement charts in Bland-Altman form (mean against difference with the 95 % limits of agreement, descriptive), the drawings side by side with differing decisions marked, and **Download comparison CSV** (wide format, `_r1` / `_r2`) for `r/icc_kappa.R`, which computes ICC(2,1) and Cohen's kappa in R (`Rscript r/icc_kappa.R file.csv`; needs the `irr` package).
+
+**Subsample lists** (spec 8.1): on the Compare screen, **Make and download list** draws a random set of sheet codes from rater 1's sheets (a number or a percent, optionally the same share from every structure). The second rater loads it with **Subsample list…** on the Score screen before choosing the folder; only those sheets are queued, and codes not found in the folder are named.
 
 **Score**:
 
