@@ -310,6 +310,7 @@
     v_e_v: 'E vertical',
     v_e_h: 'E horizontal',
     code_check: 'Same as the code printed on the sheet (K)',
+    code_check_help: 'The code was not read from the QR code: compare it with the printed code.',
     need_code_check: 'tick "Same as the code printed on the sheet"',
     code_picture: 'Printed code on this sheet',
     files_found: '{n} scans found.',

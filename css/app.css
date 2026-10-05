@@ -236,6 +236,8 @@ table { border-collapse: collapse; width: 100%; }
 .page-preview svg + svg { margin-top: 14px; }
 
 .code-pic { margin: 4px 0 6px; }
+.code-check { border-top: 1px solid var(--line); padding-top: 6px; margin: 4px 0 8px; }
+.code-check p { margin: 0 0 4px; }
 .code-pic canvas { display: block; width: 100%; max-width: 300px; height: auto; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
 .btn-finish { background: var(--ok); border-color: var(--ok); }
 .btn-finish:hover { background: #22653a; }

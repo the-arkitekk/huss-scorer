@@ -125,8 +125,6 @@
         <div id="sheet-body">
         <label class="field"><span data-s="sheet_code"></span><input type="text" id="in-sheet" autocomplete="off" spellcheck="false" maxlength="5" data-s-placeholder="sheet_code_placeholder"></label>
         <p class="small" id="sheet-status" data-s="sheet_code_hint"></p>
-        <div class="code-pic"><canvas id="code-pic" data-s-title="code_picture"></canvas></div>
-        <label class="check"><input type="checkbox" id="chk-code"><span data-s="code_check"></span></label>
         <p class="small" id="open-info" hidden></p>
         <label class="field field-inline" id="open-structure-row" hidden><span data-s="open_structure_pick"></span><select id="open-structure"></select></label>
         <p class="small" id="image-info"></p>
@@ -187,6 +185,11 @@
         <div class="btn-row nav-row">
           <button type="button" class="btn" id="btn-prev" data-s="previous"></button>
           <button type="button" class="btn" id="btn-later" data-s="review_later"></button>
+        </div>
+        <div class="code-check" id="code-check" hidden>
+          <p class="small muted" data-s="code_check_help"></p>
+          <div class="code-pic"><canvas id="code-pic" data-s-title="code_picture"></canvas></div>
+          <label class="check"><input type="checkbox" id="chk-code"><span data-s="code_check"></span></label>
         </div>
         <button type="button" class="btn btn-primary btn-block" id="btn-confirm" data-s="confirm_next"></button>
         <p class="small" id="confirm-status"></p>

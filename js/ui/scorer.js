@@ -84,6 +84,7 @@
     ctx = c;
     els.cardSheet.hidden = false;
     els.cardActions.hidden = false;
+    els.codeCheck.hidden = true;
     els.sheetTitle.textContent = c.title;
   }
 
@@ -525,7 +526,7 @@
       case 'c': case 'C': toggle(els.chkContrast); break;
       case 'r': case 'R': toggle(els.chkMask); break;
       case 'h': case 'H': toggle(els.chkGuides); break;
-      case 'k': case 'K': toggle(els.chkCode); break;
+      case 'k': case 'K': if (codeCheckNeeded()) toggle(els.chkCode); break;
       default: handled = false;
     }
     if (handled) e.preventDefault();
@@ -642,6 +643,15 @@
     return HUSS.sheet.code.isValid(v) ? 'ok' : 'bad';
   }
 
+  /**
+   * A code read from the QR code needs no comparison (error correction and check character);
+   * one read from the printed characters or typed in is compared with the printed code, right
+   * above the confirm button.
+   */
+  function codeCheckNeeded() {
+    return !(ctx && ctx.codeSource === 'qr' && sheetCodeState() === 'ok');
+  }
+
   function syncMeta() {
     var st = sheetCodeState();
     els.inSheet.classList.toggle('invalid', st === 'bad');
@@ -650,6 +660,7 @@
     var fromOcr = st === 'ok' && ctx && ctx.codeSource === 'ocr' && code === ctx.sheetCode; // printed characters, untouched
     els.sheetStatus.className = 'small' + (st === 'ok' ? ' ok' : st === 'bad' ? ' bad' : ' muted');
     els.sheetStatus.textContent = HUSS.t(fromQr ? 'sheet_code_qr' : fromOcr ? 'sheet_code_ocr' : st === 'ok' ? 'sheet_code_ok' : st === 'bad' ? 'sheet_code_bad' : 'sheet_code_hint');
+    els.codeCheck.hidden = !s || !codeCheckNeeded();
     if (!s) return;
     s.meta.sheet_code = st === 'ok' ? HUSS.sheet.code.normalize(els.inSheet.value) : '';
     s.meta.code_source = st === 'ok' ? (fromQr ? 'qr' : fromOcr ? 'ocr' : 'manual') : null;
@@ -662,7 +673,7 @@
   function missingList() {
     var miss = HUSS.measure.record.missingForConfirm(s);
     if (sheetCodeState() === 'bad' && miss.indexOf('sheet_code') < 0) miss.push('sheet_code');
-    if (!els.chkCode.checked) miss.push('code_check');
+    if (codeCheckNeeded() && !els.chkCode.checked) miss.push('code_check');
     return miss;
   }
 
@@ -737,6 +748,7 @@
    */
   function startManual(img, c, prm, why) {
     s = null; ctx = c; press = null; drag = null;
+    els.codeCheck.hidden = true;
     ui.placing = null; ui.dragging = null;
     els.mmCorners.checked = true;
     man = { img: img, prm: prm, why: why, method: 'corners', clicks: [], error: null, hover: null, busy: false };
@@ -981,7 +993,7 @@
       cardSheet: $('card-sheet'), cardHandles: $('card-handles'), cardValues: $('card-values'), cardFlags: $('card-flags'),
       cardExclusion: $('card-exclusion'), cardView: $('card-view'), cardActions: $('card-actions'),
       handleTable: $('handle-table'), valueTable: $('value-table'), flagList: $('flag-list'),
-      exclList: $('excl-list'), chkCode: $('chk-code'), codePic: $('code-pic'), chkNmV: $('chk-nm-v'), chkNmH: $('chk-nm-h'), inNote: $('in-note'),
+      exclList: $('excl-list'), chkCode: $('chk-code'), codePic: $('code-pic'), codeCheck: $('code-check'), chkNmV: $('chk-nm-v'), chkNmH: $('chk-nm-h'), inNote: $('in-note'),
       chkColor: $('chk-color'), chkContrast: $('chk-contrast'), chkMask: $('chk-mask'), chkGuides: $('chk-guides'), chkSnap: $('chk-snap'),
       btnConfirm: $('btn-confirm'), btnPrev: $('btn-prev'), btnLater: $('btn-later'), confirmStatus: $('confirm-status'),
       btnFit: $('btn-fit'), btnZoomIn: $('btn-zoom-in'), btnZoomOut: $('btn-zoom-out'),
