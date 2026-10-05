@@ -9,7 +9,7 @@
   var HUSS = root.HUSS = root.HUSS || {};
   HUSS.ui = HUSS.ui || {};
 
-  var els = {}, data = { key: [] };
+  var els = {}, data = { key: [] }, pendingNote = '';
 
   function $(id) { return document.getElementById(id); }
 
@@ -85,11 +85,7 @@
       var tr = document.createElement('tr');
       tr.appendChild(cell(input(r.sheet_code, 'upper', function (v) { r.sheet_code = HUSS.sheet.code.normalize(v); changedKey(); })));
       tr.appendChild(cell(input(r.participant_code, 'upper', function (v) { r.participant_code = v.trim().toUpperCase(); changedKey(); })));
-      var st = input(r.structure_code, 'upper', function (v) { r.structure_code = v.trim().toUpperCase(); changedKey(); });
-      st.setAttribute('list', 'tb-structure-codes');
-      st.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && idx === data.key.length - 1) { e.preventDefault(); addKeyRow(); }
-      });
+      var st = structureField(r, idx);
       tr.appendChild(cell(st));
       var prob = document.createElement('td');
       prob.className = 'problem';
@@ -98,6 +94,48 @@
       tb.appendChild(tr);
     });
     renderKeyProblems();
+  }
+
+  /** The structure of a key row: a list of the project's structures, or free text without them. */
+  function structureField(r, idx) {
+    var codes = structureCodes(), f;
+    if (codes.length) {
+      f = document.createElement('select');
+      var opts = [''].concat(codes);
+      if (r.structure_code && codes.indexOf(r.structure_code) < 0) opts.push(r.structure_code); // imported, not in the project
+      opts.forEach(function (c) {
+        var o = document.createElement('option'), st = structures().filter(function (x) { return x.code === c; })[0];
+        o.value = c;
+        o.textContent = c ? c + (st && st.name ? ' — ' + st.name : '') : '–';
+        f.appendChild(o);
+      });
+      f.value = r.structure_code || '';
+      f.addEventListener('change', function () { r.structure_code = f.value; changedKey(); });
+    } else {
+      f = input(r.structure_code, 'upper', function (v) { r.structure_code = v.trim().toUpperCase(); changedKey(); });
+      f.setAttribute('list', 'tb-structure-codes');
+    }
+    f.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && idx === data.key.length - 1) { e.preventDefault(); addKeyRow(); }
+    });
+    return f;
+  }
+
+  /** Rows for sheets whose structure is not known yet (from Results): only the structure is left to choose. */
+  function addSheets(codes) {
+    load();
+    var have = {};
+    data.key.forEach(function (r) { if (r.sheet_code) have[r.sheet_code] = true; });
+    data.key = data.key.filter(isFilled);
+    var added = 0;
+    (codes || []).forEach(function (c) {
+      if (have[c]) return;
+      have[c] = true;
+      data.key.push({ sheet_code: c, participant_code: '', structure_code: '' });
+      added++;
+    });
+    persist();
+    pendingNote = added ? HUSS.t('tb_added', { n: added }) : '';
   }
 
   function changedKey() {
@@ -112,7 +150,7 @@
     Array.prototype.forEach.call(els.keyBody.children, function (tr, idx) {
       var r = data.key[idx];
       var probs = HUSS.io.tables.keyRowProblems(r, data.key, codes);
-      var inputs = tr.querySelectorAll('input');
+      var inputs = tr.querySelectorAll('input, select');
       inputs[0].classList.toggle('invalid', probs.indexOf('bad_sheet_code') >= 0 || probs.indexOf('duplicate') >= 0);
       inputs[2].classList.toggle('invalid', probs.indexOf('unknown_structure') >= 0);
       var td = tr.children[3];
@@ -178,6 +216,7 @@
     if (!data.key.length) data.key.push({ sheet_code: '', participant_code: '', structure_code: structures().length === 1 ? structures()[0].code : '' });
     renderStructures();
     renderKey();
+    if (pendingNote) { els.keyStatus.textContent += ' ' + pendingNote; pendingNote = ''; }
   }
 
   function init() {
@@ -196,5 +235,5 @@
     load();
   }
 
-  HUSS.ui.tablesForm = { init: init, onShow: onShow, importKey: importKey, keyTable: function () { load(); return keyTable(); }, get data() { return data; } };
+  HUSS.ui.tablesForm = { init: init, onShow: onShow, importKey: importKey, addSheets: addSheets, keyTable: function () { load(); return keyTable(); }, get data() { return data; } };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

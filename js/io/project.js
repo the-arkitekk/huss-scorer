@@ -9,7 +9,7 @@
   HUSS.io = HUSS.io || {};
 
   var FORMAT = 'huss-project', FORMAT_VERSION = 2, READABLE_VERSIONS = [1, 2];
-  var MAX_STRUCTURES = 50;
+  var MAX_STRUCTURES = 16;   // one box per structure on the sheet
   var CODE_RE = /^[A-Z0-9-]{1,32}$/;
   var EXCL_RE = /^excl_[a-z0-9_]{1,40}$/;
 
@@ -98,7 +98,8 @@
       });
     }
     var st = p.structures;
-    if (!Array.isArray(st) || st.length > MAX_STRUCTURES) err('structures', 'type');
+    if (!Array.isArray(st)) err('structures', 'type');
+    else if (st.length > MAX_STRUCTURES) err('structures', 'too_many');
     else {
       var codes = {};
       p.structures = st.map(function (s, i) {
@@ -144,6 +145,7 @@
       ref_height_m: p.ref_height_m, min_figure_mm: p.min_figure_mm,
       foot_tolerance_mm: p.foot_tolerance_mm, snap_radius_mm: p.snap_radius_mm,
       suggestions: p.suggestions, exclusion_criteria: p.exclusion_criteria,
+      structures: p.structures || [],
       mode: d.mode, file_project_fallback: d.file_project_fallback
     };
   }

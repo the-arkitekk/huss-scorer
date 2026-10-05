@@ -32,24 +32,27 @@ Eklenecek maddeler:
 
 > QR içeriği `HUSS1/<ŞABLON>/<SAYFAKODU>`; sürüm 1, düzey Q, 15 mm'lik karede 4 modül sessiz bölge. Sayfa kodu QR'ın solunda Courier 12 pt ile basılıdır; QR okunamazsa araç bu karakterleri okur.
 
-**4.x Arka yüz (yeni).** Neden: masa koordinatörünün katılımcı ve yapı kodunu kâğıtla birlikte tutması; ön yüz kör kalır.
+**4.x Yapı kutuları (yeni).** Neden: hangi kâğıdın hangi yapıya ait olduğu sonradan elle eşleştirilmesin. Arka yüze bir şey basılmaz, çünkü taranınca hafifçe belli oluyor (önceki taslaktaki arka yüz seçeneği kaldırıldı).
 
-> İsteğe bağlı arka yüz: katılımcı kodu, yapı kodu, tarih, koordinatör ve not alanları. Çift taraflı basılır (kısa kenardan çevir), taranmaz.
+> Projede iki ya da daha çok yapı varsa (en çok 16) her kâğıdın ön yüzünde, zemin taramasının altında, yapı başına bir kutu (4,5 mm) bulunur; altında yapı kodu yazar, solunda "structure". Tek yapılı projede kutu basılmaz. Masa koordinatörü katılımcının çizdiği yapının kutusunu işaretler (çarpı, tik ya da karalama). Araç kutuları tarama hizalandıktan sonra okur: tek kutu belirgin biçimde işaretliyse yapı odur; hiç işaret yoksa ya da birden çok kutu benzer biçimde işaretliyse yapı boş kalır ve `flag_structure_mark` konur. Blind modda kutular ekranda kapatılır; Open modda okunan yapı gösterilir ve ölçümcü düzeltebilir.
 
 ## 5. Dosyalar ve veri modeli
 
 **5.2 Ölçüm dosyası.** Eklenen ve değişen sütunlar (ayrıntı: `docs/data-dictionary.md`):
 
 > - `code_source`: `qr`, `ocr` (basılı karakterler) ya da `manual`.
+> - `structure_mark` (kutudan okunan ya da Open modda seçilen yapı kodu), `structure_mark_source` (`mark` ya da `rater`).
 > - `align_method`: `auto`, `auto_three_corners`, `manual_corners`, `manual_floorline`.
 > - Önerilerin ilk konumu: `head_suggested_y_mm`, `foot_suggested_y_mm`, `ceiling_suggested_y_mm`, `wall_suggested_x_mm` (tutamaç duyarlığında).
 > - Yedek değerler: `red_bottom_y_mm`, `figure_red_mm`, `est_vertical_red_m`, `est_horizontal_red_m` (kırmızının en alt noktası); `ceiling_at_axis_y_mm`, `wall_at_floor_x_mm`, `est_vertical_at_axis_m`, `est_horizontal_at_floor_m` (kurallar 1.2 noktaları); `ceiling_spread_mm`, `wall_spread_mm`.
-> - Bayraklar: `flag_ceiling_uneven`, `flag_wall_uneven`.
+> - Bayraklar: `flag_ceiling_uneven`, `flag_wall_uneven`, `flag_structure_mark`.
 
 **5.4 Diğer tablolar.** Eklenecekler:
 
 > - Kalibrasyon anahtarı (CSV): `sheet_code, layout, figure_mm, ceiling_mm, distance_mm, template, generated_at`.
-> - Birleştirilmiş CSV'nin ek sütunları: `participant_code, structure_code, structure_name, true_vertical_m, true_horizontal_m, E_vertical, E_horizontal`, yedek E sütunları, `source_file`, anahtarın ek sütunları (`key_*`).
+> - Anahtar tablosunda katılımcı kodu isteğe bağlıdır; bir satırda katılımcı ya da yapıdan en az biri bulunur. Anahtardaki yapı kutudakinin yerine geçer.
+> - Birleştirmede yapı sırası: anahtar tablosu, kâğıttaki kutu, projenin tek yapısı (`structure_source`: `key`, `mark`, `rater`, `project`). Anahtar ile kutu farklıysa veri denetiminde listelenir.
+> - Birleştirilmiş CSV'nin ek sütunları: `participant_code, structure_code, structure_source, structure_name, true_vertical_m, true_horizontal_m, E_vertical, E_horizontal`, yedek E sütunları, `source_file`, anahtarın ek sütunları (`key_*`).
 
 ## 6. Puanlama kuralları (rules_version 1.3)
 
@@ -89,12 +92,12 @@ Neden: Kural 3'te havada ya da zeminin altına taşan figür; kural 4–5'te ser
 
 Neden: gerçek ölçüleri proje başında bir kez girmek; tek yapılı çalışmada anahtar tablosu gerekmesin.
 
-> Biçim sürümü 2. Yeni alan `structures`: `[{ code, name, true_vertical_m, true_horizontal_m }]` (kod büyük harf, rakam, tire; en az bir gerçek ölçü). Projede tek yapı varsa her kâğıt o yapıya aittir; anahtar tablosu yalnızca katılımcı kodları için gerekir. Biçim 1 dosyalar yapısız olarak açılır. Proje dosyası ölçümcülere de gider; Blind mod gerçek ölçüleri ölçüm sırasında hiç göstermez.
+> Biçim sürümü 2. Yeni alan `structures`: `[{ code, name, true_vertical_m, true_horizontal_m }]` (en çok 16; kod büyük harf, rakam, tire; en az bir gerçek ölçü). Projede tek yapı varsa her kâğıt o yapıya aittir; birden çok yapıda yapı kâğıttaki kutudan okunur. Anahtar tablosu yalnızca katılımcı kodları ve düzeltmeler için gerekir. Biçim 1 dosyalar yapısız olarak açılır. Proje dosyası ölçümcülere de gider; Blind mod gerçek ölçüleri ölçüm sırasında hiç göstermez.
 
 ## 8. Ekranlar
 
 > - **Açılış menüsü (8.1 yerine):** New project, Open project file, Continue (bu tarayıcıdaki son proje); bağlantılar: Try without a project, Calibration test, Guide. Proje içinde üst çubukta New project sekmesi yoktur; sol üstteki "HuSS Scorer" menüyü açar (Back to it, Edit project).
-> - **Tables:** yalnızca anahtar tablosu; yapılar projede.
+> - **Tables:** yalnızca anahtar tablosu; yapılar projede. Yapı açılır listeden seçilir. Results, yapısı bilinmeyen kâğıtları tek düğmeyle buraya ekler.
 > - **Calibration test (menüden):** kalibrasyon sayfalarını basma, anahtar ve denetim tek ekranda; yazıcı ve tarayıcı başına bir kez.
 > - **Results:** o oturumda ölçülen çizimler kendiliğinden gelir; birleştirme (8.6) ve rapor: özet kartları; yapı başına hata, tahmin–gerçek, yükseklik hatası–derinlik hatası, dağılımlar; puanlama kalitesi (değiştirilmeden kabul edilen öneriler, bayraklar, kod kaynağı, hizalama, süre); tablolar; ölçümcü ve değer seçimi; SVG, PNG, PDF ve tek dosyalık HTML çıktı.
 > - **Compare (8.7):** ek olarak iki eksen için betimleyici uyum grafiği (ortalamaya karşı fark, %95 uyum sınırları). ICC ve kappa yine R'de.

@@ -128,6 +128,7 @@
         <div class="code-pic"><canvas id="code-pic" data-s-title="code_picture"></canvas></div>
         <label class="check"><input type="checkbox" id="chk-code"><span data-s="code_check"></span></label>
         <p class="small" id="open-info" hidden></p>
+        <label class="field field-inline" id="open-structure-row" hidden><span data-s="open_structure_pick"></span><select id="open-structure"></select></label>
         <p class="small" id="image-info"></p>
         <p class="small muted" id="image-align"></p>
         <p class="small bad" id="image-warn" hidden></p>
@@ -209,12 +210,12 @@
           <span class="small muted" id="sg-exclude-info"></span>
           <input type="file" id="sg-list-input" accept=".csv,.txt,text/csv,text/plain" hidden>
         </div>
-        <label class="check check-top"><input type="checkbox" id="sg-back"><span data-s="sg_back"></span></label>
         <button type="button" class="btn btn-primary" id="sg-generate" data-s="sg_generate"></button>
         <p class="small" id="sg-status"></p>
         <div id="sg-result" hidden>
           <p class="warn-box" data-s="sg_print_warning"></p>
           <p class="small" id="sg-check"></p>
+          <p class="small" id="sg-boxes-note" hidden></p>
           <div class="btn-row">
             <button type="button" class="btn btn-primary" id="sg-print" data-s="sg_print"></button>
             <button type="button" class="btn" id="sg-pdf" data-s="sg_pdf"></button>
@@ -337,7 +338,7 @@
           <h1 data-s="res_tables"></h1>
           <p class="small muted" data-s="res_tables_help"></p>
           <p class="small" id="res-tables-status"></p>
-          <p class="warn-box small" id="res-key-needed" hidden><span id="res-key-needed-text"></span> <button type="button" class="btn btn-xs" id="res-go-tables" data-s="res_go_tables"></button></p>
+          <p class="warn-box small" id="res-key-needed" hidden><span id="res-key-needed-text"></span> <button type="button" class="btn btn-xs" id="res-go-tables" data-s="res_add_to_tables"></button></p>
           <div class="btn-row">
             <button type="button" class="btn btn-xs" id="res-use-screen" data-s="res_forget_files" hidden></button>
             <button type="button" class="btn btn-xs" id="res-load-key" data-s="res_load_key"></button>
@@ -489,6 +490,7 @@
   <script src="js/detect/line.js"></script>
   <script src="js/detect/glyphs.js"></script>
   <script src="js/detect/ocr.js"></script>
+  <script src="js/detect/boxes.js"></script>
   <script src="js/detect/pipeline.js"></script>
   <script src="js/io/merge.js"></script>
   <script src="js/io/compare.js"></script>

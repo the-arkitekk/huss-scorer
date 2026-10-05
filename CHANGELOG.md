@@ -28,6 +28,7 @@ Rules version 1.3.
 - Main menu at start (new project, open project file, continue the last project; try without a project, calibration test, guide); no New project tab inside a project; "HuSS Scorer" opens the menu.
 - Structures with their true dimensions in the project file (format 2); one-structure projects need no key table; the Tables screen holds the key table only.
 - Results and Compare use the drawings scored in this session without a CSV.
+- Structure boxes on the sheet (projects with 2-16 structures): the desk coordinator marks one; the tool reads it, covers it in Blind mode, shows and lets the rater correct it in Open mode; Merge takes the structure from the key table, else the box. New columns `structure_mark`, `structure_mark_source`, `flag_structure_mark`, merged `structure_source`. The back side for the desk coordinator was removed (it shows through in scans). The participant code in the key table is optional.
 - Results with several structures and no key table: a clear notice with a link to the Tables screen; the report shows the estimates in metres instead of empty error charts.
 - Calibration test moved out of the Sheets and Results screens into its own screen.
 

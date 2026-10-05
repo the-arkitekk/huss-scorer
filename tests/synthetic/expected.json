@@ -971,6 +971,330 @@
       ]
     }
   },
+  "B1": {
+    "description": "Structure boxes (3): pencil cross in box 2",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "YG6BE",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "ceiling_at_axis_y": 120,
+      "wall_at_floor_x": 160,
+      "ceiling_spread": 0,
+      "wall_spread": 0,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "est_vertical_at_axis_m": 5.125628140703516,
+      "est_horizontal_at_floor_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "B2": {
+    "description": "Structure boxes (5): light pencil tick in box 4, page turned 180 degrees",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 2,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "4G22Z",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "ceiling_at_axis_y": 120,
+      "wall_at_floor_x": 160,
+      "ceiling_spread": 0,
+      "wall_spread": 0,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "est_vertical_at_axis_m": 5.125628140703516,
+      "est_horizontal_at_floor_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          3461.0236220472443,
+          2433.0236220472443
+        ],
+        [
+          189.37007874015717,
+          2433.0236220472443
+        ],
+        [
+          189.37007874015717,
+          188.9291338582675
+        ],
+        [
+          3461.0236220472443,
+          188.9291338582675
+        ]
+      ]
+    }
+  },
+  "B3": {
+    "description": "Structure boxes (16): box 16 filled in red, JPEG 60 and noise",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "MWJ5B",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "ceiling_at_axis_y": 120,
+      "wall_at_floor_x": 160,
+      "ceiling_spread": 0,
+      "wall_spread": 0,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "est_vertical_at_axis_m": 5.125628140703516,
+      "est_horizontal_at_floor_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "B4": {
+    "description": "Structure boxes (3): none marked",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "QYEBX",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "ceiling_at_axis_y": 120,
+      "wall_at_floor_x": 160,
+      "ceiling_spread": 0,
+      "wall_spread": 0,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "est_vertical_at_axis_m": 5.125628140703516,
+      "est_horizontal_at_floor_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "B5": {
+    "description": "Structure boxes (3): boxes 1 and 3 both crossed",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "3Y4J7",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "ceiling_at_axis_y": 120,
+      "wall_at_floor_x": 160,
+      "ceiling_spread": 0,
+      "wall_spread": 0,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "est_vertical_at_axis_m": 5.125628140703516,
+      "est_horizontal_at_floor_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "B6": {
+    "description": "Structure boxes (3): cross in box 2, a stray stroke into box 3",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "EAGTD",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 160,
+      "ceiling_at_axis_y": 120,
+      "wall_at_floor_x": 160,
+      "ceiling_spread": 0,
+      "wall_spread": 0,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "est_vertical_at_axis_m": 5.125628140703516,
+      "est_horizontal_at_floor_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
   "C1": {
     "description": "Calibration page, layout 1 (spec 10.3)",
     "template": "A4L",

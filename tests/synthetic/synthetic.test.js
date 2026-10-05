@@ -468,3 +468,26 @@ test('calibration sheets in the PDF and the print view: red figure (stroke colou
   assert.ok(/ c S/.test(pdf), 'Bezier circle in the PDF');
   assert.equal((pdf.match(/\/Type \/Page /g) || []).length, 2);
 });
+
+test('B1-B6: structure boxes read (cross, light tick, red fill under JPEG, none, two, stray stroke); measurement unchanged', () => {
+  const want = { B1: ['one', 1, 3], B2: ['one', 3, 5], B3: ['one', 15, 16], B4: ['none', null, 3], B5: ['several', null, 3], B6: ['one', 1, 3] };
+  for (const id of Object.keys(want)) {
+    const r = run(id), a = r.a, [status, index, printed] = want[id];
+    checkCommon(id, r);
+    assert.equal(a.boxes.printed, printed, `${id}: boxes found`);
+    assert.equal(a.boxes.status, status, `${id}: ${JSON.stringify(a.boxes.fills)}`);
+    assert.equal(a.boxes.index, index, id);
+    const codes = r.g.params.structures;
+    const rec = HUSS.measure.record.buildRecord(acceptedState(a, {
+      meta: { project_code: 'VR3005', rater_code: 'AB', sheet_code: r.t.sheet_code, mode: 'blind', exclusions: {}, structure_mark: HUSS.detect.boxes.codeOf(a.boxes, codes), structure_mark_source: 'mark' }
+    }));
+    assert.equal(rec.structure_mark, index == null ? null : codes[index], id);
+    assert.equal(rec.flag_structure_mark, status !== 'one', `${id}: flag`);
+    near(a.suggestions.ceiling_y, r.t.ceiling_y, TOL.snap_mm, `${id} ceiling`);
+    near(a.suggestions.wall_x, r.t.wall_x, TOL.snap_mm, `${id} wall`);
+  }
+  // sheets without boxes: nothing read, no flag
+  const s1 = run('S1').a;
+  assert.equal(s1.boxes.status, 'not_printed');
+  assert.equal(HUSS.measure.flags.toolFlags(s1, { axis_x: s1.suggestions.axis_x, axis_placement: 'auto', foot_y: s1.suggestions.foot_y, figure_mm: 20 }, params, HUSS.config).flag_structure_mark, false);
+});

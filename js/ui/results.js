@@ -55,8 +55,6 @@
     return { name: HUSS.t('res_session_name', { rater: sess.rater_code, n: recs.length }), records: recs, exclusionIds: sess.exclusionIds, live: true };
   }
 
-  function liveOrFiles() { return files.length || liveSource(); }
-
   function sources() {
     var live = liveSource();
     return live ? [live].concat(files) : files.slice();
@@ -117,13 +115,14 @@
     });
     var t = currentTables(), parts = [];
     // Several structures and no key: the report cannot show any error yet; say so where it is seen.
-    var needKey = !t.key && !t.defaultStructure && count(t.structures) > 1 && !!liveOrFiles();
+    var unknown = merged && count(t.structures) > 1 ? merged.problems.no_structure : [];
+    var needKey = unknown.length > 0;
     parts.push(t.structures ? HUSS.t('res_st_from_' + t.from.structures, { n: count(t.structures) }) : HUSS.t('res_st_none'));
     if (t.key) parts.push(HUSS.t('res_key_from_' + t.from.key, { n: count(t.key) }));
     else if (!needKey) parts.push(HUSS.t(t.defaultStructure ? 'res_key_single' : 'res_key_none', { code: t.defaultStructure }));
     els.tablesStatus.textContent = parts.join(' ');
     els.keyNeeded.hidden = !needKey;
-    if (needKey) els.keyNeededText.textContent = HUSS.t('res_key_needed', { n: count(t.structures) });
+    if (needKey) els.keyNeededText.textContent = HUSS.t('res_key_needed', { k: unknown.length, n: count(t.structures), list: unknown.slice(0, 20).join(', ') + (unknown.length > 20 ? ', …' : '') });
     els.useScreen.hidden = !tables.key && !tables.structures;
   }
 
@@ -238,7 +237,10 @@
       rater: $('res-rater'), method: $('res-method'), print: $('res-print'), dlHtml: $('res-dl-html'), report: $('res-report'),
       keyNeeded: $('res-key-needed'), keyNeededText: $('res-key-needed-text')
     };
-    $('res-go-tables').addEventListener('click', function () { HUSS.app.show('tables'); });
+    $('res-go-tables').addEventListener('click', function () {
+      if (merged) HUSS.ui.tablesForm.addSheets(merged.problems.no_structure);
+      HUSS.app.show('tables');
+    });
     var style = document.createElement('style');
     style.id = 'rp-style';
     style.textContent = HUSS.report.build.CSS;

@@ -21,6 +21,9 @@
       qr: { x: 262, y: 185, size: 15 },
       code_text: { right: 257, baseline: 196, size_pt: 12 },
       template_id: { x: 18, baseline: 201, size_pt: 6 },
+      // structure boxes (projects with 2+ structures): below the ground hatch, clear of the red
+      // figure search (to 8 mm below the floor, 35 mm around the mark) and of the sheet code
+      boxes: { x0: 84, y: 189.5, size: 4.5, pitch: 9.5, max: 16, line: 0.25, label_baseline: 197.4, label_size_pt: 5, title: { right: 82, baseline: 193, size_pt: 6 } },
       ground: { gap_mm: 0.7, stroke_mm: 0.25, depth_mm: [2.2, 2.8], lean_deg: [48, 58], spacing_mm: [2.2, 3.6], start_x: 9, end_x: 288, skip: [[37, 43]], seed: 3005 }
     },
     A3L: {
@@ -36,6 +39,7 @@
       qr: { x: 385, y: 262, size: 15 },
       code_text: { right: 380, baseline: 273, size_pt: 12 },
       template_id: { x: 18, baseline: 288, size_pt: 6 },
+      boxes: { x0: 110, y: 265, size: 4.5, pitch: 9.5, max: 16, line: 0.25, label_baseline: 272.9, label_size_pt: 5, title: { right: 108, baseline: 268.5, size_pt: 6 } },
       ground: { gap_mm: 0.7, stroke_mm: 0.25, depth_mm: [2.2, 2.8], lean_deg: [48, 58], spacing_mm: [2.2, 3.6], start_x: 9, end_x: 411, skip: [[54, 60]], seed: 3005 }
     }
   };
@@ -90,14 +94,42 @@
   }
 
   /**
+   * The structure boxes of a sheet for n structures (none for fewer than two): [{ i, x, y, size }],
+   * x, y the outer top left corner in mm. The coordinator marks the box of the structure drawn.
+   */
+  function structureBoxes(t, n) {
+    var g = t.boxes, out = [];
+    if (!g || !(n >= 2)) return out;
+    for (var i = 0; i < Math.min(n, g.max); i++) out.push({ i: i, x: g.x0 + i * g.pitch, y: g.y, size: g.size });
+    return out;
+  }
+
+  /** Box frames (filled strips, crisp in print), the codes below them and a title to the left. */
+  function boxItems(t, codes) {
+    var g = t.boxes, boxes = structureBoxes(t, codes ? codes.length : 0), out = [];
+    if (!boxes.length) return out;
+    var w = g.line, rects = [];
+    boxes.forEach(function (b) {
+      rects.push({ x: b.x, y: b.y, w: b.size, h: w }, { x: b.x, y: b.y + b.size - w, w: b.size, h: w },
+        { x: b.x, y: b.y + w, w: w, h: b.size - 2 * w }, { x: b.x + b.size - w, y: b.y + w, w: w, h: b.size - 2 * w });
+      var label = String(codes[b.i]).slice(0, 8);
+      out.push({ k: 'text', x: b.x + b.size / 2, y: g.label_baseline, size_pt: label.length > 6 ? g.label_size_pt * 0.85 : g.label_size_pt, font: 'sans', anchor: 'middle', text: label });
+    });
+    out.unshift({ k: 'rects', rects: rects });
+    out.push({ k: 'text', x: g.title.right, y: g.title.baseline, size_pt: g.title.size_pt, font: 'sans', anchor: 'end', text: HUSS.t ? HUSS.t('sheet_boxes_title') : 'structure' });
+    return out;
+  }
+
+  /**
    * Everything printed on one sheet, in mm, as drawing items shared by the SVG print view, the
    * PDF and the synthetic test pages:
    *   { k: 'rect', x, y, w, h } | { k: 'rects', rects: [{ x, y, w, h }] } (filled as one shape)
    *   { k: 'line', x1, y1, x2, y2, w, cap, color? } | { k: 'ring', cx, cy, r, w, color? } | { k: 'poly', pts }
    *   { k: 'text', x, y (baseline), size_pt, font: 'sans' | 'mono', anchor: 'start' | 'middle' | 'end', text }
-   * Black only (rule 4.3). QR content: HUSS1/<TEMPLATE>/<SHEETCODE>.
+   * Black only (rule 4.3). QR content: HUSS1/<TEMPLATE>/<SHEETCODE>. structureCodes: the
+   * project's structure codes; two or more print the structure boxes.
    */
-  function items(t, code, label) {
+  function items(t, code, label, structureCodes) {
     var out = [], h = t.corner_size_mm / 2, i;
     for (i = 0; i < t.corners.length; i++) out.push({ k: 'rect', x: t.corners[i][0] - h, y: t.corners[i][1] - h, w: 2 * h, h: 2 * h });
     out.push({ k: 'line', x1: t.floor.x0, y1: t.floor.y, x2: t.floor.x1, y2: t.floor.y, w: t.floor.width, cap: 'butt' });
@@ -110,7 +142,7 @@
     out.push({ k: 'text', x: t.template_id.x, y: t.template_id.baseline, size_pt: t.template_id.size_pt, font: 'sans', anchor: 'start', text: t.name });
     var Q = HUSS.config.QR, qr = HUSS.sheet.qr.encode(HUSS.sheet.qr.sheetText(t.id, code), Q.LEVEL);
     out.push({ k: 'rects', rects: HUSS.sheet.qr.moduleRects(qr, t.qr.x, t.qr.y, t.qr.size, Q.QUIET_MODULES) });
-    return out;
+    return out.concat(boxItems(t, structureCodes));
   }
 
   // Calibration pages (spec 10.3): a red figure, ceiling and walls of known size printed on the
@@ -152,38 +184,8 @@
     return out.concat(figureItems(g.axis_x, g.head_y, t.floor.y + 0.1, CAL.stroke, CAL.red));
   }
 
-  /**
-   * Back side for the desk coordinator (never scanned): a framed box with the sheet code and
-   * lines for participant code, structure code, date, coordinator and notes. With "flip on short
-   * edge" the box sits behind the band below the front's floor line (no pen marks behind the
-   * drawing area) and leaves the area behind the QR code free.
-   */
-  function backItems(t, code) {
-    var W = t.width_mm, Hh = t.height_mm, out = [];
-    var tr = function (k, fallback) { return HUSS.t ? HUSS.t(k) : fallback; };
-    var x0 = Math.round(W * 50 / 297), x1 = W - 10, y0 = t.floor.y + 1, y1 = Hh - 5;
-    var frame = 0.3, line = 0.2;
-    [[x0, y0, x1, y0], [x1, y0, x1, y1], [x1, y1, x0, y1], [x0, y1, x0, y0]].forEach(function (s) {
-      out.push({ k: 'line', x1: s[0], y1: s[1], x2: s[2], y2: s[3], w: frame, cap: 'round' });
-    });
-    var rowH = (y1 - y0) / 3.4, r1 = y0 + rowH * 1.0, r2 = y0 + rowH * 2.1, r3 = y0 + rowH * 3.1, pad = 4;
-    var text = function (x, y, s, size, font, anchor) {
-      out.push({ k: 'text', x: x, y: y, size_pt: size, font: font || 'sans', anchor: anchor || 'start', text: s });
-    };
-    var blank = function (xa, xb, y) { out.push({ k: 'line', x1: xa, y1: y + 0.6, x2: xb, y2: y + 0.6, w: line, cap: 'butt' }); };
-    var span = x1 - x0 - 2 * pad, X = function (f) { return x0 + pad + f * span; };
-    text(X(0), r1, tr('back_title', 'HuSS · desk coordinator record · do not scan'), 9);
-    text(x1 - pad, r1 + 0.6, code, 16, 'mono', 'end');
-    text(X(0), r2, tr('back_participant', 'Participant code'), 8); blank(X(0.15), X(0.47), r2);
-    text(X(0.52), r2, tr('back_structure', 'Structure code'), 8); blank(X(0.66), X(1), r2);
-    text(X(0), r3, tr('back_date', 'Date'), 8); blank(X(0.06), X(0.27), r3);
-    text(X(0.31), r3, tr('back_coordinator', 'Coordinator'), 8); blank(X(0.42), X(0.62), r3);
-    text(X(0.66), r3, tr('back_notes', 'Notes'), 8); blank(X(0.73), X(1), r3);
-    return out;
-  }
-
   var api = {
-    TEMPLATES: TEMPLATES, get: get, markX: markX, markCentroid: markCentroid, groundHatch: groundHatch, items: items, backItems: backItems,
+    TEMPLATES: TEMPLATES, get: get, markX: markX, markCentroid: markCentroid, groundHatch: groundHatch, items: items, structureBoxes: structureBoxes,
     calibration: calibration, calibrationItems: calibrationItems, CAL_LAYOUTS: CAL_LAYOUTS
   };
   HUSS.sheet.template = api;

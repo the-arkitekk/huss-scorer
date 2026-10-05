@@ -153,6 +153,8 @@
     if (p.no_key) items.push(T('rp_p_no_key'));
     else if (p.no_structures) items.push(T('rp_p_no_structures'));
     if (p.mixed_projects) items.push(T('rp_p_mixed', { list: m.projects.join(', ') }));
+    if (p.no_structure && p.no_structure.length && !p.no_key) items.push(T('rp_p_no_structure', { n: p.no_structure.length, list: p.no_structure.join(', ') }));
+    if (p.mark_differs && p.mark_differs.length) items.push(T('rp_p_mark_differs', { n: p.mark_differs.length, list: p.mark_differs.map(function (d) { return d.sheet_code + ' (' + d.key + ' / ' + d.mark + ')'; }).join(', ') }));
     if (p.not_in_key.length) items.push(T('rp_p_not_in_key', { n: p.not_in_key.length, list: p.not_in_key.join(', ') }));
     if (p.missing_structure.length) items.push(T('rp_p_missing_structure', { n: p.missing_structure.length, list: p.missing_structure.map(function (x) { return x.sheet_code + ' → ' + x.structure_code; }).join(', ') }));
     if (p.duplicates.length) items.push(T('rp_p_duplicates', { n: p.duplicates.length, list: p.duplicates.map(function (d) { return d.sheet_code + ' (' + d.rater_code + ')'; }).join(', ') }));

@@ -44,10 +44,11 @@
       var code = HUSS.sheet.code.normalize(r.sheet_code);
       if (!HUSS.sheet.code.isValid(code)) { errors.push({ line: r._line, code: 'bad_sheet_code' }); return; }
       if (out[code]) { errors.push({ line: r._line, code: 'duplicate' }); return; }
-      if (!r.participant_code || !r.structure_code) { errors.push({ line: r._line, code: 'empty' }); return; }
+      // A row needs a participant or a structure: the structure may come from the box on the sheet.
+      if (!r.participant_code && !r.structure_code) { errors.push({ line: r._line, code: 'empty' }); return; }
       var extra = {};
       t.header.forEach(function (h) { if (need.indexOf(h) < 0) extra['key_' + h] = r[h]; });
-      out[code] = { participant_code: r.participant_code, structure_code: r.structure_code, extra: extra };
+      out[code] = { participant_code: r.participant_code || null, structure_code: r.structure_code || null, extra: extra };
     });
     return { ok: errors.length === 0, rows: out, errors: errors };
   }
@@ -105,7 +106,7 @@
     var out = [], code = HUSS.sheet.code.normalize(row.sheet_code);
     if (code && !HUSS.sheet.code.isValid(code)) out.push('bad_sheet_code');
     if (code && allRows.filter(function (r) { return HUSS.sheet.code.normalize(r.sheet_code) === code; }).length > 1) out.push('duplicate');
-    if (!code || !row.participant_code || !row.structure_code) out.push('empty');
+    if (!code || (!row.participant_code && !row.structure_code)) out.push('empty');
     if (row.structure_code && structureCodes && structureCodes.length && structureCodes.indexOf(row.structure_code) < 0) out.push('unknown_structure');
     return out;
   }

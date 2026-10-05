@@ -6,6 +6,7 @@
  *   analysis,                          // HUSS.detect.pipeline.analyze result
  *   params: { ref_height_m, min_figure_mm, foot_tolerance_mm, snap_radius_mm },
  *   meta: { project_code, rater_code, sheet_code, code_source, mode, file_name, color_noncompliant, note,
+ *           structure_mark (structure code from the sheet's boxes or chosen in Open mode), structure_mark_source,
  *           exclusions: { excl_id: bool }, vertical_not_measurable, horizontal_not_measurable },
  *   handles: { axis: { x, placement }, head: { y, placement }, foot: { y, placement },
  *              ceiling: { y, placement }, wall: { x, placement } },   // y/x null = not placed
@@ -149,6 +150,7 @@
       file_name: m.file_name || '', image_width_px: a.image.width, image_height_px: a.image.height,
       code_source: m.sheet_code ? (m.code_source || 'manual') : null,
       align_method: a.align.method,
+      structure_mark: m.structure_mark || null, structure_mark_source: m.structure_mark ? (m.structure_mark_source || 'mark') : null,
       px_per_mm_x: a.align.px_per_mm_x, px_per_mm_y: a.align.px_per_mm_y,
       rotation_deg: a.align.rotation_deg, align_residual_mm: a.align.residual_mm,
       corner_tl_x_px: c.tl[0], corner_tl_y_px: c.tl[1], corner_tr_x_px: c.tr[0], corner_tr_y_px: c.tr[1],

@@ -183,6 +183,20 @@
       SOLVE_MIN_SCORE: 0.8,        // one lost character is worked out from the check character only when
       SOLVE_MIN_GAP: 0.2           // the other four match this well and this far ahead of their next candidate
     },
+    // Structure boxes marked by the desk coordinator (js/detect/boxes.js)
+    BOXES: {
+      PAPER_ABOVE_MM: 1.2,         // paper level taken along a line this far above the boxes
+      FRAME_CONTRAST: 70,          // darkness above the paper of the printed frame
+      FRAME_MIN: 0.8,              // share of each side that must be dark for a printed box
+      FRAME_SLACK_MM: 0.4,         // the frame may sit this far off its place (alignment)
+      FRAME_END_MM: 0.4,           // corners left out when the sides are checked
+      FRAME_STEP_MM: 0.25,
+      INSET_MM: 0.65,              // the inside of a box starts this far from its outer edge
+      STEP_MM: 0.1,
+      MARK_CONTRAST: 30,           // darkness above the paper that counts as a mark (light pencil too)
+      MIN_FILL: 0.06,              // a box with less of its inside marked is empty (a dot, dirt)
+      DOMINANCE: 2.5               // the marked box must be this much fuller than any other partly marked one
+    },
     MANUAL: {
       REFINE_WINDOW_MM: 3,         // a click is centred on the corner square within this radius
       CLICK_SLOP_PX: 5             // a press that moves further than this pans instead of placing a point

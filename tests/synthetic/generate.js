@@ -41,7 +41,9 @@ const BASE = {
   ceilingWave: null,        // { amp, period } mm: sinusoidal wobble of the ceiling
   wallSlope: 0,             // wall x change per mm up from the floor (positive: leans right)
   wallWave: null,           // { amp, period } mm: sinusoidal wobble of the wall
-  calibration: null         // calibration layout index: the printed calibration page instead of a drawing
+  calibration: null,        // calibration layout index: the printed calibration page instead of a drawing
+  structures: null,         // structure codes: two or more print the structure boxes
+  boxMarks: []              // [{ box (0-based), kind: 'cross' | 'tick' | 'fill' | 'dot' | 'stray', color: grey level or 'red' }]
 };
 
 const SCENES = {
@@ -66,6 +68,12 @@ const SCENES = {
     ceilingSlope: -0.035, ceilingWave: { amp: 0.5, period: 30 }, wallSlope: 0.04, wallWave: { amp: 0.3, period: 20 }
   },
   S17: { description: 'Clearly slanted ceiling (rising 12 mm): flag_ceiling_uneven', ceilingSlope: -0.1 },
+  B1: { description: 'Structure boxes (3): pencil cross in box 2', structures: ['DN1', 'DN2', 'DN3'], boxMarks: [{ box: 1, kind: 'cross', color: 60 }] },
+  B2: { description: 'Structure boxes (5): light pencil tick in box 4, page turned 180 degrees', structures: ['A', 'B', 'C', 'D', 'E'], boxMarks: [{ box: 3, kind: 'tick', color: 160 }], quarterTurns: 2 },
+  B3: { description: 'Structure boxes (16): box 16 filled in red, JPEG 60 and noise', structures: Array.from({ length: 16 }, (_, i) => 'S' + (i + 1)), boxMarks: [{ box: 15, kind: 'fill', color: 'red' }], jpegQuality: 60, noise: 4 },
+  B4: { description: 'Structure boxes (3): none marked', structures: ['DN1', 'DN2', 'DN3'], boxMarks: [{ box: 0, kind: 'dot', color: 60 }] },
+  B5: { description: 'Structure boxes (3): boxes 1 and 3 both crossed', structures: ['DN1', 'DN2', 'DN3'], boxMarks: [{ box: 0, kind: 'cross', color: 60 }, { box: 2, kind: 'cross', color: 60 }] },
+  B6: { description: 'Structure boxes (3): cross in box 2, a stray stroke into box 3', structures: ['DN1', 'DN2', 'DN3'], boxMarks: [{ box: 1, kind: 'cross', color: 60 }, { box: 2, kind: 'stray', color: 60 }] },
   C1: { description: 'Calibration page, layout 1 (spec 10.3)', calibration: 0 },
   C10: { description: 'Calibration page, layout 10 (spec 10.3)', calibration: 9 }
 };
@@ -156,11 +164,11 @@ function mulberry32(seed) {
  * Printed template, drawn from the same items as the PDF and the print view
  * (HUSS.sheet.template.items). Text becomes one block per glyph (glyph width, cap height).
  */
-function templateGroups(T, code, missingCorner, calibration) {
+function templateGroups(T, code, missingCorner, calibration, structures) {
   const shapes = [], PT = 72 / 25.4, label = HUSS.config.DEFAULTS.sheet_label, colored = {};
   const skip = missingCorner >= 0 ? T.corners[missingCorner] : null;
   const glyphW = (ch, it) => HUSS.sheet.pdf.widthPt(ch, it.font, it.size_pt) / PT;
-  const all = calibration != null ? HUSS.sheet.template.calibrationItems(T, code, label, calibration) : HUSS.sheet.template.items(T, code, label);
+  const all = calibration != null ? HUSS.sheet.template.calibrationItems(T, code, label, calibration) : HUSS.sheet.template.items(T, code, label, structures);
   for (const it of all) {
     if (it.color) {
       const key = it.color.join(','), list = colored[key] || (colored[key] = []);
@@ -211,12 +219,27 @@ function figureShapes(cx, footBottom, height) {
   };
 }
 
+/** A desk coordinator's mark in a structure box (page mm). */
+function boxMarkShapes(T, m) {
+  const b = HUSS.sheet.template.structureBoxes(T, T.boxes.max)[m.box], w = PENCIL_STROKE_MM;
+  const P = (u, v) => [b.x + u, b.y + v], z = b.size;
+  switch (m.kind) {
+    case 'cross': return [seg(P(0.8, 0.8), P(z - 0.8, z - 0.8), w), seg(P(z - 0.8, 0.8), P(0.8, z - 0.8), w)];
+    case 'tick': return [seg(P(0.9, 2.4), P(1.9, 3.6), w), seg(P(1.9, 3.6), P(3.8, 0.9), w)];
+    case 'fill': { const out = []; for (let v = 0.6; v <= z - 0.6; v += 0.35) out.push(seg(P(0.5, v), P(z - 0.5, v), w)); return out; }
+    case 'dot': return [seg(P(2.2, 2.2), P(2.4, 2.3), 0.4)];
+    case 'stray': return [seg(P(-1.5, 3.4), P(1.1, 3.0), w)];
+  }
+  throw new Error('bad mark ' + m.kind);
+}
+
 /** Builds the page description and the ground truth for one scene. */
 function buildPage(p) {
   const T = HUSS.sheet.template.get(p.template);
   const floorY = T.floor.y;
   if (p.calibration != null) return calibrationPage(T, p);
-  const groups = templateGroups(T, p.code, p.missingCorner);
+  const groups = templateGroups(T, p.code, p.missingCorner, null, p.structures);
+  for (const m of p.boxMarks) groups.push({ color: m.color === 'red' ? RED : grey(m.color), shapes: boxMarkShapes(T, m) });
   p = Object.assign({}, p, { ceilingY: floorY - p.ceilingRel, wallX: HUSS.sheet.template.markX(T) + p.wallRel });
 
   // Pencil section: only what the section cuts — ceiling, back wall behind the viewer, opposite wall.

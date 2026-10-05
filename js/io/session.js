@@ -239,7 +239,9 @@
         note: rec.note || '',
         color_noncompliant: !!rec.flag_color_noncompliant,
         sheet_code: rec.sheet_code || '',
-        code_source: rec.code_source || null
+        code_source: rec.code_source || null,
+        structure_mark: rec.structure_mark || null,
+        structure_mark_source: rec.structure_mark_source || null
       },
       seconds: rec.duration_s || 0,
       // A manual alignment is repeated from its corners rather than asked for again.

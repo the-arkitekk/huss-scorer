@@ -28,6 +28,8 @@ Every column HuSS Scorer writes. Rules version 1.3, tool version 0.1.0.
 | `file_name` | text | Name of the scan file (for finding it; carries no meaning). |
 | `image_width_px`, `image_height_px` | integer | Size of the scan. |
 | `code_source` | text | Where the sheet code came from: `qr` (QR code), `ocr` (the printed characters, when the QR code could not be read) or `manual` (typed). |
+| `structure_mark` | text | Structure code of the box the desk coordinator marked on the sheet (projects with two or more structures), or the structure the rater chose in Open mode. Empty when no box is clearly marked. |
+| `structure_mark_source` | text | `mark` (read from the box) or `rater` (chosen in Open mode). |
 
 ### Alignment
 
@@ -97,6 +99,7 @@ Kept so that earlier rules can be compared with the current ones.
 | `flag_manual_alignment` | 0/1 | Aligned by hand. |
 | `flag_alignment_warning` | 0/1 | Large alignment residual or floor line not found. |
 | `flag_ceiling_uneven`, `flag_wall_uneven` | 0/1 | The line deviates more than 5 mm from its average. |
+| `flag_structure_mark` | 0/1 | The sheet has structure boxes, but not exactly one is clearly marked (none, or more than one). |
 | `flag_color_noncompliant` | 0/1 | Set by the rater: figure colour does not follow the instructions. |
 | `vertical_not_measurable`, `horizontal_not_measurable` | 0/1 | Set by the rater (rule 8); the axis then has no values. |
 | `excl_<criterion>` | 0/1 | Exclusion criteria of the project (defaults `excl_no_figure`, `excl_not_standing_full`, `excl_not_along_axis`) and `excl_other`. |
@@ -109,7 +112,9 @@ All measurement columns, then:
 
 | Column | Type | Meaning |
 |---|---|---|
-| `participant_code`, `structure_code` | text | From the key table. |
+| `participant_code` | text | From the key table (optional). |
+| `structure_code` | text | From the key table, else from the marked structure box (`structure_mark`), else the project's one structure. |
+| `structure_source` | text | Where `structure_code` came from: `key`, `mark`, `rater` (chosen in Open mode) or `project`. |
 | `structure_name` | text | From the structures table. |
 | `true_vertical_m`, `true_horizontal_m` | m | True ceiling height and distance of the structure. |
 | `E_vertical`, `E_horizontal` | E | Error ratio: (estimate − true) / true; empty for excluded drawings and not measurable axes. |
@@ -136,7 +141,7 @@ One row per drawing scored by both raters.
 
 | File | Columns |
 |---|---|
-| Key table | `sheet_code`, `participant_code`, `structure_code`, optional extra columns |
+| Key table | `sheet_code`, `participant_code`, `structure_code` (a row needs at least one of the two; a structure here is used instead of the box on the sheet), optional extra columns |
 | Structures table | `structure_code`, `structure_name`, `true_vertical_m`, `true_horizontal_m` |
 | Code list (Sheets screen) | `sheet_code`, `template`, `generated_at` |
 | Calibration key (Sheets screen) | `sheet_code`, `layout`, `figure_mm`, `ceiling_mm`, `distance_mm`, `template`, `generated_at` |

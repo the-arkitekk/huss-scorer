@@ -109,12 +109,16 @@
       suggested = saved.suggested;
     }
     var m = saved ? saved.meta : {};
+    // Structure box marked on the sheet; a structure chosen by the rater (Open mode) is kept.
+    var fromBox = HUSS.detect.boxes.codeOf(a.boxes, prm.structures);
+    var chosen = m.structure_mark_source === 'rater' ? m.structure_mark : null;
     s = {
       analysis: a,
       params: prm,
       meta: {
         project_code: c.project_code, rater_code: c.rater_code, mode: c.mode, file_name: c.fileName,
         sheet_code: '', code_source: null,
+        structure_mark: chosen || fromBox, structure_mark_source: chosen ? 'rater' : fromBox ? 'mark' : null,
         color_noncompliant: !!m.color_noncompliant, note: m.note || '',
         exclusions: Object.assign({}, m.exclusions || {}),
         vertical_not_measurable: !!m.vertical_not_measurable, horizontal_not_measurable: !!m.horizontal_not_measurable
@@ -144,6 +148,7 @@
 
     els.dropzone.hidden = true;
     setCardsVisible(true);
+    if (c.mode !== 'open') coverBoxes(a, Math.max(a.boxes ? a.boxes.printed : 0, (prm.structures || []).length));
     view.setPage(a.rect, a.red, a.dm.paper, a.template.width_mm, a.template.height_mm);
     view.setContrast(els.chkContrast.checked);
     view.setShowMask(els.chkMask.checked);
@@ -183,13 +188,63 @@
     els.hint.hidden = !on;
   }
 
+  /** A structure of the project by its code, or null. */
+  function projectStructure(code) {
+    return code && s ? (s.params.structures || []).filter(function (x) { return x.code === code; })[0] || null : null;
+  }
+
+  /**
+   * Participant, structure and true dimensions of this drawing (Open mode): the key table (or a
+   * one-structure project) first, else the structure box on the sheet or the rater's choice.
+   */
+  function structureInfo() {
+    var lk = ctx && ctx.lookup;
+    if (lk && lk.structure_code) return lk;
+    var st = projectStructure(s && s.meta.structure_mark);
+    return st ? { participant_code: lk ? lk.participant_code : null, structure_code: st.code, structure_name: st.name, true_vertical_m: st.true_vertical_m, true_horizontal_m: st.true_horizontal_m } : null;
+  }
+
   function renderOpenInfo() {
-    var lk = ctx && ctx.mode === 'open' ? ctx.lookup : null;
-    if (!ctx || ctx.mode !== 'open' || !ctx.tablesLoaded) { els.openInfo.hidden = true; return; }
+    els.openStructureRow.hidden = true;
+    var open = !!(ctx && ctx.mode === 'open' && s), sts = open ? s.params.structures || [] : [];
+    var lk = open && ctx.lookup && ctx.lookup.structure_code ? ctx.lookup : null, boxes = sts.length > 1;
+    if (!open || (!ctx.tablesLoaded && !boxes)) { els.openInfo.hidden = true; return; }
     els.openInfo.hidden = false;
-    els.openInfo.textContent = lk
-      ? HUSS.t('open_structure', { name: lk.structure_name || '–', code: lk.structure_code, participant: lk.participant_code || '–' })
-      : HUSS.t('open_not_in_key');
+    var parts = [];
+    if (lk) {
+      parts.push(HUSS.t('open_structure', { name: lk.structure_name || '–', code: lk.structure_code, participant: lk.participant_code || '–' }));
+      if (s.meta.structure_mark && s.meta.structure_mark !== lk.structure_code) parts.push(HUSS.t('open_box_differs', { mark: s.meta.structure_mark }));
+    } else if (boxes) {
+      var st = projectStructure(s.meta.structure_mark), b = s.analysis.boxes, status = b ? b.status : 'not_printed';
+      if (st) parts.push(HUSS.t(s.meta.structure_mark_source === 'rater' ? 'open_box_rater' : 'open_box_one', { name: st.name || st.code, code: st.code }));
+      else parts.push(HUSS.t('open_box_' + (status === 'one' ? 'none' : status)));
+      var sel = els.openStructure;
+      sel.textContent = '';
+      [{ code: '', label: HUSS.t('open_structure_none') }].concat(sts.map(function (x) { return { code: x.code, label: x.code + (x.name ? ' — ' + x.name : '') }; }))
+        .forEach(function (o) { var op = document.createElement('option'); op.value = o.code; op.textContent = o.label; sel.appendChild(op); });
+      sel.value = s.meta.structure_mark || '';
+      els.openStructureRow.hidden = false;
+    } else parts.push(HUSS.t('open_not_in_key'));
+    els.openInfo.textContent = parts.join(' ');
+  }
+
+  /**
+   * Blind mode: the structure boxes are covered on screen, in the contrast view and in the red
+   * mask, so the rater cannot see which structure was drawn.
+   */
+  function coverBoxes(a, n) {
+    var g = a.template.boxes;
+    if (!g || n < 2) return;
+    var R = a.R, rect = a.rect, W = rect.width, H = rect.height, d = rect.data, pm = a.red && a.red.pageMask;
+    var x0 = Math.max(0, Math.floor((g.title.right - 18) * R)), x1 = Math.min(W, Math.ceil((g.x0 + Math.min(n, g.max) * g.pitch + 1) * R));
+    var y0 = Math.max(0, Math.floor((g.y - 1.2) * R)), y1 = Math.min(H, Math.ceil((g.label_baseline + 1.2) * R));
+    for (var y = y0; y < y1; y++) {
+      for (var x = x0; x < x1; x++) {
+        var k = y * W + x, o = k * 4, v = ((x + y) >> 3) & 1 ? 212 : 226;
+        d[o] = d[o + 1] = d[o + 2] = v;
+        if (pm) pm[k] = 0;
+      }
+    }
   }
 
   /** The printed code and QR of this sheet, cut from the aligned page, next to the code field. */
@@ -558,7 +613,7 @@
     row('v_scale', fmt(c.scale_mm_per_m, 2) + ' ' + HUSS.t('unit_mm_per_m'));
     row('v_est_v', (nmV ? '–' : fmt(c.est_vertical_m, 3)) + m, 'est');
     row('v_est_h', (nmH ? '–' : fmt(c.est_horizontal_m, 3)) + m, 'est');
-    var lk = ctx && ctx.lookup;
+    var lk = structureInfo();
     if (lk) {
       var E = HUSS.measure.compute.errorRatio;
       row('v_true_v', fmt(lk.true_vertical_m, 3) + m);
@@ -921,6 +976,7 @@
       busy: $('busy'), busyText: $('busy-text'), tools: $('stage-tools'), hint: $('hint'),
       inProject: $('in-project'), inSheet: $('in-sheet'), sheetStatus: $('sheet-status'), sheetTitle: $('sheet-title'),
       imageInfo: $('image-info'), imageAlign: $('image-align'), imageWarn: $('image-warn'), openInfo: $('open-info'),
+      openStructureRow: $('open-structure-row'), openStructure: $('open-structure'),
       projectInfo: $('project-info'), projectWarn: $('project-warn'), btnMainMenu: $('btn-main-menu'),
       cardSheet: $('card-sheet'), cardHandles: $('card-handles'), cardValues: $('card-values'), cardFlags: $('card-flags'),
       cardExclusion: $('card-exclusion'), cardView: $('card-view'), cardActions: $('card-actions'),
@@ -968,6 +1024,13 @@
       chk.addEventListener('change', function () { if (s) { syncMeta(); changed(); } });
     });
     els.inNote.addEventListener('input', function () { if (s) { syncMeta(); if (ctx && ctx.onChange) ctx.onChange(); } });
+    els.openStructure.addEventListener('change', function () {
+      if (!s) return;
+      s.meta.structure_mark = els.openStructure.value || null;
+      s.meta.structure_mark_source = s.meta.structure_mark ? 'rater' : null;
+      renderOpenInfo();
+      changed();
+    });
     els.inSheet.addEventListener('input', function () {
       els.chkCode.checked = false; // a changed code has to be compared again
       syncMeta();

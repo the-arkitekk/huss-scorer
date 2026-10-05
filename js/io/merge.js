@@ -30,13 +30,15 @@
    * sets: [{ name, records, exclusionIds }] (from csv.readMeasurements); key, structures: the
    * results of tables.parseKey / parseStructures, or null. opts.defaultStructure: the structure of
    * sheets not in the key (a one-structure project).
+   * The structure of a sheet comes from the key table, else from the structure box marked on the
+   * sheet (structure_mark), else from the one-structure project; structure_source says which.
    * Returns { rows, columns, raters, projects, problems: { not_in_key, missing_structure,
-   * duplicates, unfinished, not_measured, mixed_projects }, counts }.
+   * duplicates, unfinished, not_measured, mixed_projects, mark_differs, no_structure }, counts }.
    */
   function merge(sets, key, structures, opts) {
     var defaultStructure = opts && opts.defaultStructure || null;
     var csv = HUSS.io.csv, E = HUSS.measure.compute.errorRatio;
-    var problems = { not_in_key: [], missing_structure: [], duplicates: [], unfinished: [], not_measured: [], mixed_projects: false };
+    var problems = { not_in_key: [], missing_structure: [], duplicates: [], unfinished: [], not_measured: [], mixed_projects: false, mark_differs: [], no_structure: [] };
     var exclIds = [], keyExtra = [], byKey = {}, order = [];
 
     sets.forEach(function (set) {
@@ -68,18 +70,19 @@
         E_PAIRS.forEach(function (p) { row[p[0]] = row.status === 'measured' ? E(row[p[1]], row[p[2]]) : null; });
         return;
       }
+      var mark = row.structure_mark || null;
+      var fromKey = k && k.structure_code ? k.structure_code : null;
+      row.participant_code = k ? k.participant_code || null : null;
+      row.structure_code = fromKey || mark || defaultStructure;
+      row.structure_source = fromKey ? 'key' : mark ? (row.structure_mark_source === 'rater' ? 'rater' : 'mark') : defaultStructure ? 'project' : null;
+      if (fromKey && mark && mark !== fromKey) problems.mark_differs.push({ sheet_code: row.sheet_code, rater_code: row.rater_code, key: fromKey, mark: mark });
       if (k) {
-        row.participant_code = k.participant_code;
-        row.structure_code = k.structure_code;
         Object.keys(k.extra || {}).forEach(function (x) {
           row[x] = k.extra[x];
           if (keyExtra.indexOf(x) < 0) keyExtra.push(x);
         });
-      } else {
-        row.participant_code = null;
-        row.structure_code = defaultStructure;
-        if (key && !defaultStructure && problems.not_in_key.indexOf(row.sheet_code) < 0) problems.not_in_key.push(row.sheet_code);
-      }
+      } else if (key && !row.structure_code && problems.not_in_key.indexOf(row.sheet_code) < 0) problems.not_in_key.push(row.sheet_code);
+      if (!row.structure_code && row.status === 'measured' && problems.no_structure.indexOf(row.sheet_code) < 0) problems.no_structure.push(row.sheet_code);
       var st = row.structure_code && structures && structures.rows ? structures.rows[row.structure_code] : null;
       if (row.structure_code && !st) problems.missing_structure.push({ sheet_code: row.sheet_code, structure_code: row.structure_code });
       row.structure_name = st ? st.structure_name : null;

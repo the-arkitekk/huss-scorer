@@ -208,11 +208,18 @@ test('tables screen helpers: write, read back, row problems', () => {
     { sheet_code: 'CV94Y', participant_code: 'P01', structure_code: 'ST1' },
     { sheet_code: 'cv94y', participant_code: 'P02', structure_code: 'ST1' },
     { sheet_code: 'CV94Z', participant_code: 'P03', structure_code: 'ST9' },
-    { sheet_code: '6QHJ4', participant_code: '', structure_code: 'ST1' }
+    { sheet_code: '6QHJ4', participant_code: '', structure_code: 'ST1' },
+    { sheet_code: '66J34', participant_code: '', structure_code: '' }
   ];
   assert.deepEqual(T.keyRowProblems(rows[0], rows, ['ST1']), ['duplicate']);
   assert.deepEqual(T.keyRowProblems(rows[2], rows, ['ST1']), ['bad_sheet_code', 'unknown_structure']);
-  assert.deepEqual(T.keyRowProblems(rows[3], rows, ['ST1']), ['empty']);
+  // the participant is optional (the structure may also come from the box on the sheet), but not both
+  assert.deepEqual(T.keyRowProblems(rows[3], rows, ['ST1']), []);
+  assert.deepEqual(T.keyRowProblems(rows[4], rows, ['ST1']), ['empty']);
+  const k2 = T.parseKey(T.keyToCSV([rows[3], { sheet_code: '8DTH7', participant_code: 'P05', structure_code: '' }]));
+  assert.equal(k2.ok, true);
+  assert.equal(k2.rows['6QHJ4'].participant_code, null);
+  assert.equal(k2.rows['8DTH7'].structure_code, null);
   const k = T.parseKey(T.keyToCSV([rows[0]]));
   assert.equal(k.ok, true);
   assert.equal(k.rows.CV94Y.participant_code, 'P01');

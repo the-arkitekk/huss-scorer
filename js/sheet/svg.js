@@ -23,13 +23,8 @@
   }
 
   /** SVG markup for one sheet; width and height in mm, so it prints at true size. */
-  function sheet(t, code, label) {
-    return draw(t, HUSS.sheet.template.items(t, code, label));
-  }
-
-  /** SVG markup for the back side of a sheet (desk coordinator record). */
-  function back(t, code) {
-    return draw(t, HUSS.sheet.template.backItems(t, code));
+  function sheet(t, code, label, structureCodes) {
+    return draw(t, HUSS.sheet.template.items(t, code, label, structureCodes));
   }
 
   /** SVG markup for calibration layout index (spec 10.3). */
@@ -70,7 +65,7 @@
       '</svg>';
   }
 
-  var api = { sheet: sheet, back: back, calibration: calibration };
+  var api = { sheet: sheet, calibration: calibration };
   HUSS.sheet.svg = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

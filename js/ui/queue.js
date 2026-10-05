@@ -250,9 +250,9 @@
   function lookupFor(code) {
     var t = HUSS.ui.results.currentTables();
     var lk = t.key ? HUSS.io.tables.lookup(t.key, t.structures, code) : null;
-    if (!lk && t.defaultStructure && t.structures) {
+    if ((!lk || !lk.structure_code) && t.defaultStructure && t.structures) {
       var st = t.structures.rows[t.defaultStructure];
-      lk = { participant_code: null, structure_code: t.defaultStructure, structure_name: st.structure_name, true_vertical_m: st.true_vertical_m, true_horizontal_m: st.true_horizontal_m };
+      lk = { participant_code: lk ? lk.participant_code : null, structure_code: t.defaultStructure, structure_name: st.structure_name, true_vertical_m: st.true_vertical_m, true_horizontal_m: st.true_horizontal_m };
     }
     return lk;
   }

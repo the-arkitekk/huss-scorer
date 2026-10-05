@@ -77,11 +77,11 @@
   }
 
   /**
-   * PDF bytes (Uint8Array) with one page per sheet code; with opts.back each front page is
-   * followed by its back side (double-sided printing).
+   * PDF bytes (Uint8Array) with one page per sheet code. opts.structures: the project's structure
+   * codes (boxes on the sheet); opts.itemsFor(code, i): other pages (calibration).
    */
   function sheets(t, codes, label, opts) {
-    var withBack = !!(opts && opts.back);
+    var structures = opts && opts.structures;
     var W = f3(t.width_mm * PT), H = f3(t.height_mm * PT);
     var objs = [];
     var add = function (s) { objs.push(s); return objs.length; };
@@ -95,11 +95,8 @@
       kids.push(add('<< /Type /Page /Parent ' + pages + ' 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 ' +
         f1 + ' 0 R /F2 ' + f2 + ' 0 R >> >> /Contents ' + cs + ' 0 R >>'));
     };
-    var front = opts && opts.itemsFor ? opts.itemsFor : function (code) { return HUSS.sheet.template.items(t, code, label); };
-    codes.forEach(function (code, i) {
-      page(front(code, i));
-      if (withBack) page(HUSS.sheet.template.backItems(t, code));
-    });
+    var front = opts && opts.itemsFor ? opts.itemsFor : function (code) { return HUSS.sheet.template.items(t, code, label, structures); };
+    codes.forEach(function (code, i) { page(front(code, i)); });
     objs[catalog - 1] = '<< /Type /Catalog /Pages ' + pages + ' 0 R /ViewerPreferences << /PrintScaling /None >> >>';
     objs[pages - 1] = '<< /Type /Pages /Kids [' + kids.map(function (k) { return k + ' 0 R'; }).join(' ') + '] /Count ' + kids.length + ' >>';
     var out = '%PDF-1.4\n', offsets = [];

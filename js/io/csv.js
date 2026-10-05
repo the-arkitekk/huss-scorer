@@ -59,6 +59,8 @@
     cols('str', ['tool_version', 'rules_version', 'template', 'file_name']),
     cols('int', ['image_width_px', 'image_height_px']),
     cols('str', ['code_source', 'align_method']),
+    // structure box marked on the sheet by the desk coordinator (or chosen by the rater in Open mode)
+    cols('str', ['structure_mark', 'structure_mark_source']),
     cols('pxmm', ['px_per_mm_x', 'px_per_mm_y']),
     cols('deg', ['rotation_deg']),
     cols('mm', ['align_residual_mm']),
@@ -84,7 +86,7 @@
     cols('bool', [
       'flag_red_not_found', 'flag_figure_small', 'flag_figure_off_mark', 'flag_foot_off_floor',
       'flag_multiple_red', 'flag_axis_moved', 'flag_manual_alignment', 'flag_alignment_warning',
-      'flag_ceiling_uneven', 'flag_wall_uneven', 'flag_color_noncompliant',
+      'flag_ceiling_uneven', 'flag_wall_uneven', 'flag_structure_mark', 'flag_color_noncompliant',
       'vertical_not_measurable', 'horizontal_not_measurable'
     ]),
     cols('bool', ids),
@@ -101,7 +103,7 @@
    * Extra key table columns follow as key_<name> (text).
    */
   var MERGED_COLUMNS = [].concat(
-    cols('str', ['participant_code', 'structure_code', 'structure_name']),
+    cols('str', ['participant_code', 'structure_code', 'structure_source', 'structure_name']),
     cols('m', ['true_vertical_m', 'true_horizontal_m']),
     cols('E', ['E_vertical', 'E_horizontal']),
     cols('E', ['E_vertical_at_axis', 'E_horizontal_at_floor', 'E_vertical_red', 'E_horizontal_red']),

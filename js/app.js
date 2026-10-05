@@ -25,7 +25,7 @@
   /** Scoring parameters: from the loaded project, otherwise the tool defaults. */
   function params() {
     return state.project ? HUSS.io.project.paramsOf(state.project) : Object.assign({}, HUSS.config.DEFAULTS,
-      { suggestions: { figure: true, ceiling: true, wall: true } });
+      { suggestions: { figure: true, ceiling: true, wall: true }, structures: [] });
   }
 
   function show(name) {

@@ -127,6 +127,7 @@
     var qr = al.qr || D.qr.read(D.qr.rectSampler(dark, R), T, cfg);
     var ocr = qr.found ? null : D.ocr.read(D.qr.rectSampler(dark, R), T, cfg);
     if (qr.found) qr.template_mismatch = qr.template !== T.id;
+    var boxes = D.boxes.read(D.qr.rectSampler(dark, R), T, cfg);
     t.qr = now();
     var markX = HUSS.sheet.template.markX(T);
     var red = D.redfigure.detect(rect, T, D.floorline.yAt(floor, markX), cfg);
@@ -185,6 +186,7 @@
       floor: floor,
       qr: qr,
       ocr: ocr,
+      boxes: boxes,
       red: red,
       redEdges: redEdges,
       wallProfile: wallProfile,

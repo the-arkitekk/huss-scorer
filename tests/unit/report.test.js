@@ -157,6 +157,30 @@ test('report: cards, charts and tables in the fragment; a self-contained HTML do
   assert.notEqual(pts.overview.E_v.median, model.overview.E_v.median);
 });
 
+test('merge: structure from the box on the sheet, the key table first; unknown ones listed', () => {
+  const { r1 } = sample();
+  const recs = r1.slice(0, 4).map((r, i) => Object.assign({}, r, i === 0 ? { structure_mark: 'ROOM', structure_mark_source: 'mark' }
+    : i === 1 ? { structure_mark: 'HALL', structure_mark_source: 'rater' } : i === 2 ? { structure_mark: 'ROOM', structure_mark_source: 'mark' } : {}));
+  const st = tables.parseStructures(STRUCT_TEXT);
+  let m = HUSS.io.merge.merge([asFile('ab.csv', recs)], null, st);
+  const row = (i) => m.rows.find((r) => r.sheet_code === CODES[i]);
+  assert.equal(row(0).structure_code, 'ROOM'); assert.equal(row(0).structure_source, 'mark');
+  assert.equal(row(1).structure_source, 'rater');
+  near(row(0).E_vertical, (recs[0].est_vertical_m - 3) / 3, 1e-3, 'E from the box structure');
+  assert.equal(m.problems.no_key, false);
+  assert.deepEqual(m.problems.no_structure, [CODES[3]]);
+  // a key row wins over the box, and the difference is reported; a key row without structure keeps the box
+  const key = tables.parseKey(`sheet_code,participant_code,structure_code\r\n${CODES[2]},P03,HALL\r\n${CODES[0]},P01,\r\n`);
+  assert.equal(key.ok, true);
+  m = HUSS.io.merge.merge([asFile('ab.csv', recs)], key, st);
+  assert.equal(row(2).structure_code, 'HALL'); assert.equal(row(2).structure_source, 'key');
+  assert.deepEqual(m.problems.mark_differs.map((d) => [d.sheet_code, d.key, d.mark]), [[CODES[2], 'HALL', 'ROOM']]);
+  assert.equal(row(0).structure_code, 'ROOM'); assert.equal(row(0).participant_code, 'P01');
+  assert.deepEqual(m.problems.not_in_key, [CODES[3]]);
+  const frag = B.fragment(B.model(m, {}));
+  assert.ok(frag.includes(CODES[3]) && frag.includes('HALL / ROOM'));
+});
+
 test('report without a key (several structures): says what is missing, shows the estimates in metres', () => {
   const { r1 } = sample();
   const m = HUSS.io.merge.merge([asFile('ab.csv', r1)], null, tables.parseStructures(STRUCT_TEXT));

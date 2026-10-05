@@ -85,22 +85,29 @@ test('code batches are unique, valid and avoid the codes not to use', () => {
   assert.ok(r >= 0 && r < 1);
 });
 
-test('back side: coordinator box below the front floor band, QR area left free; PDF alternates pages', () => {
+test('structure boxes: one per structure (2-16) below the ground hatch, clear of the red search and the code', () => {
   for (const t of [T4, T3]) {
-    const b = HUSS.sheet.template.backItems(t, '6QHJ4');
-    const texts = b.filter((i) => i.k === 'text').map((i) => i.text);
-    assert.ok(texts.includes('6QHJ4'));
-    assert.ok(texts.includes('Participant code') && texts.includes('Structure code'));
-    for (const i of b) {
-      const ys = i.k === 'text' ? [i.y] : [i.y1, i.y2];
-      const xs = i.k === 'text' ? [i.x] : [i.x1, i.x2];
-      for (const y of ys) assert.ok(y > t.floor.y && y < t.height_mm, 'inside the band below the floor line');
-      // with a short-edge flip, back x maps to W - x on the front: keep clear of the QR square
-      for (const x of xs) assert.ok(t.width_mm - x < t.qr.x - 1 || t.width_mm - x > t.qr.x + t.qr.size + 1);
+    assert.equal(HUSS.sheet.template.items(t, '6QHJ4', 'figure').length, HUSS.sheet.template.items(t, '6QHJ4', 'figure', ['ONE']).length, 'one structure: no boxes');
+    const codes = Array.from({ length: 16 }, (_, i) => 'ST' + (i + 1));
+    const boxes = HUSS.sheet.template.structureBoxes(t, codes.length);
+    assert.equal(boxes.length, 16);
+    assert.equal(HUSS.sheet.template.structureBoxes(t, 20).length, 16, 'at most 16');
+    const red = HUSS.config.RED, markX = HUSS.sheet.template.markX(t);
+    const codeLeft = t.code_text.right - 5 * 12 * 0.6 * 25.4 / 72;
+    for (const b of boxes) {
+      assert.ok(b.y > t.floor.y + red.SEARCH_BELOW_FLOOR_MM, 'below the red figure search');
+      assert.ok(b.x > markX + red.SEARCH_HALF_WIDTH_MM, 'right of the red figure search');
+      assert.ok(b.x + b.size + 5 < codeLeft, 'left of the printed sheet code');
+      assert.ok(b.y + b.size < t.corners[3][1] + t.corner_size_mm / 2 + 1 && b.y + b.size < t.height_mm - 8);
     }
+    const it = HUSS.sheet.template.items(t, '6QHJ4', 'figure', codes);
+    const texts = it.filter((i) => i.k === 'text').map((i) => i.text);
+    assert.ok(texts.includes('ST1') && texts.includes('ST16') && texts.includes('structure'));
+    assert.equal(qrFromItems(t, it).text, 'HUSS1/' + t.id + '/6QHJ4', 'QR still readable');
   }
-  assert.ok(HUSS.sheet.svg.back(T4, '6QHJ4').includes('desk coordinator'));
-  const s = Buffer.from(HUSS.sheet.pdf.sheets(T4, ['6QHJ4', 'CV94Y'], 'figure', { back: true })).toString('latin1');
-  assert.equal((s.match(/\/Type \/Page /g) || []).length, 4);
-  assert.ok(s.indexOf('(6QHJ4) Tj') < s.indexOf('desk coordinator'), 'front before its back');
+  const svg = HUSS.sheet.svg.sheet(T4, '6QHJ4', 'figure', ['DN1', 'DN2']);
+  assert.ok(svg.includes('>DN1<') && svg.includes('>DN2<'));
+  const s = Buffer.from(HUSS.sheet.pdf.sheets(T4, ['6QHJ4', 'CV94Y'], 'figure', { structures: ['DN1', 'DN2'] })).toString('latin1');
+  assert.equal((s.match(/\/Type \/Page /g) || []).length, 2);
+  assert.ok(s.includes('(DN2) Tj'));
 });

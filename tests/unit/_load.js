@@ -35,6 +35,7 @@ const FILES = [
   'detect/line.js',
   'detect/glyphs.js',
   'detect/ocr.js',
+  'detect/boxes.js',
   'detect/pipeline.js',
   'report/stats.js',
   'report/charts.js',

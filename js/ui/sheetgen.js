@@ -12,6 +12,12 @@
 
   function $(id) { return document.getElementById(id); }
 
+  /** The project's structure codes: two or more are printed as boxes on every sheet. */
+  function structureCodes() {
+    var p = HUSS.app.state.project;
+    return p && p.structures && p.structures.length > 1 ? p.structures.map(function (st) { return st.code; }) : null;
+  }
+
   function template() {
     return HUSS.sheet.template.get(els.template.value);
   }
@@ -48,8 +54,10 @@
     var T = template();
     var codes = HUSS.sheet.code.batch(n, excluded(), HUSS.sheet.code.secureRandom);
     var cal = false;
-    last = { template: T, label: label, codes: codes, generatedAt: new Date(), back: els.back.checked, calibration: false };
-    els.preview.innerHTML = front(codes[0], 0) + (last.back ? HUSS.sheet.svg.back(T, codes[0]) : '');
+    last = { template: T, label: label, codes: codes, generatedAt: new Date(), structures: structureCodes(), calibration: false };
+    els.preview.innerHTML = front(codes[0], 0);
+    els.boxesNote.hidden = !last.structures;
+    if (last.structures) els.boxesNote.textContent = HUSS.t('sg_boxes_note', { n: last.structures.length });
     els.csv.textContent = HUSS.t(cal ? 'sg_cal_key' : 'sg_csv');
     els.check.textContent = HUSS.t('sg_check', { mm: T.corners[1][0] - T.corners[0][0] });
     els.codes.textContent = HUSS.t('sg_codes', { list: codes.join(', ') });
@@ -59,15 +67,13 @@
 
   /** SVG of the front of sheet i: a normal sheet, or a calibration sheet (layout i). */
   function front(code, i) {
-    return last.calibration ? HUSS.sheet.svg.calibration(last.template, code, last.label, i) : HUSS.sheet.svg.sheet(last.template, code, last.label);
+    return last.calibration ? HUSS.sheet.svg.calibration(last.template, code, last.label, i) : HUSS.sheet.svg.sheet(last.template, code, last.label, last.structures);
   }
 
   function print() {
     if (!last) return;
     var T = last.template;
-    els.printRoot.innerHTML = last.codes.map(function (c, i) {
-      return front(c, i) + (last.back ? HUSS.sheet.svg.back(T, c) : '');
-    }).join('');
+    els.printRoot.innerHTML = last.codes.map(function (c, i) { return front(c, i); }).join('');
     els.pageStyle.textContent = '@page { size: ' + T.width_mm + 'mm ' + T.height_mm + 'mm; margin: 0; }';
     window.print();
   }
@@ -78,7 +84,7 @@
 
   function downloadPdf() {
     if (!last) return;
-    var opts = { back: last.back };
+    var opts = { structures: last.structures };
     if (last.calibration) opts.itemsFor = function (code, i) { return HUSS.sheet.template.calibrationItems(last.template, code, last.label, i); };
     HUSS.io.files.downloadBytes(baseName() + '.pdf', HUSS.sheet.pdf.sheets(last.template, last.codes, last.label, opts), 'application/pdf');
   }
@@ -115,7 +121,7 @@
     els = {
       template: $('sg-template'), templateNote: $('sg-template-note'), label: $('sg-label'), count: $('sg-count'),
       exclude: $('sg-exclude'), excludeInfo: $('sg-exclude-info'), loadList: $('sg-load-list'), listInput: $('sg-list-input'),
-      generate: $('sg-generate'), back: $('sg-back'), status: $('sg-status'), result: $('sg-result'), check: $('sg-check'),
+      generate: $('sg-generate'), boxesNote: $('sg-boxes-note'), status: $('sg-status'), result: $('sg-result'), check: $('sg-check'),
       print: $('sg-print'), pdf: $('sg-pdf'), csv: $('sg-csv'), codes: $('sg-codes'), preview: $('sg-preview'),
       printRoot: $('print-root'), pageStyle: $('print-page-style')
     };
