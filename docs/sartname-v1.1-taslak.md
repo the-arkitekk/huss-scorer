@@ -72,6 +72,10 @@ Neden: Kural 3'te havada ya da zeminin altına taşan figür; kural 4–5'te ser
 
 > Tek bir köşe işareti bulunamazsa yeri diğer üçünden tamamlanır (paralelkenar). Koşul: üç işaret dik açı (±1,5°) ve kâğıdın en-boy oranını (±%3) vermelidir. Yöntem `auto_three_corners` olarak yazılır; bayrak konmaz.
 
+**7.2 Yön bulma (ek).** Neden: hafif eğri basılmış ya da taranmış bir kâğıtta zemin çizgisi beklenen yerin birkaç onda bir milimetre yanında kalabiliyor; araç bu yüzden yönü bulamayıp elle hizalama istiyordu.
+
+> Yön seçilirken zemin çizgisi beklenen yerin 0,6 mm altında ya da üstünde de aranır (zemin taraması çizginin 0,7 mm altından başladığı için onunla karışmaz).
+
 **7.5 Elle hizalama.** Neden: ölçümcü normalde köşelere hiç dokunmasın.
 
 > Elle hizalama yalnızca iki ya da daha çok köşe işareti bulunamadığında kendiliğinden açılır. İki yol vardır: dört köşe karesine sırası önemsiz tıklama (her tıklama karenin ortasına oturtulur, yön otomatik bulunur) ya da zemin çizgisinin iki ucu (üçgen tarafındaki uç önce; QR ters sırayı düzeltir). Normal ekranda "elle hizala" düğmesi yoktur.
@@ -101,7 +105,8 @@ Neden: gerçek ölçüleri proje başında bir kez girmek; tek yapılı çalış
 > - **Calibration test (menüden):** kalibrasyon sayfalarını basma, anahtar ve denetim tek ekranda; yazıcı ve tarayıcı başına bir kez.
 > - **Results:** o oturumda ölçülen çizimler kendiliğinden gelir; birleştirme (8.6) ve rapor: özet kartları; yapı başına hata, tahmin–gerçek, yükseklik hatası–derinlik hatası, dağılımlar; puanlama kalitesi (değiştirilmeden kabul edilen öneriler, bayraklar, kod kaynağı, hizalama, süre); tablolar; ölçümcü ve değer seçimi; SVG, PNG, PDF ve tek dosyalık HTML çıktı.
 > - **Compare (8.7):** ek olarak iki eksen için betimleyici uyum grafiği (ortalamaya karşı fark, %95 uyum sınırları). ICC ve kappa yine R'de.
-> - **Score:** alt örneklem listesi yükleme; eksik sayfa kodu işaretinin kırmızı vurgusu.
+> - **Score:** alt örneklem listesi yükleme; eksik alanların kırmızı vurgusu. Taramaları açan düğmeler ölçümcü kodu ve mod seçilmeden kilitlidir; üzerine gelince eksikler yazılır. "Basılı kodla aynı" onayı yalnızca QR'dan okunmayan kodlarda istenir ve "Confirm and next" düğmesinin hemen üstündedir. Previous, bu oturumda bakılan çizimlere sırayla geri gider.
+> - **Kuyruk (8.4):** kodu okunamayan tarama sona değil, klasörde kendinden önceki taramanın arkasına girer. Kuyruk bitince "Review later" ile ayrılan çizimlere dönüldüğü ekranda yazılır.
 
 ## 10. Kabul testleri
 
