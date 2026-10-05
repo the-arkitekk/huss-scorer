@@ -19,8 +19,25 @@
   function num(v, d) { return v == null || !isFinite(v) ? '–' : v.toFixed(d == null ? 2 : d); }
 
   /**
+   * How the errors are shown (display only; the data stay E): 'error' as E in percent with the
+   * reference line at 0, or 'ratio' as estimate / true = 1 + E with the reference line at 1.
+   */
+  function viewOf(show) {
+    var ratio = show === 'ratio';
+    return {
+      show: ratio ? 'ratio' : 'error', ratio: ratio, ref: ratio ? 1 : 0, percent: !ratio,
+      v: function (e) { return e == null || !isFinite(e) ? null : ratio ? 1 + e : e; },
+      fmt: function (e, sign, d) {
+        if (e == null || !isFinite(e)) return '–';
+        return ratio ? (1 + e).toFixed(d == null ? 2 : d) : pct(e, sign, d);
+      },
+      key: function (k) { return ratio ? k + '_ratio' : k; }
+    };
+  }
+
+  /**
    * merged: result of io.merge.merge (or { rows, problems } read back from a merged CSV).
-   * opts: { rater (null = all), method: 'main' | 'points' | 'red', generatedAt: Date }
+   * opts: { rater (null = all), method: 'main' | 'points' | 'red', show: 'error' | 'ratio', generatedAt: Date }
    */
   function model(merged, opts) {
     opts = opts || {};
@@ -30,7 +47,7 @@
     var colorOf = {};
     structures.forEach(function (s, i) { colorOf[s.structure_code || ''] = HUSS.report.charts.PALETTE[i % HUSS.report.charts.PALETTE.length]; });
     return {
-      opts: opts, rows: rows, arows: arows, structures: structures, colorOf: colorOf,
+      opts: opts, view: viewOf(opts.show), rows: rows, arows: arows, structures: structures, colorOf: colorOf,
       overview: S.overview(rows, arows),
       quality: S.quality(rows, HUSS.measure.flags.TOOL_FLAGS.concat(['flag_color_noncompliant'])),
       hasTrue: arows.some(function (r) { return r.true_v != null || r.true_h != null; }),
@@ -45,9 +62,9 @@
   }
 
   function cards(m) {
-    var o = m.overview;
+    var o = m.overview, V = m.view, d = V.ratio ? 2 : 0;
     var axis = function (E, over, labelKey) {
-      return card(pct(E.median, true), T(labelKey), E.n ? T('rp_card_e_sub', { n: E.n, over: pct(over, false, 0), iqr: pct(E.q1, true, 0) + ' … ' + pct(E.q3, true, 0) }) : T(m.hasTrue ? 'rp_no_values' : 'rp_card_no_true'),
+      return card(V.fmt(E.median, true), T(V.key(labelKey)), E.n ? T('rp_card_e_sub', { n: E.n, over: pct(over, false, 0), iqr: V.fmt(E.q1, true, d) + ' … ' + V.fmt(E.q3, true, d) }) : T(m.hasTrue ? 'rp_no_values' : 'rp_card_no_true'),
         E.median == null ? '' : E.median > 0 ? 'over' : 'under');
     };
     return '<div class="rp-cards">' +
@@ -63,24 +80,26 @@
   }
 
   function charts(m) {
-    var C = HUSS.report.charts, out = [], structs = m.structures;
+    var C = HUSS.report.charts, out = [], structs = m.structures, V = m.view;
     var label = function (s) { return s.structure_name || s.structure_code || T('rp_no_structure'); };
+    var isE = function (f) { return f === 'E_v' || f === 'E_h'; };
+    var val = function (r, f) { return isE(f) ? V.v(r[f]) : r[f]; }; // errors as chosen (Show as); metres as they are
     var groupsOf = function (field) {
       return structs.map(function (s) {
-        return { label: label(s), color: m.colorOf[s.structure_code || ''], values: m.arows.filter(function (r) { return (r.structure_code || null) === s.structure_code; }).map(function (r) { return r[field]; }) };
+        return { label: label(s), color: m.colorOf[s.structure_code || ''], values: m.arows.filter(function (r) { return (r.structure_code || null) === s.structure_code; }).map(function (r) { return val(r, field); }) };
       });
     };
     var legend = structs.length > 1 ? structs.map(function (s) { return { label: label(s), color: m.colorOf[s.structure_code || ''] }; }) : [];
     var pts = function (fx, fy) {
-      return m.arows.map(function (r) { return { x: r[fx], y: r[fy], color: m.colorOf[r.structure_code || ''] }; });
+      return m.arows.map(function (r) { return { x: val(r, fx), y: val(r, fy), color: m.colorOf[r.structure_code || ''] }; });
     };
-    out.push({ id: 'e-structure-v', svg: C.stripBox({ title: T('rp_ch_e_struct_v'), yLabel: T('rp_ax_e_v'), groups: groupsOf('E_v'), percent: true, zeroLine: true }), caption: T('rp_cap_e_struct') });
-    out.push({ id: 'e-structure-h', svg: C.stripBox({ title: T('rp_ch_e_struct_h'), yLabel: T('rp_ax_e_h'), groups: groupsOf('E_h'), percent: true, zeroLine: true }), caption: T('rp_cap_e_struct') });
+    out.push({ id: 'e-structure-v', svg: C.stripBox({ title: T(V.key('rp_ch_e_struct_v')), yLabel: T(V.key('rp_ax_e_v')), groups: groupsOf('E_v'), percent: V.percent, ref: V.ref }), caption: T(V.key('rp_cap_e_struct')) });
+    out.push({ id: 'e-structure-h', svg: C.stripBox({ title: T(V.key('rp_ch_e_struct_h')), yLabel: T(V.key('rp_ax_e_h')), groups: groupsOf('E_h'), percent: V.percent, ref: V.ref }), caption: T(V.key('rp_cap_e_struct')) });
     out.push({ id: 'est-true-v', svg: C.scatter({ title: T('rp_ch_est_true_v'), xLabel: T('rp_ax_true_v'), yLabel: T('rp_ax_est_v'), points: pts('true_v', 'est_v'), identity: true, equal: true, legend: legend, identityLabel: T('rp_identity') }), caption: T('rp_cap_est_true') });
     out.push({ id: 'est-true-h', svg: C.scatter({ title: T('rp_ch_est_true_h'), xLabel: T('rp_ax_true_h'), yLabel: T('rp_ax_est_h'), points: pts('true_h', 'est_h'), identity: true, equal: true, legend: legend, identityLabel: T('rp_identity') }), caption: T('rp_cap_est_true') });
-    out.push({ id: 'e-v-h', svg: C.scatter({ title: T('rp_ch_e_v_h'), xLabel: T('rp_ax_e_h'), yLabel: T('rp_ax_e_v'), points: pts('E_h', 'E_v'), zeroLines: true, xPercent: true, yPercent: true, legend: legend, quadrants: [T('rp_q_tl'), T('rp_q_tr'), T('rp_q_bl'), T('rp_q_br')] }), caption: T('rp_cap_e_v_h') });
-    out.push({ id: 'hist-v', svg: C.histogram({ title: T('rp_ch_hist_v'), xLabel: T('rp_ax_e_v'), values: m.arows.map(function (r) { return r.E_v; }), percent: true, zeroLine: true, color: C.PALETTE[0], yLabel: T('rp_ax_drawings') }), caption: T('rp_cap_hist') });
-    out.push({ id: 'hist-h', svg: C.histogram({ title: T('rp_ch_hist_h'), xLabel: T('rp_ax_e_h'), values: m.arows.map(function (r) { return r.E_h; }), percent: true, zeroLine: true, color: C.PALETTE[2], yLabel: T('rp_ax_drawings') }), caption: T('rp_cap_hist') });
+    out.push({ id: 'e-v-h', svg: C.scatter({ title: T(V.key('rp_ch_e_v_h')), xLabel: T(V.key('rp_ax_e_h')), yLabel: T(V.key('rp_ax_e_v')), points: pts('E_h', 'E_v'), ref: V.ref, xPercent: V.percent, yPercent: V.percent, legend: legend, quadrants: [T('rp_q_tl'), T('rp_q_tr'), T('rp_q_bl'), T('rp_q_br')] }), caption: T('rp_cap_e_v_h') });
+    out.push({ id: 'hist-v', svg: C.histogram({ title: T(V.key('rp_ch_hist_v')), xLabel: T(V.key('rp_ax_e_v')), values: m.arows.map(function (r) { return V.v(r.E_v); }), percent: V.percent, ref: V.ref, color: C.PALETTE[0], yLabel: T('rp_ax_drawings') }), caption: T(V.key('rp_cap_hist')) });
+    out.push({ id: 'hist-h', svg: C.histogram({ title: T(V.key('rp_ch_hist_h')), xLabel: T(V.key('rp_ax_e_h')), values: m.arows.map(function (r) { return V.v(r.E_h); }), percent: V.percent, ref: V.ref, color: C.PALETTE[2], yLabel: T('rp_ax_drawings') }), caption: T(V.key('rp_cap_hist')) });
     return out;
   }
 
@@ -128,12 +147,17 @@
   }
 
   function structureTable(m) {
-    var med = function (s) { return s.n ? pct(s.median, true) + ' [' + pct(s.q1, true, 0) + ', ' + pct(s.q3, true, 0) + ']' : '–'; };
+    var V = m.view, d = V.ratio ? 2 : 0;
+    var med = function (s) { return s.n ? V.fmt(s.median, true) + ' [' + V.fmt(s.q1, true, d) + ', ' + V.fmt(s.q3, true, d) + ']' : '–'; };
+    var mean = function (s) {
+      return s.n ? V.fmt(s.mean, true) + (s.ci_lo != null ? ' [' + V.fmt(s.ci_lo, true) + ', ' + V.fmt(s.ci_hi, true) + ']' : '') : '–';
+    };
     return table(
-      [T('rp_t_structure'), 'n', T('rp_t_true_v'), T('rp_t_est_v'), T('rp_t_e_v'), T('rp_t_over'), T('rp_t_true_h'), T('rp_t_est_h'), T('rp_t_e_h'), T('rp_t_over')],
+      [T('rp_t_structure'), 'n', T('rp_t_true_v'), T('rp_t_est_v'), T(V.key('rp_t_e_v')), T(V.key('rp_t_e_v_mean')), T('rp_t_over'),
+        T('rp_t_true_h'), T('rp_t_est_h'), T(V.key('rp_t_e_h')), T(V.key('rp_t_e_h_mean')), T('rp_t_over')],
       m.structures.map(function (s) {
-        return [s.structure_name || s.structure_code || T('rp_no_structure'), s.n, num(s.true_v), num(s.est_v.mean) + ' (' + num(s.est_v.median) + ')', med(s.E_v), pct(s.over_v, false, 0),
-          num(s.true_h), num(s.est_h.mean) + ' (' + num(s.est_h.median) + ')', med(s.E_h), pct(s.over_h, false, 0)];
+        return [s.structure_name || s.structure_code || T('rp_no_structure'), s.n, num(s.true_v), num(s.est_v.mean) + ' (' + num(s.est_v.median) + ')', med(s.E_v), mean(s.E_v), pct(s.over_v, false, 0),
+          num(s.true_h), num(s.est_h.mean) + ' (' + num(s.est_h.median) + ')', med(s.E_h), mean(s.E_h), pct(s.over_h, false, 0)];
       }), 'num');
   }
 
@@ -216,7 +240,7 @@
   function metaLine(m) {
     var o = m.opts;
     return T('rp_meta', {
-      projects: m.projects.join(', ') || '–', rater: o.rater || T('rp_all_raters'), method: T('rp_method_' + (o.method || 'main')),
+      projects: m.projects.join(', ') || '–', rater: o.rater || T('rp_all_raters'), method: T('rp_method_' + (o.method || 'main')), show: T('rp_show_' + m.view.show),
       date: HUSS.measure.record.isoLocal(o.generatedAt || new Date()), tool: HUSS.config.TOOL_VERSION, rules: HUSS.config.RULES_VERSION
     });
   }

@@ -154,7 +154,7 @@
       els.print.disabled = els.dlHtml.disabled = true;
       return;
     }
-    model = HUSS.report.build.model(merged, { rater: els.rater.value || null, method: els.method.value, generatedAt: new Date() });
+    model = HUSS.report.build.model(merged, { rater: els.rater.value || null, method: els.method.value, show: els.show.value, generatedAt: new Date() });
     els.report.innerHTML = HUSS.report.build.fragment(model); // all text in it is escaped by the builder
     Array.prototype.forEach.call(els.report.querySelectorAll('.rp-fig'), addChartTools);
     els.print.disabled = els.dlHtml.disabled = false;
@@ -234,7 +234,7 @@
       files: $('res-files'), input: $('res-input'), fileErrors: $('res-file-errors'), tablesStatus: $('res-tables-status'),
       tableErrors: $('res-table-errors'), useScreen: $('res-use-screen'), keyInput: $('res-key-input'), structuresInput: $('res-structures-input'),
       merged: $('res-merged'), dlMerged: $('res-dl-merged'), dlExcel: $('res-dl-excel'),
-      rater: $('res-rater'), method: $('res-method'), print: $('res-print'), dlHtml: $('res-dl-html'), report: $('res-report'),
+      rater: $('res-rater'), method: $('res-method'), show: $('res-show'), print: $('res-print'), dlHtml: $('res-dl-html'), report: $('res-report'),
       keyNeeded: $('res-key-needed'), keyNeededText: $('res-key-needed-text')
     };
     $('res-go-tables').addEventListener('click', function () {
@@ -265,6 +265,7 @@
     });
     els.rater.addEventListener('change', function () { raterPick = els.rater.value; renderReport(); });
     els.method.addEventListener('change', renderReport);
+    els.show.addEventListener('change', renderReport); // display only: the merged CSV stays as it is
     els.print.addEventListener('click', printReport);
     els.dlHtml.addEventListener('click', function () {
       if (model) HUSS.io.files.downloadText(projectBase() + '_report.html', HUSS.report.build.documentHtml(model), 'text/html;charset=utf-8');

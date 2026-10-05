@@ -29,6 +29,8 @@
     g.appendChild(el('h2', HUSS.t('gd_rules_title', v)));
     g.appendChild(list('ol', 'gd_rules'));
     g.appendChild(el('p', HUSS.t('gd_estimates')));
+    g.appendChild(el('h2', HUSS.t('gd_report_title')));
+    g.appendChild(list('ul', 'gd_report'));
     g.appendChild(el('h2', HUSS.t('gd_keys_title')));
     g.appendChild(list('ul', 'gd_keys'));
     g.appendChild(el('h2', HUSS.t('gd_files_title')));

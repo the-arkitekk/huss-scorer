@@ -193,3 +193,41 @@ test('report without a key (several structures): says what is missing, shows the
   assert.ok(frag.includes(HUSS.t('rp_no_true_key')) && frag.includes(HUSS.t('rp_card_no_true')));
   assert.ok(!/NaN|undefined/.test(frag));
 });
+
+test('stats: t quantiles and the 95 % confidence interval of the mean (from 3 values on)', () => {
+  for (const [df, t] of [[1, 12.7062], [2, 4.3027], [12, 2.1788], [14, 2.1448], [30, 2.0423], [100, 1.9840]]) near(S.tQuantile(0.975, df), t, 1e-4, 't(0.975, ' + df + ')');
+  const v = [0.1, -0.2, 0.05, 0.3, -0.1];
+  const s = S.summary(v), half = S.tQuantile(0.975, 4) * s.sd / Math.sqrt(5);
+  near(s.ci_lo, s.mean - half, 1e-12, 'ci_lo'); near(s.ci_hi, s.mean + half, 1e-12, 'ci_hi');
+  near(s.ci_hi - s.ci_lo, 2 * 2.7764 * s.sd / Math.sqrt(5), 1e-3, 'width with t(0.975, 4) = 2.7764');
+  assert.equal(S.summary([0.1, 0.2]).ci_lo, null, 'no interval below 3 values');
+  assert.equal(C.fmt(-0.005, true, 1), '-0.5%', 'a small negative percentage keeps its sign');
+  assert.equal(C.fmt(-0.0004, true, 1), '0.0%', 'but no "-0.0%"');
+});
+
+test('charts: mean diamond and 95 % CI bar right of the box; only the diamond below 3 values', () => {
+  const svg = C.stripBox({ title: 't', yLabel: 'E', groups: [{ label: 'A', values: [0.1, -0.2, 0.05, 0.3] }, { label: 'B', values: [0.2, 0.4] }], percent: true, ref: 0 });
+  assert.equal((svg.match(/<path d="M/g) || []).length, 2, 'one diamond per group');
+  assert.ok(svg.includes("mean 6.2% [95% CI -26.5%, 39.0%]"), "mean and interval under group A");
+  assert.ok(/>mean 30\.0%</.test(svg), 'group B (2 values): mean without an interval');
+  const ratio = C.stripBox({ title: 't', groups: [{ label: 'A', values: [1.1, 0.8, 1.05, 1.3] }], percent: false, ref: 1 });
+  assert.ok(/mean 1\.06 \[95% CI 0\.7\d, 1\.3\d\]/.test(ratio) && /median 1\.08/.test(ratio));
+});
+
+test('report: Show as ratio (1 + E) in the cards, error charts and By structure table; E stays in the data', () => {
+  const { r1 } = sample();
+  const m = HUSS.io.merge.merge([asFile('ab.csv', r1)], tables.parseKey(KEY_TEXT), tables.parseStructures(STRUCT_TEXT));
+  const before = csv.toCSV(m.rows, m.columns);
+  const err = B.fragment(B.model(m, { rater: 'AB', show: 'error' }));
+  const rat = B.fragment(B.model(m, { rater: 'AB', show: 'ratio' }));
+  assert.ok(err.includes('E height, mean [95% CI]') && err.includes('E distance, mean [95% CI]'));
+  assert.ok(rat.includes('Ratio height, mean [95% CI]') && rat.includes('median ratio (estimate / true)'));
+  assert.ok(rat.includes('Above 1 overestimated, below 1 underestimated'));
+  const mo = B.model(m, { rater: 'AB', show: 'ratio' }), hall = mo.structures.find((s) => s.structure_code === 'HALL');
+  assert.ok(rat.includes(mo.view.fmt(hall.E_v.mean, true)), 'the HALL mean as a ratio');
+  near(Number(mo.view.fmt(hall.E_v.median, true)), 1 + hall.E_v.median, 0.005, 'ratio = 1 + E');
+  assert.ok(B.documentHtml(mo).includes('Shown as: Ratio'), 'the HTML report says how it is shown');
+  assert.ok(!/NaN|undefined/.test(rat));
+  // the merged rows (and so the merged CSV) are not touched by the display choice
+  assert.equal(csv.toCSV(m.rows, m.columns), before);
+});

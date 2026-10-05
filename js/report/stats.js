@@ -1,7 +1,7 @@
 /* HuSS Scorer — js/report/stats.js
  * Descriptive statistics for the Report (merged rows -> numbers). DOM-free.
- * Only description: counts, means, medians, quartiles, standard deviations, shares. ICC and kappa
- * are computed in R (r/icc_kappa.R).
+ * Description: counts, means with their 95 % confidence intervals (t distribution), medians,
+ * quartiles, standard deviations, shares. ICC and kappa are computed in R (r/icc_kappa.R).
  */
 (function (root) {
   'use strict';
@@ -17,13 +17,78 @@
     return sorted[lo] + (h - lo) * (sorted[hi] - sorted[lo]);
   }
 
-  /** { n, mean, sd, median, q1, q3, min, max } of the finite numbers in values (nulls when empty). */
+  /** ln Gamma(x), x > 0 (Lanczos approximation, about 15 digits). */
+  function lnGamma(x) {
+    var g = [676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+      12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    if (x < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * x))) - lnGamma(1 - x);
+    x -= 1;
+    var a = 0.99999999999980993, t = x + 7.5;
+    for (var i = 0; i < 8; i++) a += g[i] / (x + i + 1);
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  }
+
+  /** Continued fraction of the regularized incomplete beta function (modified Lentz). */
+  function betacf(a, b, x) {
+    var qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap, tiny = 1e-300;
+    if (Math.abs(d) < tiny) d = tiny;
+    d = 1 / d;
+    var h = d;
+    for (var m = 1; m <= 300; m++) {
+      var m2 = 2 * m, aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+      d = 1 + aa * d; if (Math.abs(d) < tiny) d = tiny;
+      c = 1 + aa / c; if (Math.abs(c) < tiny) c = tiny;
+      d = 1 / d; h *= d * c;
+      aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+      d = 1 + aa * d; if (Math.abs(d) < tiny) d = tiny;
+      c = 1 + aa / c; if (Math.abs(c) < tiny) c = tiny;
+      d = 1 / d;
+      var del = d * c;
+      h *= del;
+      if (Math.abs(del - 1) < 1e-14) break;
+    }
+    return h;
+  }
+
+  /** Regularized incomplete beta function I_x(a, b). */
+  function ibeta(x, a, b) {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    var bt = Math.exp(lnGamma(a + b) - lnGamma(a) - lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+    return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b;
+  }
+
+  /** Cumulative t distribution with df degrees of freedom. */
+  function tCdf(t, df) {
+    var p = 0.5 * ibeta(df / (df + t * t), df / 2, 0.5);
+    return t >= 0 ? 1 - p : p;
+  }
+
+  /** Quantile of the t distribution (p in (0, 1)), by bisection on the cumulative function. */
+  function tQuantile(p, df) {
+    var lo = -1000, hi = 1000;
+    for (var i = 0; i < 200 && hi - lo > 1e-12; i++) {
+      var mid = (lo + hi) / 2;
+      if (tCdf(mid, df) < p) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  /**
+   * { n, mean, sd, median, q1, q3, min, max, ci_lo, ci_hi } of the finite numbers in values (nulls
+   * when empty). ci: the 95 % confidence interval of the mean, mean +- t(0.975, n - 1) * sd / sqrt(n),
+   * from 3 values on (null below).
+   */
   function summary(values) {
     var v = values.filter(isNum).sort(function (a, b) { return a - b; }), n = v.length;
-    if (!n) return { n: 0, mean: null, sd: null, median: null, q1: null, q3: null, min: null, max: null };
+    if (!n) return { n: 0, mean: null, sd: null, median: null, q1: null, q3: null, min: null, max: null, ci_lo: null, ci_hi: null };
     var mean = v.reduce(function (s, x) { return s + x; }, 0) / n;
     var sd = n > 1 ? Math.sqrt(v.reduce(function (s, x) { return s + (x - mean) * (x - mean); }, 0) / (n - 1)) : null;
-    return { n: n, mean: mean, sd: sd, median: quantile(v, 0.5), q1: quantile(v, 0.25), q3: quantile(v, 0.75), min: v[0], max: v[n - 1] };
+    var half = n >= 3 ? tQuantile(0.975, n - 1) * sd / Math.sqrt(n) : null;
+    return {
+      n: n, mean: mean, sd: sd, median: quantile(v, 0.5), q1: quantile(v, 0.25), q3: quantile(v, 0.75), min: v[0], max: v[n - 1],
+      ci_lo: half == null ? null : mean - half, ci_hi: half == null ? null : mean + half
+    };
   }
 
   /** Estimate and E columns of each method the Report can show. */
@@ -128,7 +193,7 @@
   }
 
   var api = {
-    METHODS: METHODS, quantile: quantile, summary: summary, analysisRows: analysisRows,
+    METHODS: METHODS, quantile: quantile, summary: summary, analysisRows: analysisRows, tQuantile: tQuantile, tCdf: tCdf,
     byStructure: byStructure, overview: overview, quality: quality, isNum: isNum
   };
   HUSS.report.stats = api;

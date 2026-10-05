@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased (0.1.0)
+## 0.1.1 (unreleased)
+
+Report (display only; measurement, rules and CSV columns unchanged):
+- Error-by-structure charts: the mean (diamond) and its 95 % confidence interval (bar; t distribution, from 3 drawings on) right of each box; the mean and interval under each group and as two new columns of the By structure table; captions explain the sideways spread of the dots and the whiskers (lowest to highest value).
+- "Show as": Error (%) or Ratio (estimate / true = 1 + E), for the summary cards, the error charts, the histograms, the height-against-distance chart and the By structure table, and for the PNG, SVG, print and HTML exports; the merged CSV files are unchanged.
+- Small negative percentages (between -1 % and 0) kept their minus sign in the charts.
+- Guide: "Reading the report".
+
+## 0.1.0 (pilot, unreleased)
 
 Rules version 1.3.
 

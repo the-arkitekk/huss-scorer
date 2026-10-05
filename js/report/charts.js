@@ -23,7 +23,10 @@
 
   function fmt(v, percent, decimals) {
     if (v == null || !isFinite(v)) return '–';
-    if (percent) return (v * 100).toFixed(decimals == null ? 0 : decimals).replace('-0', '0') + '%';
+    if (percent) {
+      var t = (v * 100).toFixed(decimals == null ? 0 : decimals);
+      return (/^-0(\.0+)?$/.test(t) ? t.slice(1) : t) + '%'; // no "-0%", but -0.5% keeps its sign
+    }
     return (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(decimals == null ? 2 : decimals));
   }
 
@@ -119,19 +122,32 @@
     return open(w, h, o.title) + text(w / 2, h / 2, o.emptyText || 'No data', { anchor: 'middle', size: 12 }) + '</svg>';
   }
 
+  /** Mean and its 95 % confidence interval as written under a group: "mean 0.0% [95% CI -10.3%, 10.2%]". */
+  function meanText(s, percent) {
+    var d = percent ? 1 : 2;
+    return 'mean ' + fmt(s.mean, percent, d) + (s.ci_lo != null ? ' [95% CI ' + fmt(s.ci_lo, percent, d) + ', ' + fmt(s.ci_hi, percent, d) + ']' : '');
+  }
+
   /**
-   * Points per group with a box (quartiles), median line and whiskers (min to max).
-   * o: { title, yLabel, groups: [{ label, values, color }], percent, zeroLine, width, height }
+   * Points per group (spread sideways only so they do not overlap) with a box (quartiles), median
+   * line and whiskers (lowest to highest value); right of the box the mean (diamond) and its 95 %
+   * confidence interval (bar; from 3 values on).
+   * o: { title, yLabel, groups: [{ label, values, color }], percent, ref (reference line value, e.g.
+   *      0 for errors, 1 for ratios) or zeroLine, width, height }
    */
   function stripBox(o) {
-    var w = o.width || 560, h = o.height || 340, L = 60, R = w - 16, T = 40, B = h - 52;
-    var all = [];
-    o.groups.forEach(function (g) { all = all.concat(g.values.filter(isNum)); });
+    var w = o.width || 560, h = o.height || 356, L = 60, R = w - 16, T = 40, B = h - 66;
+    var ref = o.ref != null ? o.ref : o.zeroLine ? 0 : null, all = [];
+    o.groups.forEach(function (g) {
+      all = all.concat(g.values.filter(isNum));
+      var s = HUSS.report.stats.summary(g.values);
+      if (s.ci_lo != null) all.push(s.ci_lo, s.ci_hi);
+    });
     if (!all.length) return empty(o, w, h);
-    var dom = extent(all, o.zeroLine ? [0] : []), pad = (dom[1] - dom[0]) * 0.08 || 0.05;
+    var dom = extent(all, ref != null ? [ref] : []), pad = (dom[1] - dom[0]) * 0.08 || 0.05;
     var ya = yAxis([dom[0] - pad, dom[1] + pad], T, B, L, R, o.percent, o.yLabel);
     var svg = open(w, h, o.title) + ya.svg;
-    if (o.zeroLine) svg += line(L, ya.y(0), R, ya.y(0), AXIS, 1.2);
+    if (ref != null) svg += line(L, ya.y(ref), R, ya.y(ref), AXIS, 1.2);
     var band = (R - L) / o.groups.length, S = HUSS.report.stats, k = 0;
     o.groups.forEach(function (g, gi) {
       var cx = L + band * (gi + 0.5), col = g.color || PALETTE[gi % PALETTE.length], s = S.summary(g.values);
@@ -146,15 +162,24 @@
         g.values.filter(isNum).forEach(function (v) {
           svg += '<circle cx="' + r1(cx + jitter(k++) * bw * 0.45) + '" cy="' + r1(ya.y(v)) + '" r="3.4" fill="' + col + '" fill-opacity="0.75" stroke="#fff" stroke-width="0.8"/>';
         });
+        // mean (diamond) and 95 % CI (bar with caps) right of the box, in ink: not the median's colour or shape
+        var mx = cx + bw / 2 + 12, my = ya.y(s.mean), dd = 4.5;
+        if (s.ci_lo != null) {
+          svg += line(mx, ya.y(s.ci_lo), mx, ya.y(s.ci_hi), INK, 1.4) +
+            line(mx - 3.5, ya.y(s.ci_lo), mx + 3.5, ya.y(s.ci_lo), INK, 1.4) + line(mx - 3.5, ya.y(s.ci_hi), mx + 3.5, ya.y(s.ci_hi), INK, 1.4);
+        }
+        svg += '<path d="M' + r1(mx) + ' ' + r1(my - dd) + 'L' + r1(mx + dd) + ' ' + r1(my) + 'L' + r1(mx) + ' ' + r1(my + dd) + 'L' + r1(mx - dd) + ' ' + r1(my) +
+          'Z" fill="#ffffff" stroke="' + INK + '" stroke-width="1.6"/>';
       }
       svg += text(cx, B + 16, g.label, { anchor: 'middle', size: 11, fill: INK }) +
-        text(cx, B + 30, 'n = ' + s.n + (s.n ? ' · median ' + fmt(s.median, o.percent, 1) : ''), { anchor: 'middle' });
+        text(cx, B + 30, 'n = ' + s.n + (s.n ? ' · median ' + fmt(s.median, o.percent, o.percent ? 1 : 2) : ''), { anchor: 'middle' }) +
+        (s.n ? text(cx, B + 44, meanText(s, o.percent), { anchor: 'middle' }) : '');
     });
     return svg + '</svg>';
   }
 
   /**
-   * o: { title, xLabel, yLabel, points: [{ x, y, color }], identity, zeroLines, equal, xPercent, yPercent,
+   * o: { title, xLabel, yLabel, points: [{ x, y, color }], identity, zeroLines (or ref: value of both reference lines), equal, xPercent, yPercent,
    *      legend: [{ label, color }], quadrants: [tl, tr, bl, br], width, height }
    */
   function scatter(o) {
@@ -162,7 +187,8 @@
     var pts = o.points.filter(function (p) { return isNum(p.x) && isNum(p.y); });
     if (!pts.length) return empty(o, w, h);
     var xs = pts.map(function (p) { return p.x; }), ys = pts.map(function (p) { return p.y; });
-    var dx = extent(xs, o.zeroLines ? [0] : []), dy = extent(ys, o.zeroLines ? [0] : []);
+    var ref = o.ref != null ? o.ref : o.zeroLines ? 0 : null;
+    var dx = extent(xs, ref != null ? [ref] : []), dy = extent(ys, ref != null ? [ref] : []);
     if (o.equal) { var lo = Math.min(dx[0], dy[0]), hi = Math.max(dx[1], dy[1]); dx = [lo, hi]; dy = [lo, hi]; }
     var px = (dx[1] - dx[0]) * 0.08 || 0.1, py = (dy[1] - dy[0]) * 0.08 || 0.1;
     var ya = yAxis([dy[0] - py, dy[1] + py], T, B, L, R, o.yPercent, o.yLabel);
@@ -170,9 +196,9 @@
     var svg = open(w, h, o.title) + ya.svg + xa.svg;
     if (o.legend && o.legend.length) svg += legend(o.legend, 14, 40);
     var X0 = xa.ticks.lo, X1 = xa.ticks.hi, Y0 = ya.ticks.lo, Y1 = ya.ticks.hi;
-    if (o.zeroLines) {
-      if (X0 <= 0 && X1 >= 0) svg += line(xa.x(0), T, xa.x(0), B, AXIS, 1.2);
-      if (Y0 <= 0 && Y1 >= 0) svg += line(L, ya.y(0), R, ya.y(0), AXIS, 1.2);
+    if (ref != null) {
+      if (X0 <= ref && X1 >= ref) svg += line(xa.x(ref), T, xa.x(ref), B, AXIS, 1.2);
+      if (Y0 <= ref && Y1 >= ref) svg += line(L, ya.y(ref), R, ya.y(ref), AXIS, 1.2);
     }
     if (o.quadrants) {
       var q = o.quadrants;
@@ -189,12 +215,12 @@
     return svg + '</svg>';
   }
 
-  /** o: { title, xLabel, values, percent, color, zeroLine, width, height } */
+  /** o: { title, xLabel, values, percent, color, zeroLine (or ref: value of the dashed line), width, height } */
   function histogram(o) {
     var w = o.width || 560, h = o.height || 300, L = 52, R = w - 16, T = 40, B = h - 52;
-    var v = o.values.filter(isNum);
+    var v = o.values.filter(isNum), ref = o.ref != null ? o.ref : o.zeroLine ? 0 : null;
     if (!v.length) return empty(o, w, h);
-    var dom = extent(v, o.zeroLine ? [0] : []), t = niceTicks(dom[0], dom[1], Math.min(16, Math.max(6, Math.round(Math.sqrt(v.length) * 2.5))));
+    var dom = extent(v, ref != null ? [ref] : []), t = niceTicks(dom[0], dom[1], Math.min(16, Math.max(6, Math.round(Math.sqrt(v.length) * 2.5))));
     var bins = [];
     for (var b = t.lo; b < t.hi - t.step / 2; b += t.step) bins.push({ a: b, b: b + t.step, n: 0 });
     if (!bins.length) bins.push({ a: t.lo, b: t.lo + t.step, n: 0 });
@@ -210,7 +236,7 @@
       var x1 = xa.x(q.a) + 1, x2 = xa.x(q.b) - 1;
       if (q.n) svg += '<rect x="' + r1(x1) + '" y="' + r1(ya.y(q.n)) + '" width="' + r1(Math.max(1, x2 - x1)) + '" height="' + r1(B - ya.y(q.n)) + '" fill="' + col + '" fill-opacity="0.8" rx="1.5"/>';
     });
-    if (o.zeroLine && t.lo <= 0 && t.hi >= 0) svg += line(xa.x(0), T, xa.x(0), B, INK, 1.2, '4 3');
+    if (ref != null && t.lo <= ref && t.hi >= ref) svg += line(xa.x(ref), T, xa.x(ref), B, INK, 1.2, '4 3');
     return svg + '</svg>';
   }
 

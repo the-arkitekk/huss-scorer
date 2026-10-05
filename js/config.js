@@ -8,7 +8,7 @@
   var HUSS = root.HUSS = root.HUSS || {};
 
   var config = {
-    TOOL_VERSION: '0.1.0',
+    TOOL_VERSION: '0.1.1',
     // 1.1: rule 3 — red drawn below the floor line counts as standing on the line (flagged).
     // 1.2: rule 3 — the figure is always measured from the head top to the floor line;
     //      a red trace ending off the line is flagged, its own bottom kept as a backup value.
