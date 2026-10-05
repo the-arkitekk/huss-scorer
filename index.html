@@ -120,20 +120,6 @@
         </div>
       </section>
 
-      <section class="card" id="card-sheet" hidden>
-        <h2 id="sheet-title"></h2>
-        <p class="small later-note" id="later-note" hidden></p>
-        <div id="sheet-body">
-        <label class="field"><span data-s="sheet_code"></span><input type="text" id="in-sheet" autocomplete="off" spellcheck="false" maxlength="5" data-s-placeholder="sheet_code_placeholder"></label>
-        <p class="small" id="sheet-status" data-s="sheet_code_hint"></p>
-        <p class="small" id="open-info" hidden></p>
-        <label class="field field-inline" id="open-structure-row" hidden><span data-s="open_structure_pick"></span><select id="open-structure"></select></label>
-        <p class="small" id="image-info"></p>
-        <p class="small muted" id="image-align"></p>
-        <p class="small bad" id="image-warn" hidden></p>
-        </div>
-      </section>
-
       <section class="card" id="card-manual" hidden>
         <h2 data-s="sec_manual"></h2>
         <p class="small" id="manual-why"></p>
@@ -182,11 +168,22 @@
         <label class="check"><input type="checkbox" id="chk-snap" checked><span data-s="view_snap"></span></label>
       </section>
 
-      <section class="card card-actions" id="card-actions" hidden>
-        <div class="btn-row nav-row">
-          <button type="button" class="btn" id="btn-prev" data-s="previous"></button>
-          <button type="button" class="btn" id="btn-later" data-s="review_later"></button>
+      <section class="card" id="card-sheet" hidden>
+        <h2 id="sheet-title"></h2>
+        <p class="small later-note" id="later-note" hidden></p>
+        <div id="sheet-body">
+        <label class="field"><span data-s="sheet_code"></span><input type="text" id="in-sheet" autocomplete="off" spellcheck="false" maxlength="5" data-s-placeholder="sheet_code_placeholder"></label>
+        <p class="small" id="sheet-status" data-s="sheet_code_hint"></p>
+        <p class="small" id="open-info" hidden></p>
+        <p class="small" id="box-info" hidden></p>
+        <label class="field field-inline" id="open-structure-row" hidden><span data-s="open_structure_pick"></span><select id="open-structure"></select></label>
+        <p class="small" id="image-info"></p>
+        <p class="small muted" id="image-align"></p>
+        <p class="small bad" id="image-warn" hidden></p>
         </div>
+      </section>
+
+      <section class="card card-actions" id="card-actions" hidden>
         <div class="code-check" id="code-check" hidden>
           <p class="small muted" data-s="code_check_help"></p>
           <div class="code-pic"><canvas id="code-pic" data-s-title="code_picture"></canvas></div>
@@ -194,6 +191,10 @@
         </div>
         <button type="button" class="btn btn-primary btn-block" id="btn-confirm" data-s="confirm_next"></button>
         <p class="small" id="confirm-status"></p>
+        <div class="btn-row nav-row">
+          <button type="button" class="btn" id="btn-prev" data-s="previous"></button>
+          <button type="button" class="btn" id="btn-later" data-s="review_later"></button>
+        </div>
       </section>
     </aside>
   </main>

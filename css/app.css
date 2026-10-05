@@ -237,7 +237,7 @@ table { border-collapse: collapse; width: 100%; }
 
 .code-pic { margin: 4px 0 6px; }
 .later-note { background: var(--warn-bg); color: var(--warn); border-radius: var(--radius); padding: 4px 8px; margin: -2px 0 8px; }
-.code-check { border-top: 1px solid var(--line); padding-top: 6px; margin: 4px 0 8px; }
+.code-check { margin: 0 0 8px; }
 .code-check p { margin: 0 0 4px; }
 .code-pic canvas { display: block; width: 100%; max-width: 300px; height: auto; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
 .btn-finish { background: var(--ok); border-color: var(--ok); }

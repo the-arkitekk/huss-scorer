@@ -223,11 +223,17 @@ test('S9: double-line wall -> the inner face is suggested and snapped to', () =>
   checkSnapAndEstimates('S9', r.t, m);
 });
 
-test('S10: no ceiling above the figure -> no ceiling suggestion; wall still suggested', () => {
-  const r = run('S10');
+test('S10: ceiling drawn only right of the figure -> suggested from where it starts; snap finds it too; wall suggested', () => {
+  const r = run('S10'), a = r.a, ax = a.suggestions.axis_x;
   checkCommon('S10', r);
-  assert.equal(r.a.suggestions.ceiling_y, null);
-  near(r.a.suggestions.wall_x, r.t.wall_x, 0.3, 'S10 wall');
+  near(a.suggestions.ceiling_y, r.t.ceiling_y, TOL.snap_mm, 'S10 ceiling');
+  near(a.suggestions.wall_x, r.t.wall_x, 0.3, 'S10 wall');
+  const l = HUSS.detect.line.ceilingLine(a, ax, a.suggestions.ceiling_at_axis_y, a.suggestions.wall_x);
+  near(l.from_x, 60, 0.5, 'S10 ceiling averaged from its start');
+  // a handle dropped 1 mm off the line snaps to it, though the line does not reach the axis
+  const sn = P.snapCeiling(a, ax, r.t.ceiling_y + 1, params.snap_radius_mm, r.t.wall_x);
+  assert.equal(sn.snapped, true);
+  near(sn.pos, r.t.ceiling_y, TOL.snap_mm, 'S10 snapped');
 });
 
 test('S11: JPEG quality 60 and noise -> alignment, QR, figure, snap and estimates hold', () => {

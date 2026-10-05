@@ -3,7 +3,9 @@
  *
  * Ceiling: going up from 1 mm above the head top, the first line in the ceiling profile that
  * runs horizontally: on its row, at least 60 % of the 10 mm to the right of the axis is dark, or
- * (a wavy freehand line) the line can be followed over at least 60 % of those 10 mm.
+ * (a wavy freehand line) the line can be followed over at least 60 % of those 10 mm. Without such
+ * a line over the figure, the first line above the head that starts right of it and can be
+ * followed for at least 6 mm (a ceiling drawn between the figure and the wall).
  * Wall: among the lines right of the figure, the rightmost one that rises from the floor for at
  * least half the ceiling height (10 mm without a ceiling); if another such line lies within
  * 6 mm to its left, that one (the inner face of a double-line wall).
@@ -107,6 +109,13 @@
       var run = horizontalRun(a.dm, R, y, axisX, axisX + S.CEILING_RUN_MM, S.CEILING_Y_TOLERANCE_MM, S.CEILING_SLOPE_MAX, thr);
       if (run >= S.CEILING_RUN_MIN) return y;
       if (followedShare(a, axisX, y) >= S.CEILING_RUN_MIN) return y;
+    }
+    // No ceiling over the figure: one drawn only to its right (rules 1.3: averaged from its start).
+    var rows = HUSS.detect.line.rowsRight(a, axisX, Math.floor(S.TOP_MM * R), Math.floor(start * R), null)
+      .sort(function (p, q) { return q - p; });
+    for (var j = 0; j < rows.length; j++) {
+      var l = HUSS.detect.line.ceilingLine(a, axisX, rows[j] / R, null);
+      if (l.followed && l.pts[l.pts.length - 1][0] - l.pts[0][0] >= S.CEILING_RUN_MM * S.CEILING_RUN_MIN) return rows[j] / R;
     }
     return null;
   }

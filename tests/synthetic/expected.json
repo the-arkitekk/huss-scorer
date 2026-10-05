@@ -702,7 +702,7 @@
     }
   },
   "S10": {
-    "description": "No ceiling above the figure",
+    "description": "Ceiling drawn only right of the figure (from x = 60 mm)",
     "template": "A4L",
     "dpi": 300,
     "rotation_deg": 0,

@@ -60,7 +60,7 @@ Neden: Kural 3'te havada ya da zeminin altına taşan figür; kural 4–5'te ser
 
 > 3. Ayak tabanı her zaman zemin çizgisidir: figür baş üstünden zemin çizgisine ölçülür (figür havada da olsa, ayaklar çizginin altına taşsa da). Kırmızı iz çizgiden `foot_tolerance_mm` (proje ayarı; varsayılan 4 mm) fazla uzakta biterse `flag_foot_off_floor` konur. Kırmızının en alt noktası ve ona göre ölçülen değerler yedek sütunlarda tutulur.
 >
-> 4. Tavan yüksekliği zemin çizgisinden tavana ölçülür. Tavan, çizgisinin figür ekseninden karşı duvarın 1 mm öncesine kadar olan kısmının **ortalamasıdır** (karşı duvar yoksa çizginin gittiği yere kadar). Her sütunda çizginin ortası alınır; köşeye bitişik son 1 mm alınmaz.
+> 4. Tavan yüksekliği zemin çizgisinden tavana ölçülür. Tavan, çizgisinin figür ekseninden karşı duvarın 1 mm öncesine kadar olan kısmının **ortalamasıdır** (karşı duvar yoksa çizginin gittiği yere kadar). Tavan figürün üstüne kadar uzanmıyorsa (yalnızca figür ile duvar arasında çizilmişse) başladığı yerden itibaren ortalanır. Kural 8: yalnızca hiç tavan çizgisi yoksa düşey eksen ölçülemez sayılır. Her sütunda çizginin ortası alınır; köşeye bitişik son 1 mm alınmaz.
 >
 > 5. Yatay uzaklık figürün düşey ekseninden karşı duvara ölçülür. Duvar, çizgisinin zeminin 1 mm üstünden tavanın 1 mm altına kadar olan kısmının **ortalamasıdır**.
 >
@@ -110,7 +110,7 @@ Neden: gerçek ölçüleri proje başında bir kez girmek; tek yapılı çalış
 
 ## 10. Kabul testleri
 
-**10.2 Sentetik sayfalar.** Eklenecekler:
+**10.2 Sentetik sayfalar.** S10 değişir: tavan figürün sağında başlıyor; öneri o çizgiye, başladığı yerden ortalanarak yapılır. Eklenecekler:
 
 > S16 (eğik ve dalgalı tavan ve duvar; öneri gerçek ortalamaya 0,3 mm içinde), S17 (belirgin eğik tavan; bayrak), C1 ve C10 (kalibrasyon sayfası; uzunluklar 0,3 mm ya da %1 içinde), T1 (180° dönüşte yön belirsizliği; QR karar verir). S14: tek köşe eksik sayfa artık otomatik hizalanır; iki köşe eksikse elle hizalama istenir.
 

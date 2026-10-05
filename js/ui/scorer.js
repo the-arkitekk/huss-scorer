@@ -208,7 +208,25 @@
     return st ? { participant_code: lk ? lk.participant_code : null, structure_code: st.code, structure_name: st.name, true_vertical_m: st.true_vertical_m, true_horizontal_m: st.true_horizontal_m } : null;
   }
 
+  /**
+   * What was read from the structure boxes, in a way Blind mode may show (never which structure):
+   * read, none marked, several marked, or a box beyond the project's structures.
+   */
+  function renderBoxInfo() {
+    var b = s && s.analysis.boxes, sts = s ? s.params.structures || [] : [], text = '', cls = 'small';
+    if (b && b.printed >= 2) {
+      if (b.status === 'one' && b.index >= sts.length) { text = HUSS.t('box_outside', { n: b.index + 1, m: sts.length }); cls += ' bad'; }
+      else if (ctx.mode === 'open') text = ''; // the Open mode line below says it, with the structure
+      else if (b.status === 'one') text = HUSS.t('box_read_blind');
+      else { text = HUSS.t(b.status === 'several' ? 'box_several' : 'box_none'); cls += ' bad'; }
+    }
+    els.boxInfo.hidden = !text;
+    els.boxInfo.textContent = text;
+    els.boxInfo.className = cls;
+  }
+
   function renderOpenInfo() {
+    renderBoxInfo();
     els.openStructureRow.hidden = true;
     var open = !!(ctx && ctx.mode === 'open' && s), sts = open ? s.params.structures || [] : [];
     var lk = open && ctx.lookup && ctx.lookup.structure_code ? ctx.lookup : null, boxes = sts.length > 1;
@@ -221,7 +239,7 @@
     } else if (boxes) {
       var st = projectStructure(s.meta.structure_mark), b = s.analysis.boxes, status = b ? b.status : 'not_printed';
       if (st) parts.push(HUSS.t(s.meta.structure_mark_source === 'rater' ? 'open_box_rater' : 'open_box_one', { name: st.name || st.code, code: st.code }));
-      else parts.push(HUSS.t('open_box_' + (status === 'one' ? 'none' : status)));
+      else parts.push(HUSS.t(status === 'one' ? 'open_structure_choose' : 'open_box_' + status));
       var sel = els.openStructure;
       sel.textContent = '';
       [{ code: '', label: HUSS.t('open_structure_none') }].concat(sts.map(function (x) { return { code: x.code, label: x.code + (x.name ? ' — ' + x.name : '') }; }))
@@ -993,7 +1011,7 @@
       busy: $('busy'), busyText: $('busy-text'), tools: $('stage-tools'), hint: $('hint'),
       inProject: $('in-project'), inSheet: $('in-sheet'), sheetStatus: $('sheet-status'), sheetTitle: $('sheet-title'),
       imageInfo: $('image-info'), imageAlign: $('image-align'), imageWarn: $('image-warn'), openInfo: $('open-info'),
-      openStructureRow: $('open-structure-row'), openStructure: $('open-structure'),
+      openStructureRow: $('open-structure-row'), openStructure: $('open-structure'), boxInfo: $('box-info'),
       projectInfo: $('project-info'), projectWarn: $('project-warn'), btnMainMenu: $('btn-main-menu'),
       cardSheet: $('card-sheet'), cardHandles: $('card-handles'), cardValues: $('card-values'), cardFlags: $('card-flags'),
       cardExclusion: $('card-exclusion'), cardView: $('card-view'), cardActions: $('card-actions'),

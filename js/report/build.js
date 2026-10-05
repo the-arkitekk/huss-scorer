@@ -161,7 +161,22 @@
     if (p.unfinished.length) items.push(T('rp_p_unfinished', { n: p.unfinished.length, list: p.unfinished.map(function (d) { return d.sheet_code + ' (' + d.rater_code + ')'; }).join(', ') }));
     if (p.not_measured.length) items.push(T('rp_p_not_measured', { n: p.not_measured.length, list: p.not_measured.join(', ') }));
     return '<section class="rp-section rp-checks"><h2>' + esc(T('rp_checks')) + '</h2>' +
-      (items.length ? '<ul>' + items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>' : '<p class="rp-ok">' + esc(T(p.single_structure ? 'rp_checks_ok_single' : 'rp_checks_ok')) + '</p>') + '</section>';
+      (items.length ? '<ul>' + items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>' : '<p class="rp-ok">' + esc(T(p.single_structure ? 'rp_checks_ok_single' : 'rp_checks_ok')) + '</p>') +
+      sourcesHtml(m) + '</section>';
+  }
+
+  /** Where the structures of the drawings came from (all records, excluded ones too). */
+  function sourcesHtml(m) {
+    var n = { key: 0, mark: 0, rater: 0, project: 0, none: 0 }, any = false;
+    m.rows.forEach(function (r) {
+      if (r.structure_source === undefined) return;
+      any = true;
+      n[r.structure_source && n[r.structure_source] !== undefined ? r.structure_source : 'none']++;
+    });
+    if (!any) return '';
+    var parts = ['mark', 'key', 'rater', 'project', 'none'].filter(function (k) { return n[k]; })
+      .map(function (k) { return T('rp_src_' + k + '_n', { n: n[k] }); });
+    return '<p class="rp-sources">' + esc(T('rp_sources', { list: parts.join(', ') })) + '</p>';
   }
 
   /** The report body (cards, charts, tables) as an HTML fragment. */
@@ -189,7 +204,7 @@
     '.rp-fig figcaption{font-size:11px;color:#5f6672;padding:4px 6px 2px}',
     '.rp-table{border-collapse:collapse;font-size:12px;width:100%}.rp-table th,.rp-table td{border-bottom:1px solid #e9ecef;padding:4px 8px;text-align:left}',
     '.rp-table.num td:not(:first-child),.rp-table.num th:not(:first-child){text-align:right}.rp-table th{background:#f4f6f8;font-weight:600}',
-    '.rp-checks ul{margin:0;padding-left:18px;color:#8a4a12}.rp-ok{color:#2b7a3d}.rp-note{color:#8a4a12}',
+    '.rp-checks ul{margin:0;padding-left:18px;color:#8a4a12}.rp-ok{color:#2b7a3d}.rp-note{color:#8a4a12}.rp-sources{font-size:12px;color:#5f6672;margin:6px 0 0}',
     '.rp-table tr.rp-mismatch td{background:#fff4e5}',
     '.rp-table.rp-cmp td:nth-child(-n+3),.rp-table.rp-cmp th:nth-child(-n+3){text-align:left}',
     '@media print{.rp-grid{grid-template-columns:1fr 1fr}.rp-fig{page-break-inside:avoid}}'

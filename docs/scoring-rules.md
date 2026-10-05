@@ -9,11 +9,11 @@ Two axes are measured: **vertical** (ceiling height, primary) and **horizontal**
 1. **Lines.** The middle of a line is measured (floor, ceiling, opposite wall).
 2. **Figure height.** From the foot to the head top. The head top is the highest point of the red trace.
 3. **Foot.** The foot is always the floor line: the figure is measured from the head top to the floor line, also when it floats above the line or its feet are drawn through it. If the red trace ends more than `foot_tolerance_mm` (project setting; default 4 mm, specification 0.5 mm) above or below the line, `flag_foot_off_floor` is set. The lowest red point and the values measured to it are kept as backup columns.
-4. **Ceiling height.** From the floor line to the ceiling. The ceiling is the **average** of its line from the figure axis to 1 mm before the opposite wall (without an opposite wall: as far as the line goes). In each column the middle of the line is taken; the last 1 mm next to a corner is left out.
+4. **Ceiling height.** From the floor line to the ceiling. The ceiling is the **average** of its line from the figure axis to 1 mm before the opposite wall (without an opposite wall: as far as the line goes). A ceiling drawn only between the figure and the wall (not reaching over the figure) is averaged from where it starts. In each column the middle of the line is taken; the last 1 mm next to a corner is left out.
 5. **Distance.** From the figure axis to the opposite wall, along the floor line. The wall is the **average** of its line from 1 mm above the floor to 1 mm below the ceiling.
 6. **Axis.** The vertical axis passes through the middle of the figure. If the figure is more than 5 mm from the start mark, `flag_figure_off_mark` is set; the axis still follows the figure.
 7. **Double lines and corrections.** With a double line or correction marks, the line nearer the figure (the inner face) is measured. The rater decides in the end.
-8. **Not measurable.** No ceiling line above the figure: the vertical axis is marked not measurable. No opposite wall, or a wall running off the page: the horizontal axis is marked not measurable.
+8. **Not measurable.** No ceiling line at all: the vertical axis is marked not measurable. No opposite wall, or a wall running off the page: the horizontal axis is marked not measurable.
 9. **No red figure.** The rater places the head and the foot; the drawing is not excluded, it is flagged (`flag_red_not_found`).
 10. **Small figure.** A figure smaller than `min_figure_mm` is not excluded, it is flagged (`flag_figure_small`).
 
@@ -36,3 +36,4 @@ The real ceilings are flat and the real walls upright, and the true dimension of
 | 1.1 | Red drawn more than 0.5 mm below the floor line counts as standing on it (flagged). |
 | 1.2 | The figure is always measured from the head top to the floor line; red-bottom values kept as backups. |
 | 1.3 | Ceiling and wall are the averages of their lines; the rules 1.2 points kept as backups; flags for clearly slanted lines. Foot tolerance default 4 mm (a project setting). |
+| 1.3 (addition) | A ceiling drawn only between the figure and the wall is measured (averaged from where it starts) instead of marking the height not measurable. Drawings measurable before give the same values. |

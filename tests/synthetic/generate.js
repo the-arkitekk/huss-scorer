@@ -61,7 +61,7 @@ const SCENES = {
   S15: { description: 'A3L template', template: 'A3L' },
   T1: { description: 'Orientation tie: mirrored floor line and start mark drawn by hand; the QR decides', tieDecoy: true, quarterTurns: 2 },
   S9: { description: 'Double-line opposite wall (3 mm)', wallDouble: 3 },
-  S10: { description: 'No ceiling above the figure', ceilingFromX: 60 },
+  S10: { description: 'Ceiling drawn only right of the figure (from x = 60 mm)', ceilingFromX: 60 },
   S11: { description: 'JPEG quality 60 and noise', jpegQuality: 60, noise: 4 },
   S14: { description: 'One corner mark missing', missingCorner: 2 },
   S16: {

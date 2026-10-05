@@ -17,7 +17,8 @@
    * p: { min_figure_mm, foot_tolerance_mm }; config: HUSS.config.
    * flag_foot_off_floor is set when the red trace ends off the line (either side, rule 3)
    * or when the final foot handle is off the line. flag_structure_mark: the sheet has structure
-   * boxes but not exactly one clear mark.
+   * boxes but not exactly one clear mark, or the marked box is not one of the project's structures
+   * (a sheet printed for another project).
    */
   function toolFlags(a, s, p, config) {
     var markX = HUSS.sheet.template.markX(a.template);
@@ -37,7 +38,8 @@
       flag_alignment_warning: !!a.align.warning,
       flag_ceiling_uneven: isNum(s.ceiling_spread) && s.ceiling_spread > config.LINE.UNEVEN_MM,
       flag_wall_uneven: isNum(s.wall_spread) && s.wall_spread > config.LINE.UNEVEN_MM,
-      flag_structure_mark: !!(a.boxes && a.boxes.printed >= 2 && a.boxes.status !== 'one')
+      flag_structure_mark: !!(a.boxes && a.boxes.printed >= 2 &&
+        (a.boxes.status !== 'one' || (p.structures && a.boxes.index >= p.structures.length)))
     };
   }
 

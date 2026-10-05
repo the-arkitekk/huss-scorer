@@ -4,7 +4,8 @@
  * The line is followed sample by sample: column by column for the ceiling, row by row for the
  * wall. In each sample its centre is the darkness-weighted middle of the part darker than
  * halfway between the paper and that sample's darkest point (rule 1: the middle of the line).
- * The ceiling is averaged from the figure axis to 1 mm before the opposite wall, the wall from
+ * The ceiling is averaged from the figure axis (or, when the drawn ceiling does not reach over the
+ * figure, from where it starts) to 1 mm before the opposite wall, the wall from
  * 1 mm above the floor to 1 mm below the ceiling. Where the line runs into a crossing line or
  * turns by more than 45 degrees (a corner, also a rounded one) the last 1 mm before it is left out.
  */
@@ -118,20 +119,58 @@
   }
 
   /**
+   * The first column from a0 towards a1 where a line near cross position c0 starts (can be
+   * followed for STRENGTH_RUN_MM), probing every half millimetre; null when there is none.
+   */
+  function startRight(a, a0, a1, c0, o, L) {
+    var R = a.R, step = Math.max(1, Math.round(0.5 * R)), run = Math.round(L.STRENGTH_RUN_MM * R);
+    for (var s = a0; s <= a1 - run; s += step) {
+      if (threshold(a.dm, true, s, s + run, c0, o, L) != null) return s;
+    }
+    return null;
+  }
+
+  /**
    * The ceiling line through (axisX, yAtAxis), averaged from the axis to 1 mm before the wall
-   * (wallX; without a wall, as far as the line goes). Returns { pos, at_axis, spread, followed, pts }.
+   * (wallX; without a wall, as far as the line goes). A ceiling drawn only right of the figure
+   * (it does not reach over it) is averaged from where it starts; at_axis is then its point
+   * nearest to the axis. Returns { pos, at_axis, from_x, spread, followed, pts }.
    */
   function ceilingLine(a, axisX, yAtAxis, wallX) {
     return cached(a, 'c' + axisX.toFixed(4) + '|' + yAtAxis.toFixed(4) + '|' + (wallX == null ? '-' : wallX.toFixed(4)), function () {
       var R = a.R, L = a.config.LINE, o = options(a);
       var end = wallX != null ? wallX - L.END_MM : a.template.width_mm - L.PAGE_MARGIN_MM;
-      var a0 = Math.floor(axisX * R), a1 = Math.max(a0, Math.floor(end * R));
-      var thr = threshold(a.dm, true, a0, Math.min(a1, a0 + Math.round(L.STRENGTH_RUN_MM * R)), yAtAxis * R, o, L);
-      var f = thr == null ? { pts: [], junction: false } : follow(a.dm, true, a0, a1, yAtAxis * R, thr, o);
+      var a0 = Math.floor(axisX * R), a1 = Math.max(a0, Math.floor(end * R)), run = Math.round(L.STRENGTH_RUN_MM * R);
+      var thr = threshold(a.dm, true, a0, Math.min(a1, a0 + run), yAtAxis * R, o, L), from = a0;
+      if (thr == null) {
+        var st = startRight(a, a0 + 1, a1, yAtAxis * R, o, L);
+        if (st != null) { from = st; thr = threshold(a.dm, true, st, Math.min(a1, st + run), yAtAxis * R, o, L); }
+      }
+      var f = thr == null ? { pts: [], junction: false } : follow(a.dm, true, from, a1, yAtAxis * R, thr, o);
       var r = summarize(a, f, true, yAtAxis);
-      r.at_axis = yAtAxis;
+      r.at_axis = r.followed && from > a0 ? r.pts[0][1] : yAtAxis;
+      r.from_x = r.followed ? r.pts[0][0] : axisX;
       return r;
     });
+  }
+
+  /**
+   * Rows (px) of horizontal lines right of the axis between rows lo and hi: peaks of the ceiling
+   * profiles taken every OFF_AXIS_STEP_MM from the axis to the wall (or the page margin), combined
+   * by their maximum. Finds a ceiling that does not reach over the figure.
+   */
+  function rowsRight(a, axisX, lo, hi, wallX) {
+    var R = a.R, cfg = a.config, L = cfg.LINE, P = HUSS.detect.profile;
+    var end = wallX != null ? wallX - L.END_MM : a.template.width_mm - L.PAGE_MARGIN_MM;
+    var comb = null;
+    for (var x = axisX + L.OFF_AXIS_STEP_MM; x <= end; x += L.OFF_AXIS_STEP_MM) {
+      var pr = P.ceilingProfile(a.dm, R, x, cfg.PROFILE);
+      if (!comb) comb = new Float64Array(pr.length);
+      for (var k = Math.max(0, lo); k <= Math.min(pr.length - 1, hi); k++) if (pr[k] > comb[k]) comb[k] = pr[k];
+    }
+    if (!comb) return [];
+    comb = P.smooth(comb, cfg.PROFILE.SMOOTH_SIGMA_MM * R);
+    return P.findPeaks(comb, lo, hi, cfg.PROFILE).map(function (pk) { return pk.centre; });
   }
 
   /**
@@ -162,9 +201,14 @@
    */
   function ceilingNear(a, axisX, y, radius, wallX) {
     var R = a.R, ex = a.config.LINE.CANDIDATE_EXTRA_MM;
+    var lo = Math.floor((y - radius - ex) * R), hi = Math.ceil((y + radius + ex) * R);
     var prof = HUSS.detect.pipeline.ceilingProfile(a, axisX);
-    var peaks = HUSS.detect.profile.findPeaks(prof, Math.floor((y - radius - ex) * R), Math.ceil((y + radius + ex) * R), a.config.PROFILE);
-    return nearest(peaks.map(function (pk) { return ceilingLine(a, axisX, pk.centre / R, wallX); }), y, radius);
+    var rows = HUSS.detect.profile.findPeaks(prof, lo, hi, a.config.PROFILE).map(function (pk) { return pk.centre; });
+    var l = nearest(rows.map(function (c) { return ceilingLine(a, axisX, c / R, wallX); }), y, radius);
+    if (l) return l;
+    // a ceiling drawn only right of the figure
+    return nearest(rowsRight(a, axisX, lo, hi, wallX).map(function (c) { return ceilingLine(a, axisX, c / R, wallX); })
+      .filter(function (c) { return c.followed; }), y, radius);
   }
 
   /** The wall line whose average lies nearest to x, within radius (see ceilingNear). */
@@ -184,7 +228,7 @@
   }
 
   var api = {
-    follow: follow, ceilingLine: ceilingLine, wallLine: wallLine, ceilingNear: ceilingNear, wallNear: wallNear
+    follow: follow, ceilingLine: ceilingLine, wallLine: wallLine, ceilingNear: ceilingNear, wallNear: wallNear, rowsRight: rowsRight
   };
   HUSS.detect.line = api;
   if (typeof module === 'object' && module.exports) module.exports = api;

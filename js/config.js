@@ -158,7 +158,8 @@
       PAGE_MARGIN_MM: 8,           // a ceiling without a wall is followed at most this close to the page edge
       CANDIDATE_EXTRA_MM: 40,      // lines crossing the axis (ceiling) or the floor band (wall) this much beyond the snap
                                    // radius are candidates too: a slanted line crosses there away from its average
-      FOLLOW_UP_EXTRA_MM: 3,       // a suggested/snapped handle is averaged again within snap radius + this when the other moves
+      FOLLOW_UP_EXTRA_MM: 3,
+      OFF_AXIS_STEP_MM: 2,         // a ceiling drawn only right of the figure is looked for in profiles this far apart       // a suggested/snapped handle is averaged again within snap radius + this when the other moves
       TURN_SLOPE: 1,               // a line turning steeper than this (45 degrees) over TURN_RUN_MM ends there (a corner)
       TURN_RUN_MM: 0.5,
       TURN_SLACK_MM: 0.3,          // allowance for pencil texture in that test
