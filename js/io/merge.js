@@ -48,6 +48,7 @@
         var id = rec.sheet_code + '|' + rec.rater_code, prev = byKey[id];
         var row = Object.assign({}, rec, { source_file: set.name });
         if (!prev) { byKey[id] = row; order.push(id); return; }
+        if (prev.measured_at === rec.measured_at && prev.status === rec.status) return; // the same record twice (e.g. the session and its CSV)
         var dup = problems.duplicates.filter(function (d) { return d.sheet_code === rec.sheet_code && d.rater_code === rec.rater_code; })[0];
         if (!dup) { dup = { sheet_code: rec.sheet_code, rater_code: rec.rater_code, files: [prev.source_file] }; problems.duplicates.push(dup); }
         dup.files.push(set.name);

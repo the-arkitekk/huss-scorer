@@ -45,8 +45,10 @@
 
   function update() {
     var t = HUSS.ui.results.currentTables();
-    merged = files.length ? HUSS.io.merge.merge(files, t.key, t.structures) : null;
+    var live = HUSS.ui.results.liveSource(), src = live ? [live].concat(files) : files;
+    merged = src.length ? HUSS.io.merge.merge(src, t.key, t.structures) : null;
     els.files.textContent = '';
+    if (live) { var lli = document.createElement('li'); lli.appendChild(document.createElement('span')).textContent = live.name; els.files.appendChild(lli); }
     files.forEach(function (f, idx) {
       var li = document.createElement('li'), span = document.createElement('span'), b = document.createElement('button');
       var uniq = function (k) { var o = {}; f.records.forEach(function (r) { if (r[k]) o[r[k]] = true; }); return Object.keys(o).join(', ') || '–'; };

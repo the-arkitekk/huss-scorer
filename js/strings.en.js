@@ -312,9 +312,10 @@
 // Results screen: Merge and Report (spec 8.6; Report beyond the v1 spec)
     tab_results: 'Results',
     res_title: 'Results',
-    res_warning: 'This screen shows true dimensions and errors. In a blind study, raters open it only after all scoring is finished.',
+    res_warning: 'Shows true dimensions and errors: in a blind study, raters look at it only after all scoring is done.',
+    res_session_name: 'This session (Score screen): rater {rater}, {n} records',
     res_files: 'Measurement files',
-    res_files_help: 'One or more measurement CSVs (Download CSV on the Score screen), from one or more raters. A merged CSV can be opened here too.',
+    res_files_help: 'Drawings scored on the Score screen appear here by themselves. You can add measurement CSVs too (from other raters or earlier sessions), or a merged CSV.',
     res_add: 'Add CSV files…',
     res_clear: 'Remove all',
     res_none: 'No files yet.',
@@ -344,7 +345,7 @@
     res_dl_html: 'Download report (HTML)',
     res_svg: 'SVG',
     res_png: 'PNG',
-    res_empty: 'Add measurement files to see the report.',
+    res_empty: 'No records yet: score drawings on the Score screen (they appear here by themselves), or add measurement CSV files.',
 
     // Report
     rp_card_drawings: 'Drawings',
@@ -482,7 +483,7 @@
     cmp_intro: 'Read only: the records of two raters side by side. Add their CSV files (or one merged CSV holding both), then choose the two raters.',
     cmp_r1: 'Rater 1',
     cmp_r2: 'Rater 2',
-    cmp_need_two: 'Add files with at least two raters.',
+    cmp_need_two: 'Needs two raters: the drawings of this session and another rater’s CSV, or two CSV files.',
     cmp_dl_wide: 'Download comparison CSV',
     cmp_dl_html: 'Download comparison (HTML)',
     cmp_tables_note: 'Errors (E) come from a merged CSV or, for plain files, from the key and structures chosen on the Results screen.',

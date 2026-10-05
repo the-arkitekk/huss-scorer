@@ -6,7 +6,7 @@ Status: **v0.1.0, rules 1.3, pilot version** — Phases 1–3 of the specificati
 
 ## Use
 
-The top bar has seven screens: **Score**, **Sheets**, **Tables**, **Results**, **Compare**, **New project** and **Guide** (quick start, rules, keys, citation, version and licence).
+The top bar has seven screens: **Sheets**, **Score**, **Tables**, **Results**, **Compare**, **New project** and **Guide** (quick start, rules, keys, citation, version and licence).
 
 Documents: `docs/user-guide.md`, `docs/scoring-rules.md`, `docs/data-dictionary.md` (every CSV column), `docs/validation-plan.md`.
 

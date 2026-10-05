@@ -14,8 +14,8 @@
       <span class="version" id="version"></span>
     </div>
     <nav class="tabs" id="tabs">
-      <button type="button" class="tab active" data-screen="score" data-s="tab_score"></button>
       <button type="button" class="tab" data-screen="sheets" data-s="tab_sheets"></button>
+      <button type="button" class="tab active" data-screen="score" data-s="tab_score"></button>
       <button type="button" class="tab" data-screen="tables" data-s="tab_tables"></button>
       <button type="button" class="tab" data-screen="results" data-s="tab_results"></button>
       <button type="button" class="tab" data-screen="compare" data-s="tab_compare"></button>
@@ -333,15 +333,6 @@
           <p class="small bad" id="res-table-errors" hidden></p>
         </section>
         <section class="page-card res-merge">
-          <h1 data-s="cal_title"></h1>
-          <p class="small muted" data-s="cal_help"></p>
-          <div class="btn-row">
-            <button type="button" class="btn btn-xs" id="res-load-cal" data-s="cal_load"></button>
-            <input type="file" id="res-cal-input" accept=".csv,text/csv" hidden>
-          </div>
-          <div id="res-cal" class="res-report"></div>
-        </section>
-        <section class="page-card res-merge">
           <p class="small" id="res-merged"></p>
           <div class="btn-row">
             <button type="button" class="btn btn-xs" id="res-dl-merged" data-s="res_dl_merged" disabled></button>
@@ -364,6 +355,15 @@
         </div>
         <div id="res-report" class="res-report"><p class="small muted" data-s="res_empty"></p></div>
       </section>
+        <section class="page-card res-cal-card">
+          <h1 data-s="cal_title"></h1>
+          <p class="small muted" data-s="cal_help"></p>
+          <div class="btn-row">
+            <button type="button" class="btn btn-xs" id="res-load-cal" data-s="cal_load"></button>
+            <input type="file" id="res-cal-input" accept=".csv,text/csv" hidden>
+          </div>
+          <div id="res-cal" class="res-report"></div>
+        </section>
     </div>
   </main>
 

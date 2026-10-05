@@ -248,7 +248,7 @@ table.grid td.ok-mark { color: var(--ok); font-size: 12px; }
 
 /* Results screen (Merge and Report) */
 .res-wrap { max-width: 1400px; margin: 0 auto; }
-.res-warning { background: var(--warn-bg); color: var(--warn); border-radius: var(--radius); padding: 8px 12px; margin: 0 0 14px; font-size: 13px; }
+.res-warning { color: var(--ink-2); font-size: 12px; margin: 0 0 10px; }
 .res-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
 .res-controls .res-merge { grid-column: 1 / -1; padding: 10px 18px; }
 .res-controls .res-merge .btn-row { margin: 4px 0 0; }
@@ -272,3 +272,11 @@ table.grid td.ok-mark { color: var(--ok); font-size: 12px; }
 .guide p, .guide li { font-size: 13px; line-height: 1.5; }
 .guide ol, .guide ul { padding-left: 20px; margin: 4px 0; }
 .guide .cite { background: var(--surface-2); border-radius: var(--radius); padding: 8px 10px; font-size: 13px; }
+.res-cal-card { margin-top: 14px; }
+/* Narrow windows: the tabs scroll sideways instead of running off the bar */
+.tabs { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { white-space: nowrap; flex: none; }
+@media (max-width: 1000px) { .version, .badge { display: none; } }
+.brand { flex: none; white-space: nowrap; }
+.topbar-actions { flex: none; }

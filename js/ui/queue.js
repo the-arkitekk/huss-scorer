@@ -449,6 +449,6 @@
   HUSS.ui.queue = {
     init: init, begin: begin, setPendingCsv: setPendingCsv, setSubsample: setSubsample, setTable: setTable, setupChanged: setupChanged,
     confirm: confirm, previous: previous, later: later, downloadCsv: downloadCsv, downloadExcel: downloadExcel,
-    get session() { return sess; }, get running() { return running; }
+    get session() { return sess; }, get running() { return running; }, get tables() { return tables; }
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

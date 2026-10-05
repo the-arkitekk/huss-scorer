@@ -44,6 +44,23 @@
     });
   }
 
+  /**
+   * The drawings scored in this browser tab (Score screen): used without downloading and adding
+   * the CSV first. null when nothing has been scored yet.
+   */
+  function liveSource() {
+    var Q = HUSS.ui.queue, sess = Q && Q.session;
+    if (!sess) return null;
+    var recs = HUSS.io.session.records(sess);
+    if (!recs.length) return null;
+    return { name: HUSS.t('res_session_name', { rater: sess.rater_code, n: recs.length }), records: recs, exclusionIds: sess.exclusionIds, live: true };
+  }
+
+  function sources() {
+    var live = liveSource();
+    return live ? [live].concat(files) : files.slice();
+  }
+
   function screenTables() {
     var d = HUSS.ui.tablesForm && HUSS.ui.tablesForm.data;
     if (!d) return { key: null, structures: null };
@@ -57,7 +74,11 @@
   }
 
   function currentTables() {
-    return tables.source === 'files' ? { key: tables.key, structures: tables.structures } : screenTables();
+    if (tables.source === 'files') return { key: tables.key, structures: tables.structures };
+    var t = screenTables(), q = HUSS.ui.queue && HUSS.ui.queue.tables;
+    // Nothing on the Tables screen: the tables loaded for Open mode on the Score screen, if any.
+    if (!t.key && !t.structures && q && (q.key || q.structures)) return { key: q.key, structures: q.structures };
+    return t;
   }
 
   function loadTable(kind, file) {
@@ -80,7 +101,14 @@
 
   function renderInputs() {
     els.files.textContent = '';
-    if (!files.length) {
+    var live = liveSource();
+    if (live) {
+      var lli = document.createElement('li'), ls = document.createElement('span');
+      ls.textContent = live.name;
+      lli.appendChild(ls);
+      els.files.appendChild(lli);
+    }
+    if (!files.length && !live) {
       var li = document.createElement('li');
       li.className = 'muted';
       li.textContent = HUSS.t('res_none');
@@ -137,7 +165,8 @@
 
   function update() {
     var t = currentTables();
-    merged = files.length ? HUSS.io.merge.merge(files, t.key, t.structures) : null;
+    var src = sources();
+    merged = src.length ? HUSS.io.merge.merge(src, t.key, t.structures) : null;
     renderInputs();
     els.merged.textContent = merged ? HUSS.t('res_merged', { n: merged.counts.rows, m: merged.counts.measured, e: merged.counts.excluded }) : '';
     els.dlMerged.disabled = els.dlExcel.disabled = !merged;
@@ -259,5 +288,5 @@
     });
   }
 
-  HUSS.ui.results = { init: init, onShow: onShow, screenTables: screenTables, currentTables: currentTables, get merged() { return merged; }, get files() { return files; } };
+  HUSS.ui.results = { init: init, onShow: onShow, screenTables: screenTables, currentTables: currentTables, liveSource: liveSource, get merged() { return merged; }, get files() { return files; } };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
