@@ -82,7 +82,7 @@
     var ey = [(centres[2][0] - tl[0]) / span, (centres[2][1] - tl[1]) / span];
     var mx = Math.hypot(ex[0], ex[1]);
     if (Math.abs(mx - m) > 0.25 * m || Math.abs(Math.hypot(ey[0], ey[1]) - m) > 0.25 * m) return null;
-    var grid = [], o = q.SAMPLE_OFFSET;
+    var means = [], o = q.SAMPLE_OFFSET;
     for (var r = 0; r < size; r++) {
       var row = [];
       for (var c = 0; c < size; c++) {
@@ -93,11 +93,18 @@
             s += sample(tl[0] + uu * ex[0] + vv * ey[0], tl[1] + uu * ex[1] + vv * ey[1]);
           }
         }
-        row.push(s / 9 > thr);
+        row.push(s / 9);
       }
-      grid.push(row);
+      means.push(row);
     }
-    var dec = HUSS.sheet.qr.decodeGrid(grid);
+    // Otsu first; a pale print with toner spread (light modules next to dark ones read darker)
+    // can need a higher threshold: then the middle of the darkness range, and halfway between.
+    // The error correction and the HUSS1/ text check rule out a wrong reading.
+    var mid = (lo + hi) / 2, dec = null;
+    [thr, mid, (thr + mid) / 2].some(function (t) {
+      dec = HUSS.sheet.qr.decodeGrid(means.map(function (rw) { return rw.map(function (val) { return val > t; }); }));
+      return dec.ok && HUSS.sheet.qr.parseSheetText(dec.text).ok;
+    });
     if (!dec.ok) return null;
     var parsed = HUSS.sheet.qr.parseSheetText(dec.text);
     if (!parsed.ok) return null;

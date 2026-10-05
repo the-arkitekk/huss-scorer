@@ -161,3 +161,20 @@ test('module rectangles: quiet zone and merged runs', () => {
   for (let r = 0; r < 21; r++) for (let c = 0; c < 21; c++) if (q.dark(r, c)) dark++;
   assert.ok(Math.abs(area - dark * m * m) < 1e-9);
 });
+
+test('reader: a pale print with toner spread (trial 4, scan 7) is read from the QR code', () => {
+  // The code square of a real scan, 2 mm around it, sampled at 16 px per mm on the aligned page.
+  // Light modules next to dark ones read darker there, and the Otsu threshold alone fails.
+  const fs = require('node:fs'), path = require('node:path'), png = require('../synthetic/png.js');
+  const T = HUSS.sheet.template.get('A4L'), S = 16, x0 = T.qr.x - 2, y0 = T.qr.y - 2;
+  const img = png.decode(fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'pale-qr', '6NL8Y.png')));
+  const sample = (x, y) => {
+    const sx = (x - x0) * S - 0.5, sy = (y - y0) * S - 0.5, ix = Math.floor(sx), iy = Math.floor(sy);
+    if (ix < 0 || iy < 0 || ix >= img.width - 1 || iy >= img.height - 1) return 0;
+    const fx = sx - ix, fy = sy - iy, v = (i, j) => 255 - img.data[((iy + j) * img.width + ix + i) * 4];
+    return (1 - fx) * (1 - fy) * v(0, 0) + fx * (1 - fy) * v(1, 0) + (1 - fx) * fy * v(0, 1) + fx * fy * v(1, 1);
+  };
+  const res = HUSS.detect.qr.read(sample, T, HUSS.config);
+  assert.equal(res.found, true);
+  assert.equal(res.sheet_code, '6NL8Y');
+});
