@@ -119,13 +119,15 @@
   }
 
   /**
-   * The first column from a0 towards a1 where a line near cross position c0 starts (can be
-   * followed for STRENGTH_RUN_MM), probing every half millimetre; null when there is none.
+   * The first column from a0 towards a1 where a line near cross position c0 starts: it can be
+   * followed over most of STRENGTH_RUN_MM (a speck or a dot is passed over). Probes every half
+   * millimetre; null when there is none.
    */
   function startRight(a, a0, a1, c0, o, L) {
     var R = a.R, step = Math.max(1, Math.round(0.5 * R)), run = Math.round(L.STRENGTH_RUN_MM * R);
+    var loose = a.dm.paper + L.MIN_CONTRAST;
     for (var s = a0; s <= a1 - run; s += step) {
-      if (threshold(a.dm, true, s, s + run, c0, o, L) != null) return s;
+      if (follow(a.dm, true, s, s + run, c0, loose, o).pts.length >= 0.7 * run && threshold(a.dm, true, s, s + run, c0, o, L) != null) return s;
     }
     return null;
   }
@@ -142,12 +144,18 @@
       var end = wallX != null ? wallX - L.END_MM : a.template.width_mm - L.PAGE_MARGIN_MM;
       var a0 = Math.floor(axisX * R), a1 = Math.max(a0, Math.floor(end * R)), run = Math.round(L.STRENGTH_RUN_MM * R);
       var thr = threshold(a.dm, true, a0, Math.min(a1, a0 + run), yAtAxis * R, o, L), from = a0;
-      if (thr == null) {
-        var st = startRight(a, a0 + 1, a1, yAtAxis * R, o, L);
-        if (st != null) { from = st; thr = threshold(a.dm, true, st, Math.min(a1, st + run), yAtAxis * R, o, L); }
-      }
-      var f = thr == null ? { pts: [], junction: false } : follow(a.dm, true, from, a1, yAtAxis * R, thr, o);
+      var f = thr == null ? { pts: [], junction: false } : follow(a.dm, true, a0, a1, yAtAxis * R, thr, o);
       var r = summarize(a, f, true, yAtAxis);
+      if (!r.followed) {
+        // Nothing to follow from the axis (or only a speck there): the line may start further right.
+        var st = startRight(a, a0 + 1, a1, yAtAxis * R, o, L);
+        if (st != null) {
+          // a hand-drawn line often starts faintly: up to STRENGTH_RUN_MM may pass before it is dark enough
+          var os = Object.assign({}, o, { startGap: run });
+          thr = threshold(a.dm, true, st, Math.min(a1, st + run), yAtAxis * R, os, L);
+          if (thr != null) { from = st; f = follow(a.dm, true, st, a1, yAtAxis * R, thr, os); r = summarize(a, f, true, yAtAxis); }
+        }
+      }
       r.at_axis = r.followed && from > a0 ? r.pts[0][1] : yAtAxis;
       r.from_x = r.followed ? r.pts[0][0] : axisX;
       return r;

@@ -2,6 +2,9 @@
 
 ## 0.2.0 (unreleased)
 
+- Main menu: **Try with example scans**: ten trial 3 scans (150 dpi, `demo/demo-scans.js`, loaded only when chosen, also from disk) and an example project with one structure; an Open mode session starts at once (rater code DEMO). Made with `tests/tools/make-demo.js`; published with the Pages site.
+- Ceiling drawn only right of the figure: a speck near the axis or a faint line start no longer hides the line (it was missed at 200 dpi).
+
 Report (display only; measurement, rules and CSV columns unchanged):
 - Error-by-structure charts: the mean (diamond) and its 95 % confidence interval (bar; t distribution, from 3 drawings on) right of each box; the mean and interval under each group and as two new columns of the By structure table; captions explain the sideways spread of the dots and the whiskers (lowest to highest value).
 - "Show as": Error (%) or Ratio (estimate / true = 1 + E), for the summary cards, the error charts, the histograms, the height-against-distance chart and the By structure table, and for the PNG, SVG, print and HTML exports; the merged CSV files are unchanged.

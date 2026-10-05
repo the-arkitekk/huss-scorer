@@ -489,6 +489,19 @@
     HUSS.io.files.downloadText(name, HUSS.io.csv.toExcelView(S().records(sess), S().columns(sess)));
   }
 
+  /**
+   * Starts a session at once with the given scans and session fields (the example scans of the
+   * main menu): rater code and mode filled in, no earlier autosave applied.
+   */
+  function startWith(files, values) {
+    if (running) return;
+    els.inRater.value = values.rater_code;
+    (values.mode === 'blind' ? els.modeBlind : els.modeOpen).checked = true;
+    setupChanged();
+    els.chkAutosave.checked = false;
+    begin(files);
+  }
+
   function newSession() {
     if (sess && sess.dirty && !window.confirm(HUSS.t('new_session_confirm'))) return;
     if (sess) sess.dirty = false;
@@ -518,7 +531,7 @@
   }
 
   HUSS.ui.queue = {
-    init: init, begin: begin, canStart: canStart, setPendingCsv: setPendingCsv, setSubsample: setSubsample, setTable: setTable, setupChanged: setupChanged,
+    init: init, begin: begin, startWith: startWith, canStart: canStart, setPendingCsv: setPendingCsv, setSubsample: setSubsample, setTable: setTable, setupChanged: setupChanged,
     confirm: confirm, previous: previous, later: later, downloadCsv: downloadCsv, downloadExcel: downloadExcel,
     get session() { return sess; }, get running() { return running; }, get tables() { return tables; }
   };

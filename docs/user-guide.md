@@ -2,6 +2,8 @@
 
 HuSS Scorer runs in the browser: open `index.html` (double-click, no installation, no internet). Images and data never leave the computer; nothing is uploaded.
 
+To see the tool at work without scans of your own: main menu → **Try with example scans**. Ten trial drawings of one remembered room (ceiling 4 m, opposite wall 7 m) open in an Open mode session (rater code DEMO); after confirming them, Results shows the report.
+
 ## 1. Before the study (project owner)
 
 1. **Main menu → New project:** fill in the form (project code, template A4L or A3L, reference height, minimum figure size, foot tolerance, snap radius, which suggestions are on, the **structures** with their true ceiling height and distance, exclusion criteria) and **Create project**. The file `<project_code>.huss.json` is downloaded; send it to the raters. Clicking **HuSS Scorer** at the top left always opens the main menu (Back to it, Edit project, Continue).

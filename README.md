@@ -6,7 +6,7 @@ Status: **v0.2.0, rules 1.3, pilot version** — Phases 1–3 of the specificati
 
 ## Use
 
-The tool opens with a **main menu**: **New project**, **Open project file…**, **Continue <last project>** (kept in this browser), and the links **Try without a project** (default settings), **Calibration test (once per scanner)** and **Guide**. Inside a project the top bar has six screens: **Sheets**, **Score**, **Tables**, **Results**, **Compare** and **Guide**; the project code stands next to the name, and clicking **HuSS Scorer** at the top left opens the main menu again (with **Back to it** and **Edit project**).
+The tool opens with a **main menu**: **New project**, **Open project file…**, **Continue <last project>** (kept in this browser), **Try with example scans** (ten trial drawings and an example project: scoring starts at once in Open mode, `demo/`), and the links **Try without a project** (default settings), **Calibration test (once per scanner)** and **Guide**. Inside a project the top bar has six screens: **Sheets**, **Score**, **Tables**, **Results**, **Compare** and **Guide**; the project code stands next to the name, and clicking **HuSS Scorer** at the top left opens the main menu again (with **Back to it** and **Edit project**).
 
 Documents: `docs/user-guide.md`, `docs/scoring-rules.md`, `docs/data-dictionary.md` (every CSV column), `docs/validation-plan.md`.
 
