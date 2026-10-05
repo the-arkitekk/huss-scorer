@@ -46,7 +46,7 @@ If the corner marks of a scan cannot be found (two or more torn or blotted), the
 
 ## 5. After scoring
 
-- **Results:** the drawings of this session appear by themselves (other raters' CSVs can be added). With the project's structures and the key table the tool computes the errors, lists data problems, and shows the **Report** (summary cards, charts, tables). Download the merged CSV, each chart as SVG or PNG, the report as PDF (print) or as one HTML file.
+- **Results:** the drawings of this session appear by themselves (other raters' CSVs can be added). With the project's structures and the key table the tool computes the errors, lists data problems, and shows the **Report** (summary cards, charts, tables). A project with more than one structure needs the key table (which sheet shows which structure); until it is filled in, the report shows the estimates in metres. Download the merged CSV, each chart as SVG or PNG, the report as PDF (print) or as one HTML file.
 - **Compare:** add the CSVs of two raters; read-only comparison, agreement charts, comparison CSV for `r/icc_kappa.R` (ICC and kappa in R). The subsample list maker is on the same screen.
 
 The scoring rules are in `docs/scoring-rules.md`, every CSV column in `docs/data-dictionary.md`.

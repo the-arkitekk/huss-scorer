@@ -156,3 +156,16 @@ test('report: cards, charts and tables in the fragment; a self-contained HTML do
   const pts = B.model(m, { rater: 'AB', method: 'points' });
   assert.notEqual(pts.overview.E_v.median, model.overview.E_v.median);
 });
+
+test('report without a key (several structures): says what is missing, shows the estimates in metres', () => {
+  const { r1 } = sample();
+  const m = HUSS.io.merge.merge([asFile('ab.csv', r1)], null, tables.parseStructures(STRUCT_TEXT));
+  assert.equal(m.problems.no_key, true);
+  const model = B.model(m, { method: 'main' });
+  assert.equal(model.hasTrue, false);
+  const frag = B.fragment(model);
+  for (const id of ['est-hist-v', 'est-hist-h', 'q-handles']) assert.ok(frag.includes('data-chart="' + id + '"'), id);
+  for (const id of ['e-structure-v', 'est-true-v', 'e-v-h', 'hist-v']) assert.ok(!frag.includes('data-chart="' + id + '"'), id + ' needs E');
+  assert.ok(frag.includes(HUSS.t('rp_no_true_key')) && frag.includes(HUSS.t('rp_card_no_true')));
+  assert.ok(!/NaN|undefined/.test(frag));
+});

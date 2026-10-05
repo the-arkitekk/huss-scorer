@@ -55,6 +55,8 @@
     return { name: HUSS.t('res_session_name', { rater: sess.rater_code, n: recs.length }), records: recs, exclusionIds: sess.exclusionIds, live: true };
   }
 
+  function liveOrFiles() { return files.length || liveSource(); }
+
   function sources() {
     var live = liveSource();
     return live ? [live].concat(files) : files.slice();
@@ -114,10 +116,14 @@
       els.files.appendChild(li);
     });
     var t = currentTables(), parts = [];
+    // Several structures and no key: the report cannot show any error yet; say so where it is seen.
+    var needKey = !t.key && !t.defaultStructure && count(t.structures) > 1 && !!liveOrFiles();
     parts.push(t.structures ? HUSS.t('res_st_from_' + t.from.structures, { n: count(t.structures) }) : HUSS.t('res_st_none'));
     if (t.key) parts.push(HUSS.t('res_key_from_' + t.from.key, { n: count(t.key) }));
-    else parts.push(HUSS.t(t.defaultStructure ? 'res_key_single' : 'res_key_none', { code: t.defaultStructure }));
+    else if (!needKey) parts.push(HUSS.t(t.defaultStructure ? 'res_key_single' : 'res_key_none', { code: t.defaultStructure }));
     els.tablesStatus.textContent = parts.join(' ');
+    els.keyNeeded.hidden = !needKey;
+    if (needKey) els.keyNeededText.textContent = HUSS.t('res_key_needed', { n: count(t.structures) });
     els.useScreen.hidden = !tables.key && !tables.structures;
   }
 
@@ -229,8 +235,10 @@
       files: $('res-files'), input: $('res-input'), fileErrors: $('res-file-errors'), tablesStatus: $('res-tables-status'),
       tableErrors: $('res-table-errors'), useScreen: $('res-use-screen'), keyInput: $('res-key-input'), structuresInput: $('res-structures-input'),
       merged: $('res-merged'), dlMerged: $('res-dl-merged'), dlExcel: $('res-dl-excel'),
-      rater: $('res-rater'), method: $('res-method'), print: $('res-print'), dlHtml: $('res-dl-html'), report: $('res-report')
+      rater: $('res-rater'), method: $('res-method'), print: $('res-print'), dlHtml: $('res-dl-html'), report: $('res-report'),
+      keyNeeded: $('res-key-needed'), keyNeededText: $('res-key-needed-text')
     };
+    $('res-go-tables').addEventListener('click', function () { HUSS.app.show('tables'); });
     var style = document.createElement('style');
     style.id = 'rp-style';
     style.textContent = HUSS.report.build.CSS;

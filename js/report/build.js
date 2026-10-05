@@ -33,6 +33,7 @@
       opts: opts, rows: rows, arows: arows, structures: structures, colorOf: colorOf,
       overview: S.overview(rows, arows),
       quality: S.quality(rows, HUSS.measure.flags.TOOL_FLAGS.concat(['flag_color_noncompliant'])),
+      hasTrue: arows.some(function (r) { return r.true_v != null || r.true_h != null; }),
       problems: merged.problems || null,
       projects: merged.projects || [], raters: merged.raters || []
     };
@@ -46,7 +47,7 @@
   function cards(m) {
     var o = m.overview;
     var axis = function (E, over, labelKey) {
-      return card(pct(E.median, true), T(labelKey), E.n ? T('rp_card_e_sub', { n: E.n, over: pct(over, false, 0), iqr: pct(E.q1, true, 0) + ' … ' + pct(E.q3, true, 0) }) : T('rp_no_values'),
+      return card(pct(E.median, true), T(labelKey), E.n ? T('rp_card_e_sub', { n: E.n, over: pct(over, false, 0), iqr: pct(E.q1, true, 0) + ' … ' + pct(E.q3, true, 0) }) : T(m.hasTrue ? 'rp_no_values' : 'rp_card_no_true'),
         E.median == null ? '' : E.median > 0 ? 'over' : 'under');
     };
     return '<div class="rp-cards">' +
@@ -81,6 +82,15 @@
     out.push({ id: 'hist-v', svg: C.histogram({ title: T('rp_ch_hist_v'), xLabel: T('rp_ax_e_v'), values: m.arows.map(function (r) { return r.E_v; }), percent: true, zeroLine: true, color: C.PALETTE[0], yLabel: T('rp_ax_drawings') }), caption: T('rp_cap_hist') });
     out.push({ id: 'hist-h', svg: C.histogram({ title: T('rp_ch_hist_h'), xLabel: T('rp_ax_e_h'), values: m.arows.map(function (r) { return r.E_h; }), percent: true, zeroLine: true, color: C.PALETTE[2], yLabel: T('rp_ax_drawings') }), caption: T('rp_cap_hist') });
     return out;
+  }
+
+  /** Without true dimensions (no key table, or no structures): the estimates themselves. */
+  function estimateCharts(m) {
+    var C = HUSS.report.charts;
+    return [
+      { id: 'est-hist-v', svg: C.histogram({ title: T('rp_ch_est_hist_v'), xLabel: T('rp_ax_est_v'), values: m.arows.map(function (r) { return r.est_v; }), color: C.PALETTE[0], yLabel: T('rp_ax_drawings') }), caption: T('rp_cap_est_hist') },
+      { id: 'est-hist-h', svg: C.histogram({ title: T('rp_ch_est_hist_h'), xLabel: T('rp_ax_est_h'), values: m.arows.map(function (r) { return r.est_h; }), color: C.PALETTE[2], yLabel: T('rp_ax_drawings') }), caption: T('rp_cap_est_hist') }
+    ];
   }
 
   function qualityCharts(m) {
@@ -155,12 +165,11 @@
   /** The report body (cards, charts, tables) as an HTML fragment. */
   function fragment(m) {
     var figs = function (list) { return '<div class="rp-grid">' + list.map(function (c) { return figure(c.id, c.svg, c.caption); }).join('') + '</div>'; };
-    var hasTrue = m.arows.some(function (r) { return r.true_v != null || r.true_h != null; });
+    var noTrue = m.problems && m.problems.no_key ? 'rp_no_true_key' : 'rp_no_true';
     return cards(m) +
       problemsHtml(m) +
       '<section class="rp-section"><h2>' + esc(T('rp_sec_results')) + '</h2>' +
-      (hasTrue ? '' : '<p class="rp-note">' + esc(T('rp_no_true')) + '</p>') +
-      figs(charts(m)) + '<h3>' + esc(T('rp_sec_structures')) + '</h3>' + structureTable(m) + '</section>' +
+      (m.hasTrue ? figs(charts(m)) : '<p class="rp-note">' + esc(T(noTrue)) + '</p>' + figs(estimateCharts(m))) + '<h3>' + esc(T('rp_sec_structures')) + '</h3>' + structureTable(m) + '</section>' +
       '<section class="rp-section"><h2>' + esc(T('rp_sec_quality')) + '</h2>' + figs(qualityCharts(m)) +
       '<h3>' + esc(T('rp_sec_acceptance')) + '</h3>' + qualityTable(m) + '</section>';
   }

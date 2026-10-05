@@ -28,6 +28,7 @@ Rules version 1.3.
 - Main menu at start (new project, open project file, continue the last project; try without a project, calibration test, guide); no New project tab inside a project; "HuSS Scorer" opens the menu.
 - Structures with their true dimensions in the project file (format 2); one-structure projects need no key table; the Tables screen holds the key table only.
 - Results and Compare use the drawings scored in this session without a CSV.
+- Results with several structures and no key table: a clear notice with a link to the Tables screen; the report shows the estimates in metres instead of empty error charts.
 - Calibration test moved out of the Sheets and Results screens into its own screen.
 
 ### Rules
