@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1 (unreleased)
+## 0.2.0 (unreleased)
 
 Report (display only; measurement, rules and CSV columns unchanged):
 - Error-by-structure charts: the mean (diamond) and its 95 % confidence interval (bar; t distribution, from 3 drawings on) right of each box; the mean and interval under each group and as two new columns of the By structure table; captions explain the sideways spread of the dots and the whiskers (lowest to highest value).

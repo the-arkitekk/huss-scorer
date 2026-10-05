@@ -1,6 +1,6 @@
 # Data dictionary
 
-Every column HuSS Scorer writes. Rules version 1.3, tool version 0.1.1.
+Every column HuSS Scorer writes. Rules version 1.3, tool version 0.2.0.
 
 **Conventions**
 

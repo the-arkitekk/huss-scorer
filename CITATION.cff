@@ -15,7 +15,7 @@ authors:
     given-names: "Erdem"
     # orcid: "https://orcid.org/0000-0000-0000-0000"
     # affiliation: ""
-version: "0.1.1"
+version: "0.2.0"
 license: MIT
 keywords:
   - spatial cognition

@@ -2,7 +2,7 @@
 
 Semi-automatic scorer for HuSS (Human-Scaled Section) drawings. The tool suggests, the rater confirms or corrects. Everything runs in the browser; images and data never leave the computer.
 
-Status: **v0.1.1, rules 1.3, pilot version** — Phases 1–3 of the specification (`huss-scorer-sartname-v1.md`, Turkish, section 13) are done: alignment, suggestions, folder sessions, own QR code, Results with merge and report, Compare, calibration, documents. Changes from the specification are collected in `docs/sartname-v1.1-taslak.md` (draft for the author). See `huss-scorer-sartname-v1.md` (technical specification, Turkish), section 13.
+Status: **v0.2.0, rules 1.3, pilot version** — Phases 1–3 of the specification (`huss-scorer-sartname-v1.md`, Turkish, section 13) are done: alignment, suggestions, folder sessions, own QR code, Results with merge and report, Compare, calibration, documents. Changes from the specification are collected in `docs/sartname-v1.1-taslak.md` (draft for the author). See `huss-scorer-sartname-v1.md` (technical specification, Turkish), section 13.
 
 ## Use
 
