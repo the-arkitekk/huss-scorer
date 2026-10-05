@@ -12,6 +12,7 @@
   var A = function () { return HUSS.io.autosave; };
   var sess = null, files = {}, tables = { key: null, structures: null }, pendingCsv = null, subsample = null;
   var openedAt = null, saveTimer = null, running = false, els = {}, setup = null;
+  var visited = [];                                 // queue positions seen before the current one (Previous)
 
   function $(id) { return document.getElementById(id); }
 
@@ -30,6 +31,42 @@
     };
   }
 
+  // Buttons that open scans: locked until the session fields are filled in.
+  var START_BUTTONS = ['btn-open', 'btn-choose', 'btn-folder', 'btn-choose-files', 'btn-files'];
+
+  /** What is still missing before scans can be opened (empty when ready). */
+  function setupMissing() {
+    var v = setupValues(), miss = [];
+    if (!v.project_code) miss.push('project');
+    if (!v.rater_code) miss.push('rater');
+    if (!v.mode) miss.push('mode');
+    return miss;
+  }
+
+  function updateStartButtons() {
+    var miss = running ? [] : setupMissing();
+    var text = miss.length ? HUSS.t('start_needs', { list: miss.map(function (m) { return HUSS.t('start_need_' + m); }).join('\n') }) : '';
+    START_BUTTONS.forEach(function (id) {
+      var b = $(id);
+      if (!b) return;
+      b.classList.toggle('is-disabled', !!miss.length);
+      b.setAttribute('aria-disabled', miss.length ? 'true' : 'false');
+      if (miss.length) b.setAttribute('data-need', text); else b.removeAttribute('data-need');
+    });
+  }
+
+  /** Before scans are opened: true when ready, else the missing fields are marked and named. */
+  function canStart() {
+    var miss = setupMissing();
+    els.inProject.classList.toggle('invalid', miss.indexOf('project') >= 0);
+    els.inRater.classList.toggle('invalid', miss.indexOf('rater') >= 0);
+    els.modeRow.classList.toggle('invalid', miss.indexOf('mode') >= 0);
+    if (!miss.length) return true;
+    showSetupError(HUSS.t('start_needs', { list: miss.map(function (m) { return HUSS.t('start_need_' + m); }).join('\n') }));
+    (miss[0] === 'project' ? els.inProject : miss[0] === 'rater' ? els.inRater : els.modeBlind).focus();
+    return false;
+  }
+
   function showSetupError(text) {
     els.setupError.textContent = text || '';
     els.setupError.hidden = !text;
@@ -46,6 +83,9 @@
     var v = setupValues();
     els.openTables.hidden = v.mode !== 'open';
     if (v.rater_code) els.inRater.classList.remove('invalid');
+    if (v.project_code) els.inProject.classList.remove('invalid');
+    if (v.mode) els.modeRow.classList.remove('invalid');
+    updateStartButtons();
     var saved = v.rater_code && v.mode ? A().load(A().key(v.project_code, v.rater_code, v.mode)) : null;
     if (saved && saved.records && (saved.records.length || (saved.drafts && saved.drafts.length))) {
       els.autosaveText.textContent = HUSS.t('autosave_found', { done: saved.done || 0, total: saved.total || 0, time: timeOf(saved.saved_at) });
@@ -181,12 +221,7 @@
   function begin(fileList) {
     if (running) return;
     var v = setupValues();
-    if (!v.rater_code || !v.mode) {
-      showSetupError(HUSS.t('need_rater_and_mode'));
-      if (!v.rater_code) { els.inRater.classList.add('invalid'); els.inRater.focus(); }
-      HUSS.ui.scorer.clear(HUSS.t('need_rater_and_mode'));
-      return;
-    }
+    if (!canStart()) { HUSS.ui.scorer.clear(els.setupError.textContent); return; }
     var list = Array.prototype.filter.call(fileList, isImage);
     var ignored = fileList.length - list.length;
     if (!list.length) { HUSS.ui.scorer.clear(HUSS.t('no_scans')); return; }
@@ -194,6 +229,8 @@
     showSetupError('');
     setup = v;
     running = true;
+    visited = [];
+    updateStartButtons();
     els.cardSession.classList.add('running');
     els.setupBox.hidden = true;
     HUSS.ui.scorer.setProjectLocked(true);
@@ -299,6 +336,9 @@
   function openCurrent() {
     var item = S().current(sess);
     if (!item) return;
+    var prev = $('btn-prev'), first = !visited.length && sess.index === 0;
+    prev.classList.toggle('is-disabled', first);
+    if (first) prev.setAttribute('data-need', HUSS.t('previous_first')); else prev.removeAttribute('data-need');
     openedAt = Date.now();
     updateSummary();
     HUSS.ui.scorer.openItem(files[item.key], itemContext(item));
@@ -345,13 +385,26 @@
     advance();
   }
 
+  /**
+   * Back to the drawing seen just before this one (Shift+Enter): the drawings visited in this
+   * session, else the one before in the queue.
+   */
   function previous() {
-    if (!running || sess.index === 0) return;
+    if (!running) return;
+    while (visited.length && visited[visited.length - 1] === sess.index) visited.pop();
+    var target = visited.length ? visited.pop() : sess.index - 1;
+    if (target < 0) return;
     var item = clock();
     if (HUSS.ui.scorer.session && !item.record) keepDraft(item);
-    S().goTo(sess, sess.index - 1);
+    S().goTo(sess, target);
     saveAutosave();
     openCurrent();
+  }
+
+  /** Moves on to queue position i, remembering where we were for Previous. */
+  function moveTo(i) {
+    if (i !== sess.index) visited.push(sess.index);
+    S().goTo(sess, i);
   }
 
   function advance() {
@@ -363,7 +416,7 @@
       if (isComplete()) HUSS.ui.scorer.setFinishMode(true);
       return;
     }
-    S().goTo(sess, i);
+    moveTo(i);
     openCurrent();
   }
 
@@ -442,7 +495,7 @@
 
   function init() {
     els = {
-      inProject: $('in-project'), inRater: $('in-rater'), modeBlind: $('mode-blind'), modeOpen: $('mode-open'),
+      inProject: $('in-project'), inRater: $('in-rater'), modeBlind: $('mode-blind'), modeOpen: $('mode-open'), modeRow: $('mode-row'),
       cardSession: $('card-session'), setupBox: $('session-setup'), running: $('session-running'),
       setupError: $('setup-error'), resumeStatus: $('resume-status'), autosaveRow: $('autosave-row'),
       autosaveText: $('autosave-text'), chkAutosave: $('chk-autosave'), openTables: $('open-tables'), tablesStatus: $('tables-status'),
@@ -463,7 +516,7 @@
   }
 
   HUSS.ui.queue = {
-    init: init, begin: begin, setPendingCsv: setPendingCsv, setSubsample: setSubsample, setTable: setTable, setupChanged: setupChanged,
+    init: init, begin: begin, canStart: canStart, setPendingCsv: setPendingCsv, setSubsample: setSubsample, setTable: setTable, setupChanged: setupChanged,
     confirm: confirm, previous: previous, later: later, downloadCsv: downloadCsv, downloadExcel: downloadExcel,
     get session() { return sess; }, get running() { return running; }, get tables() { return tables; }
   };

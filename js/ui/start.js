@@ -44,8 +44,9 @@
     var folderInput = $('folder-input'), filesInput = $('files-input'), csvInput = $('csv-input');
     var keyInput = $('key-input'), structuresInput = $('structures-input'), subsampleInput = $('subsample-input');
     var Q = HUSS.ui.queue;
-    [$('btn-open'), $('btn-choose'), $('btn-folder')].forEach(function (b) { b.addEventListener('click', function () { pick(folderInput); }); });
-    [$('btn-choose-files'), $('btn-files')].forEach(function (b) { b.addEventListener('click', function () { pick(filesInput); }); });
+    // Scans are opened only after the rater code, the project code and the mode are set.
+    [$('btn-open'), $('btn-choose'), $('btn-folder')].forEach(function (b) { b.addEventListener('click', function () { if (Q.canStart()) pick(folderInput); }); });
+    [$('btn-choose-files'), $('btn-files')].forEach(function (b) { b.addEventListener('click', function () { if (Q.canStart()) pick(filesInput); }); });
     $('btn-resume-csv').addEventListener('click', function () { pick(csvInput); });
     $('btn-subsample').addEventListener('click', function () { pick(subsampleInput); });
     subsampleInput.addEventListener('change', function () {
