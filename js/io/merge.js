@@ -28,11 +28,13 @@
 
   /**
    * sets: [{ name, records, exclusionIds }] (from csv.readMeasurements); key, structures: the
-   * results of tables.parseKey / parseStructures, or null.
+   * results of tables.parseKey / parseStructures, or null. opts.defaultStructure: the structure of
+   * sheets not in the key (a one-structure project).
    * Returns { rows, columns, raters, projects, problems: { not_in_key, missing_structure,
    * duplicates, unfinished, not_measured, mixed_projects }, counts }.
    */
-  function merge(sets, key, structures) {
+  function merge(sets, key, structures, opts) {
+    var defaultStructure = opts && opts.defaultStructure || null;
     var csv = HUSS.io.csv, E = HUSS.measure.compute.errorRatio;
     var problems = { not_in_key: [], missing_structure: [], duplicates: [], unfinished: [], not_measured: [], mixed_projects: false };
     var exclIds = [], keyExtra = [], byKey = {}, order = [];
@@ -61,7 +63,7 @@
     rows.forEach(function (row) {
       measuredCodes[row.sheet_code] = true;
       var k = key && key.rows ? key.rows[row.sheet_code] : null;
-      if (!(key && key.rows) && row.true_vertical_m !== undefined && (row.structure_code || row.true_vertical_m != null)) {
+      if (!(key && key.rows) && !defaultStructure && row.true_vertical_m !== undefined && (row.structure_code || row.true_vertical_m != null)) {
         // An already merged CSV and no key table: its participant, structure and true values stay.
         E_PAIRS.forEach(function (p) { row[p[0]] = row.status === 'measured' ? E(row[p[1]], row[p[2]]) : null; });
         return;
@@ -75,8 +77,8 @@
         });
       } else {
         row.participant_code = null;
-        row.structure_code = null;
-        if (key && problems.not_in_key.indexOf(row.sheet_code) < 0) problems.not_in_key.push(row.sheet_code);
+        row.structure_code = defaultStructure;
+        if (key && !defaultStructure && problems.not_in_key.indexOf(row.sheet_code) < 0) problems.not_in_key.push(row.sheet_code);
       }
       var st = row.structure_code && structures && structures.rows ? structures.rows[row.structure_code] : null;
       if (row.structure_code && !st) problems.missing_structure.push({ sheet_code: row.sheet_code, structure_code: row.structure_code });
@@ -98,8 +100,9 @@
       if (projects.indexOf(r.project_code) < 0) projects.push(r.project_code);
     });
     problems.mixed_projects = projects.length > 1;
-    var carried = rows.some(function (r) { return r.structure_code; }); // read from an already merged CSV
+    var carried = rows.some(function (r) { return r.structure_code; }); // read from an already merged CSV, or the default
     problems.no_key = !(key && key.rows) && !carried;
+    problems.single_structure = !!defaultStructure;
     problems.no_structures = !(structures && structures.rows) && !rows.some(function (r) { return r.true_vertical_m != null || r.true_horizontal_m != null; });
     var columns = csv.columnsFor(exclIds.length ? exclIds : null).concat(csv.MERGED_COLUMNS,
       keyExtra.map(function (x) { return { name: x, type: 'str' }; }));

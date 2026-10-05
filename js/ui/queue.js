@@ -246,6 +246,22 @@
 
   // ------------------------------------------------------------ queue
 
+  /** Open mode: participant, structure and true dimensions of a sheet (key + project structures). */
+  function lookupFor(code) {
+    var t = HUSS.ui.results.currentTables();
+    var lk = t.key ? HUSS.io.tables.lookup(t.key, t.structures, code) : null;
+    if (!lk && t.defaultStructure && t.structures) {
+      var st = t.structures.rows[t.defaultStructure];
+      lk = { participant_code: null, structure_code: t.defaultStructure, structure_name: st.structure_name, true_vertical_m: st.true_vertical_m, true_horizontal_m: st.true_horizontal_m };
+    }
+    return lk;
+  }
+
+  function hasStudyTables() {
+    var t = HUSS.ui.results.currentTables();
+    return !!(t.key || t.defaultStructure);
+  }
+
   function itemContext(item) {
     var saved = item.record ? S().stateFromRecord(item.record) : item.draft ? S().stateFromRecord(item.draft) : null;
     var p = S().progress(sess);
@@ -256,8 +272,8 @@
     return {
       mode: sess.mode, rater_code: sess.rater_code, project_code: sess.project_code,
       title: title, chip: item.status, sheetCode: code, codeSource: item.code_source, saved: saved,
-      lookup: sess.mode === 'open' && tables.key ? HUSS.io.tables.lookup(tables.key, tables.structures, code) : null,
-      tablesLoaded: !!tables.key, fileName: item.name, onChange: scheduleAutosave,
+      lookup: sess.mode === 'open' ? lookupFor(code) : null,
+      tablesLoaded: hasStudyTables(), fileName: item.name, onChange: scheduleAutosave,
       onAligned: function (code, source) { return adoptCode(item, code, source); },
       finished: isComplete() && (item.status === 'measured' || item.status === 'excluded')
     };

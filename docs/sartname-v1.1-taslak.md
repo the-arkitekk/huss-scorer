@@ -85,12 +85,19 @@ Neden: Kural 3'te havada ya da zeminin altına taşan figür; kural 4–5'te ser
 
 > Tavan ve duvar tutamacı, ortalaması bırakılan yerin `snap_radius_mm` yakınındaki çizgiye, o çizginin ortalamasına oturur. Çizgi sütun sütun (tavan) ya da satır satır (duvar) izlenir: 1 mm'ye kadar kesintiler atlanır; başka bir çizgiye çarpınca ya da 45°'den fazla dönünce (köşe) durulur. Tavan önerisinde 10 mm'lik süreklilik koşulu, dalgalı bir çizgi bu 10 mm'nin en az %60'ında izlenebiliyorsa da sağlanmış sayılır. Biri taşınınca öteki (önerilmiş ya da çizgiye oturmuşsa) yeniden ortalanır.
 
+## 5.1 Proje dosyası
+
+Neden: gerçek ölçüleri proje başında bir kez girmek; tek yapılı çalışmada anahtar tablosu gerekmesin.
+
+> Biçim sürümü 2. Yeni alan `structures`: `[{ code, name, true_vertical_m, true_horizontal_m }]` (kod büyük harf, rakam, tire; en az bir gerçek ölçü). Projede tek yapı varsa her kâğıt o yapıya aittir; anahtar tablosu yalnızca katılımcı kodları için gerekir. Biçim 1 dosyalar yapısız olarak açılır. Proje dosyası ölçümcülere de gider; Blind mod gerçek ölçüleri ölçüm sırasında hiç göstermez.
+
 ## 8. Ekranlar
 
-> - **Tables:** yapılar ve anahtar tablosunun girilmesi, içe ve dışa aktarılması.
-> - **Results:** birleştirme (8.6) ve rapor: özet kartları; yapı başına hata, tahmin–gerçek, yükseklik hatası–derinlik hatası, dağılımlar; puanlama kalitesi (değiştirilmeden kabul edilen öneriler, bayraklar, kod kaynağı, hizalama, süre); tablolar; ölçümcü ve değer seçimi; SVG, PNG, PDF ve tek dosyalık HTML çıktı; kalibrasyon denetimi.
+> - **Açılış menüsü (8.1 yerine):** New project, Open project file, Continue (bu tarayıcıdaki son proje); bağlantılar: Try without a project, Calibration test, Guide. Proje içinde üst çubukta New project sekmesi yoktur; sol üstteki "HuSS Scorer" menüyü açar (Back to it, Edit project).
+> - **Tables:** yalnızca anahtar tablosu; yapılar projede.
+> - **Calibration test (menüden):** kalibrasyon sayfalarını basma, anahtar ve denetim tek ekranda; yazıcı ve tarayıcı başına bir kez.
+> - **Results:** o oturumda ölçülen çizimler kendiliğinden gelir; birleştirme (8.6) ve rapor: özet kartları; yapı başına hata, tahmin–gerçek, yükseklik hatası–derinlik hatası, dağılımlar; puanlama kalitesi (değiştirilmeden kabul edilen öneriler, bayraklar, kod kaynağı, hizalama, süre); tablolar; ölçümcü ve değer seçimi; SVG, PNG, PDF ve tek dosyalık HTML çıktı.
 > - **Compare (8.7):** ek olarak iki eksen için betimleyici uyum grafiği (ortalamaya karşı fark, %95 uyum sınırları). ICC ve kappa yine R'de.
-> - **Sheets:** kalibrasyon sayfaları seçeneği ve kalibrasyon anahtarı.
 > - **Score:** alt örneklem listesi yükleme; eksik sayfa kodu işaretinin kırmızı vurgusu.
 
 ## 10. Kabul testleri
@@ -101,7 +108,7 @@ Neden: Kural 3'te havada ya da zeminin altına taşan figür; kural 4–5'te ser
 
 **10.3 Kalibrasyon sayfası.**
 
-> Kalibrasyon sayfaları Sheets ekranından basılır (on düzen; kırmızı figür, tavan ve duvar bilinen ölçülerde). Taranıp normal ölçülür; Results ekranındaki kalibrasyon denetimi her uzunluğu kalibrasyon anahtarıyla karşılaştırır.
+> Kalibrasyon sayfaları açılış menüsündeki Calibration test ekranından basılır (on düzen; kırmızı figür, tavan ve duvar bilinen ölçülerde). Taranıp normal ölçülür; aynı ekran her uzunluğu kalibrasyon anahtarıyla karşılaştırır. Yazıcı ve tarayıcı başına bir kez yapılır.
 
 ## 14. v2 listesi
 

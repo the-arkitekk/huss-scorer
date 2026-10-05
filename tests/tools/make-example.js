@@ -61,6 +61,12 @@ function main() {
   const stText = T.structuresToCSV([{ structure_code: STRUCTURE.code, structure_name: STRUCTURE.name, true_vertical_m: STRUCTURE.v, true_horizontal_m: STRUCTURE.h }]);
   const csvText = HUSS.io.csv.toCSV(records);
   fs.writeFileSync(path.join(OUT, 'HUSS-TRIALS_key.csv'), keyText);
+  // The project file of the trials: one structure, so no key table is needed for the errors.
+  const project = HUSS.io.project.create({
+    project_code: 'HUSS-TRIALS', title: STRUCTURE.name,
+    structures: [{ code: STRUCTURE.code, name: STRUCTURE.name, true_vertical_m: STRUCTURE.v, true_horizontal_m: STRUCTURE.h }]
+  }, new Date(2026, 9, 5, 9, 0, 0));
+  fs.writeFileSync(path.join(OUT, 'HUSS-TRIALS.huss.json'), HUSS.io.project.serialize(project));
   fs.writeFileSync(path.join(OUT, 'HUSS-TRIALS_structures.csv'), stText);
   fs.writeFileSync(path.join(OUT, 'HUSS-TRIALS_DEMO_blind.csv'), csvText);
   const read = HUSS.io.csv.readMeasurements(csvText);

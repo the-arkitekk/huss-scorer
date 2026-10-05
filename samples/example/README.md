@@ -4,6 +4,7 @@ Made with `node tests/tools/make-example.js` from the 19 trial scans in `samples
 
 | File | What it is |
 |---|---|
+| `HUSS-TRIALS.huss.json` | The project file of the trials: one structure (the remembered room, 4 m × 7 m), so the errors appear without a key table. Open it from the main menu (Open project file…), score the trial scans, and the Results screen shows the report. |
 | `HUSS-TRIALS_DEMO_blind.csv` | A measurement CSV as the Score screen writes it. Rater `DEMO` accepted every suggestion unchanged (as if pressing K and Enter on each drawing); the two drawings without a red figure are excluded, an axis without a suggestion is marked not measurable. The values are the tool's own suggestions, not a human rater's scores. |
 | `HUSS-TRIALS_key.csv`, `HUSS-TRIALS_structures.csv` | Key table (participant codes P01–P19 are placeholders) and structures table. |
 | `HUSS-TRIALS_merged.csv` | The Merge output: the measurement CSV with participant, structure, true dimensions and E columns. |
@@ -11,4 +12,4 @@ Made with `node tests/tools/make-example.js` from the 19 trial scans in `samples
 | `HUSS-TRIALS_subsample.txt`, `HUSS-TRIALS_DEMO2_blind.csv` | A subsample of 8 sheets and a **simulated** second rater on it: the same suggestions with the head, ceiling and wall moved by small random amounts. For trying Compare only. |
 | `HUSS-TRIALS_compare_DEMO_DEMO2.csv`, `.html` | The Compare output (wide CSV for `r/icc_kappa.R`) and the comparison as HTML. |
 
-To try the Results screen: Results → Add CSV files… → `HUSS-TRIALS_DEMO_blind.csv`, then Load key CSV… and Load structures CSV…. To try Compare: Compare → Add CSV files… → both DEMO files.
+To try the Results screen: open `HUSS-TRIALS.huss.json` from the main menu, then Results → Add CSV files… → `HUSS-TRIALS_DEMO_blind.csv` (or score scans yourself: they appear by themselves). To try Compare: Compare → Add CSV files… → both DEMO files.

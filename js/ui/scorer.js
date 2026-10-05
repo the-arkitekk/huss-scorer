@@ -188,7 +188,7 @@
     if (!ctx || ctx.mode !== 'open' || !ctx.tablesLoaded) { els.openInfo.hidden = true; return; }
     els.openInfo.hidden = false;
     els.openInfo.textContent = lk
-      ? HUSS.t('open_structure', { name: lk.structure_name || '–', code: lk.structure_code, participant: lk.participant_code })
+      ? HUSS.t('open_structure', { name: lk.structure_name || '–', code: lk.structure_code, participant: lk.participant_code || '–' })
       : HUSS.t('open_not_in_key');
   }
 
@@ -921,8 +921,7 @@
       busy: $('busy'), busyText: $('busy-text'), tools: $('stage-tools'), hint: $('hint'),
       inProject: $('in-project'), inSheet: $('in-sheet'), sheetStatus: $('sheet-status'), sheetTitle: $('sheet-title'),
       imageInfo: $('image-info'), imageAlign: $('image-align'), imageWarn: $('image-warn'), openInfo: $('open-info'),
-      projectInfo: $('project-info'), projectWarn: $('project-warn'), projectInput: $('project-input'),
-      btnLoadProject: $('btn-load-project'), btnNewProject: $('btn-new-project'),
+      projectInfo: $('project-info'), projectWarn: $('project-warn'), btnMainMenu: $('btn-main-menu'),
       cardSheet: $('card-sheet'), cardHandles: $('card-handles'), cardValues: $('card-values'), cardFlags: $('card-flags'),
       cardExclusion: $('card-exclusion'), cardView: $('card-view'), cardActions: $('card-actions'),
       handleTable: $('handle-table'), valueTable: $('value-table'), flagList: $('flag-list'),
@@ -981,11 +980,7 @@
     els.btnConfirm.addEventListener('click', function () { actions.confirm(); });
     els.btnPrev.addEventListener('click', function () { actions.previous(); });
     els.btnLater.addEventListener('click', function () { actions.later(); });
-    els.btnLoadProject.addEventListener('click', function () { els.projectInput.value = ''; els.projectInput.click(); });
-    els.projectInput.addEventListener('change', function () {
-      if (els.projectInput.files && els.projectInput.files[0]) loadProjectFile(els.projectInput.files[0]);
-    });
-    els.btnNewProject.addEventListener('click', function () { HUSS.app.show('project'); });
+    els.btnMainMenu.addEventListener('click', function () { HUSS.ui.home.show(); });
     [els.mmCorners, els.mmFloorline].forEach(function (r) {
       r.addEventListener('change', function () {
         if (!man || man.busy) return;
@@ -1017,10 +1012,7 @@
     setActions: function (a) { actions = a; },
     setFinishMode: setFinishMode,
     get finishMode() { return !!ui.finish; },
-    setProjectLocked: function (locked) {
-      els.btnLoadProject.disabled = locked;
-      els.btnNewProject.disabled = locked;
-    },
+    setProjectLocked: function () {},
     get session() { return s; },
     get context() { return ctx; }
   };

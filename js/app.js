@@ -5,8 +5,9 @@
   'use strict';
   var HUSS = root.HUSS = root.HUSS || {};
 
-  var state = { project: null, screen: 'score' };
-  var SCREENS = { score: 'screen-score', sheets: 'screen-sheets', tables: 'screen-tables', results: 'screen-results', compare: 'screen-compare', project: 'screen-project', guide: 'screen-guide' };
+  var state = { project: null, screen: 'home', inProject: false, lastScreen: 'score' };
+  var WORK = { sheets: true, score: true, tables: true, results: true, compare: true };
+  var SCREENS = { score: 'screen-score', sheets: 'screen-sheets', tables: 'screen-tables', results: 'screen-results', compare: 'screen-compare', project: 'screen-project', guide: 'screen-guide', home: 'screen-home', calibration: 'screen-calibration' };
 
   function applyStrings(scope) {
     Array.prototype.forEach.call(scope.querySelectorAll('[data-s]'), function (el) {
@@ -29,6 +30,9 @@
 
   function show(name) {
     state.screen = name;
+    if (WORK[name]) state.lastScreen = name;
+    // The tabs belong to a project: hidden on the main menu and before a project is opened.
+    document.body.classList.toggle('no-tabs', name === 'home' || !state.inProject);
     Object.keys(SCREENS).forEach(function (k) {
       document.getElementById(SCREENS[k]).hidden = k !== name;
     });
@@ -40,11 +44,28 @@
     if (name === 'tables') HUSS.ui.tablesForm.onShow();
     if (name === 'results') HUSS.ui.results.onShow();
     if (name === 'compare') HUSS.ui.compare.onShow();
+    if (name === 'calibration') HUSS.ui.calibration.onShow();
     if (name === 'score') HUSS.ui.scorer.onShow();
+  }
+
+  /**
+   * The study's tables: the key table of the Tables screen and the project's structures; with a
+   * single structure, every sheet belongs to it (no key needed).
+   */
+  function studyTables() {
+    var p = state.project;
+    return {
+      key: HUSS.ui.tablesForm ? HUSS.ui.tablesForm.keyTable() : null,
+      structures: HUSS.io.project.structuresTable(p),
+      defaultStructure: HUSS.io.project.singleStructure(p)
+    };
   }
 
   function setProject(p) {
     state.project = p;
+    var chip = document.getElementById('project-chip');
+    chip.hidden = !p;
+    chip.textContent = p ? p.project_code : '';
     HUSS.ui.scorer.projectChanged();
   }
 
@@ -61,12 +82,16 @@
     HUSS.ui.results.init();
     HUSS.ui.compare.init();
     HUSS.ui.guide.init();
+    HUSS.ui.calibration.init();
+    HUSS.ui.home.init();
+    document.getElementById('home-version').textContent = 'v' + HUSS.config.TOOL_VERSION + ' · rules ' + HUSS.config.RULES_VERSION;
     Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
       b.addEventListener('click', function () { show(b.getAttribute('data-screen')); });
     });
+    HUSS.ui.home.start();
   }
 
-  HUSS.app = { init: init, applyStrings: applyStrings, params: params, show: show, setProject: setProject, state: state };
+  HUSS.app = { init: init, applyStrings: applyStrings, params: params, show: show, setProject: setProject, studyTables: studyTables, state: state };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })(typeof globalThis !== 'undefined' ? globalThis : this);

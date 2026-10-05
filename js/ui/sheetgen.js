@@ -47,8 +47,8 @@
     if (!label || label.length > 20) { setStatus(HUSS.t('sg_bad_label'), 'bad'); return; }
     var T = template();
     var codes = HUSS.sheet.code.batch(n, excluded(), HUSS.sheet.code.secureRandom);
-    var cal = els.calibration.checked;
-    last = { template: T, label: label, codes: codes, generatedAt: new Date(), back: els.back.checked && !cal, calibration: cal };
+    var cal = false;
+    last = { template: T, label: label, codes: codes, generatedAt: new Date(), back: els.back.checked, calibration: false };
     els.preview.innerHTML = front(codes[0], 0) + (last.back ? HUSS.sheet.svg.back(T, codes[0]) : '');
     els.csv.textContent = HUSS.t(cal ? 'sg_cal_key' : 'sg_csv');
     els.check.textContent = HUSS.t('sg_check', { mm: T.corners[1][0] - T.corners[0][0] });
@@ -115,7 +115,7 @@
     els = {
       template: $('sg-template'), templateNote: $('sg-template-note'), label: $('sg-label'), count: $('sg-count'),
       exclude: $('sg-exclude'), excludeInfo: $('sg-exclude-info'), loadList: $('sg-load-list'), listInput: $('sg-list-input'),
-      generate: $('sg-generate'), back: $('sg-back'), calibration: $('sg-calibration'), status: $('sg-status'), result: $('sg-result'), check: $('sg-check'),
+      generate: $('sg-generate'), back: $('sg-back'), status: $('sg-status'), result: $('sg-result'), check: $('sg-check'),
       print: $('sg-print'), pdf: $('sg-pdf'), csv: $('sg-csv'), codes: $('sg-codes'), preview: $('sg-preview'),
       printRoot: $('print-root'), pageStyle: $('print-page-style')
     };

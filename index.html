@@ -9,7 +9,8 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <span data-s="app_title"></span>
+      <button type="button" class="brand-home" id="brand" data-s-title="home_brand_title"><span data-s="app_title"></span></button>
+      <span class="project-chip" id="project-chip" hidden></span>
       <span class="badge" data-s="phase_badge"></span>
       <span class="version" id="version"></span>
     </div>
@@ -19,7 +20,6 @@
       <button type="button" class="tab" data-screen="tables" data-s="tab_tables"></button>
       <button type="button" class="tab" data-screen="results" data-s="tab_results"></button>
       <button type="button" class="tab" data-screen="compare" data-s="tab_compare"></button>
-      <button type="button" class="tab" data-screen="project" data-s="tab_project"></button>
       <button type="button" class="tab" data-screen="guide" data-s="tab_guide"></button>
     </nav>
     <div class="topbar-actions">
@@ -73,10 +73,8 @@
         <p class="small" id="project-info" data-s="project_none"></p>
         <p class="small bad" id="project-warn" hidden></p>
         <div class="btn-row">
-          <button type="button" class="btn btn-xs" id="btn-load-project" data-s="load_project"></button>
-          <button type="button" class="btn btn-xs" id="btn-new-project" data-s="new_project"></button>
+          <button type="button" class="btn btn-xs" id="btn-main-menu" data-s="main_menu"></button>
         </div>
-        <input type="file" id="project-input" accept=".json,application/json" hidden>
       </section>
 
       <section class="card" id="card-session">
@@ -212,7 +210,6 @@
           <input type="file" id="sg-list-input" accept=".csv,.txt,text/csv,text/plain" hidden>
         </div>
         <label class="check check-top"><input type="checkbox" id="sg-back"><span data-s="sg_back"></span></label>
-        <label class="check check-top"><input type="checkbox" id="sg-calibration"><span data-s="sg_calibration"></span></label>
         <button type="button" class="btn btn-primary" id="sg-generate" data-s="sg_generate"></button>
         <p class="small" id="sg-status"></p>
         <div id="sg-result" hidden>
@@ -230,10 +227,35 @@
     </div>
   </main>
 
+  <main class="screen-page" id="screen-home" hidden>
+    <div class="home">
+      <h1 class="home-title" data-s="app_title"></h1>
+      <p class="home-tagline" data-s="home_tagline"></p>
+      <div class="home-current" id="home-current" hidden>
+        <span id="home-current-text"></span>
+        <button type="button" class="btn btn-primary btn-xs" id="home-back" data-s="home_back"></button>
+        <button type="button" class="btn btn-xs" id="home-edit" data-s="home_edit"></button>
+      </div>
+      <div class="home-actions">
+        <button type="button" class="home-card" id="home-new"><b data-s="home_new"></b><span data-s="home_new_sub"></span></button>
+        <button type="button" class="home-card" id="home-open"><b data-s="home_open"></b><span data-s="home_open_sub"></span></button>
+        <button type="button" class="home-card" id="home-continue" hidden><b id="home-continue-title"></b><span id="home-continue-sub"></span></button>
+      </div>
+      <p class="small bad" id="home-error" hidden></p>
+      <input type="file" id="home-project-input" accept=".json,application/json" hidden>
+      <p class="home-links">
+        <button type="button" class="link" id="home-noproject" data-s="home_noproject"></button>
+        <button type="button" class="link" id="home-calibration" data-s="home_calibration"></button>
+        <button type="button" class="link" id="home-guide" data-s="tab_guide"></button>
+      </p>
+      <p class="small muted home-version" id="home-version"></p>
+    </div>
+  </main>
+
   <main class="screen-page" id="screen-project" hidden>
     <div class="page-grid page-grid-narrow">
       <section class="page-card">
-        <h1 data-s="pf_title"></h1>
+        <h1 id="pf-heading" data-s="pf_title"></h1>
         <p class="small muted" data-s="pf_intro"></p>
         <label class="field"><span data-s="pf_code"></span><input type="text" id="pf-code" maxlength="32"></label>
         <p class="small muted field-help" data-s="pf_code_help"></p>
@@ -249,6 +271,13 @@
         <label class="check"><input type="checkbox" id="pf-sug-figure" checked><span data-s="pf_sug_figure"></span></label>
         <label class="check"><input type="checkbox" id="pf-sug-ceiling" checked><span data-s="pf_sug_ceiling"></span></label>
         <label class="check"><input type="checkbox" id="pf-sug-wall" checked><span data-s="pf_sug_wall"></span></label>
+        <h2 data-s="pf_structures"></h2>
+        <p class="small muted" data-s="pf_structures_help"></p>
+        <table class="grid pf-structures" id="pf-structures">
+          <thead><tr><th data-s="tb_col_code"></th><th data-s="tb_col_name"></th><th data-s="tb_col_true_v"></th><th data-s="tb_col_true_h"></th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button type="button" class="btn btn-xs" id="pf-st-add" data-s="tb_add_structure"></button>
         <h2 data-s="pf_exclusions"></h2>
         <div id="pf-excl-list"></div>
         <button type="button" class="btn btn-xs" id="pf-excl-add" data-s="pf_excl_add"></button>
@@ -256,33 +285,21 @@
         <p class="small bad" id="pf-errors" hidden></p>
         <p class="small ok" id="pf-saved" hidden></p>
         <div class="btn-row">
-          <button type="button" class="btn btn-primary" id="pf-download" data-s="pf_download"></button>
-          <button type="button" class="btn" id="pf-use" data-s="pf_use"></button>
+          <button type="button" class="btn btn-primary" id="pf-save" data-s="pf_create"></button>
+          <button type="button" class="btn" id="pf-cancel" data-s="pf_cancel"></button>
         </div>
+        <p class="small muted" data-s="pf_send_note"></p>
       </section>
     </div>
   </main>
 
   <main class="screen-page" id="screen-tables" hidden>
-    <div class="page-grid page-grid-tables">
-      <section class="page-card">
-        <h1 data-s="tb_structures_title"></h1>
-        <p class="small muted" data-s="tb_structures_intro"></p>
-        <table class="grid" id="tb-structures">
-          <thead><tr><th data-s="tb_col_code"></th><th data-s="tb_col_name"></th><th data-s="tb_col_true_v"></th><th data-s="tb_col_true_h"></th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <div class="btn-row">
-          <button type="button" class="btn btn-xs" id="tb-st-add" data-s="tb_add_structure"></button>
-          <button type="button" class="btn btn-xs" id="tb-st-import" data-s="tb_import"></button>
-          <button type="button" class="btn btn-xs" id="tb-st-download" data-s="tb_download"></button>
-          <input type="file" id="tb-st-input" accept=".csv,.txt,text/csv,text/plain" hidden>
-        </div>
-        <p class="small" id="tb-st-status"></p>
-      </section>
+    <div class="page-grid page-grid-narrow page-grid-key">
       <section class="page-card">
         <h1 data-s="tb_key_title"></h1>
         <p class="small muted" data-s="tb_key_intro"></p>
+        <p class="small" id="tb-structures-info"></p>
+        <p class="small ok" id="tb-single" hidden></p>
         <table class="grid" id="tb-key">
           <thead><tr><th data-s="tb_col_sheet"></th><th data-s="tb_col_participant"></th><th data-s="tb_col_structure"></th><th></th><th></th></tr></thead>
           <tbody></tbody>
@@ -296,9 +313,6 @@
         </div>
         <p class="small" id="tb-key-status"></p>
       </section>
-      <section class="page-card tb-actions">
-        <button type="button" class="btn btn-primary" id="tb-use" data-s="tb_use"></button>
-        <p class="small" id="tb-use-status"></p>
         <p class="small muted" data-s="tb_kept"></p>
       </section>
     </div>
@@ -324,7 +338,7 @@
           <p class="small muted" data-s="res_tables_help"></p>
           <p class="small" id="res-tables-status"></p>
           <div class="btn-row">
-            <button type="button" class="btn btn-xs" id="res-use-screen" data-s="res_use_screen"></button>
+            <button type="button" class="btn btn-xs" id="res-use-screen" data-s="res_forget_files" hidden></button>
             <button type="button" class="btn btn-xs" id="res-load-key" data-s="res_load_key"></button>
             <button type="button" class="btn btn-xs" id="res-load-structures" data-s="res_load_structures"></button>
             <input type="file" id="res-key-input" accept=".csv,.txt,text/csv,text/plain" hidden>
@@ -355,15 +369,6 @@
         </div>
         <div id="res-report" class="res-report"><p class="small muted" data-s="res_empty"></p></div>
       </section>
-        <section class="page-card res-cal-card">
-          <h1 data-s="cal_title"></h1>
-          <p class="small muted" data-s="cal_help"></p>
-          <div class="btn-row">
-            <button type="button" class="btn btn-xs" id="res-load-cal" data-s="cal_load"></button>
-            <input type="file" id="res-cal-input" accept=".csv,text/csv" hidden>
-          </div>
-          <div id="res-cal" class="res-report"></div>
-        </section>
     </div>
   </main>
 
@@ -414,6 +419,38 @@
   <main class="screen-page" id="screen-guide" hidden>
     <div class="page-grid page-grid-narrow guide-grid">
       <article class="page-card guide" id="guide"></article>
+    </div>
+  </main>
+
+  <main class="screen-page" id="screen-calibration" hidden>
+    <div class="page-grid page-grid-narrow guide-grid">
+      <section class="page-card">
+        <button type="button" class="link" id="cal-menu" data-s="back_to_menu"></button>
+        <h1 data-s="cal_title"></h1>
+        <p class="small muted" data-s="cal_intro"></p>
+        <h2 data-s="cal_step1"></h2>
+        <p class="small" data-s="cal_step1_help"></p>
+        <label class="field"><span data-s="sg_template"></span>
+          <select id="cal-template"><option value="A4L">A4L · A4 landscape</option><option value="A3L">A3L · A3 landscape</option></select></label>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="cal-pdf" data-s="sg_pdf"></button>
+          <button type="button" class="btn" id="cal-print" data-s="sg_print"></button>
+          <button type="button" class="btn" id="cal-key" data-s="sg_cal_key"></button>
+        </div>
+        <p class="small muted codes" id="cal-codes"></p>
+        <h2 data-s="cal_step2"></h2>
+        <p class="small" data-s="cal_step2_help"></p>
+        <h2 data-s="cal_step3"></h2>
+        <p class="small" data-s="cal_step3_help"></p>
+        <div class="btn-row">
+          <button type="button" class="btn btn-xs" id="cal-add-csv" data-s="res_add"></button>
+          <button type="button" class="btn btn-xs" id="cal-load-key" data-s="cal_load"></button>
+          <input type="file" id="cal-csv-input" accept=".csv,text/csv" multiple hidden>
+          <input type="file" id="cal-key-input" accept=".csv,text/csv" hidden>
+        </div>
+        <p class="small" id="cal-sources"></p>
+        <div id="cal-result" class="res-report"></div>
+      </section>
     </div>
   </main>
 
@@ -470,6 +507,8 @@
   <script src="js/ui/results.js"></script>
   <script src="js/ui/compare.js"></script>
   <script src="js/ui/guide.js"></script>
+  <script src="js/ui/calibration.js"></script>
+  <script src="js/ui/home.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -1,15 +1,16 @@
 /* HuSS Scorer — js/ui/projectForm.js
- * New project screen (spec 8.2): a form for the fields of 5.1, download of the project file,
- * and "use this project now".
+ * Project form (spec 8.2): a new project, or the open project edited (main menu). Fields of
+ * 5.1 plus the structures with their true dimensions. Saving downloads the project file and
+ * opens the project.
  */
 (function (root) {
   'use strict';
   var HUSS = root.HUSS = root.HUSS || {};
   HUSS.ui = HUSS.ui || {};
 
-  var els = {};
+  var els = {}, mode = 'new';
   var FIELD_LABELS = {
-    project_code: 'pf_code', title: 'pf_title_field', template: 'pf_template', sheet_label: 'pf_label',
+    project_code: 'pf_code', title: 'pf_title_field', template: 'pf_template', sheet_label: 'pf_label', structures: 'pf_structures',
     ref_height_m: 'pf_ref', min_figure_mm: 'pf_min_fig', foot_tolerance_mm: 'pf_foot_tol', snap_radius_mm: 'pf_snap'
   };
 
@@ -35,6 +36,32 @@
     return input;
   }
 
+  function addStructureRow(s) {
+    s = s || {};
+    var tr = document.createElement('tr');
+    var mk = function (value, cls, type) {
+      var td = document.createElement('td'), i = document.createElement('input');
+      i.type = 'text';
+      if (type === 'num') { i.inputMode = 'decimal'; i.className = 'num'; }
+      if (cls) i.className = (i.className ? i.className + ' ' : '') + cls;
+      i.value = value == null ? '' : String(value);
+      td.appendChild(i);
+      tr.appendChild(td);
+      return i;
+    };
+    mk(s.code, 'upper');
+    mk(s.name, 'keep-case');
+    mk(s.true_vertical_m, '', 'num');
+    mk(s.true_horizontal_m, '', 'num');
+    var td = document.createElement('td'), rm = document.createElement('button');
+    rm.type = 'button'; rm.className = 'btn btn-xs'; rm.textContent = HUSS.t('tb_remove');
+    rm.addEventListener('click', function () { tr.remove(); });
+    td.appendChild(rm);
+    tr.appendChild(td);
+    els.stBody.appendChild(tr);
+    return tr.querySelector('input');
+  }
+
   function fill(p) {
     els.code.value = p.project_code;
     els.title.value = p.title;
@@ -49,6 +76,9 @@
     els.sugWall.checked = p.suggestions.wall;
     els.exclList.textContent = '';
     p.exclusion_criteria.forEach(function (e) { addExclusionRow(e.id, e.label); });
+    els.stBody.textContent = '';
+    (p.structures || []).forEach(addStructureRow);
+    if (!(p.structures || []).length) addStructureRow();
     els.rules.textContent = HUSS.t('pf_rules', { v: HUSS.config.RULES_VERSION });
   }
 
@@ -69,7 +99,13 @@
       taken.push(id);
       excl.push({ id: id, label: label });
     });
-    return HUSS.io.project.create({
+    var structures = Array.prototype.slice.call(els.stBody.querySelectorAll('tr')).map(function (tr) {
+      var v = Array.prototype.map.call(tr.querySelectorAll('input'), function (i) { return i.value.trim(); });
+      var n = function (x) { return x === '' ? null : Number(x.replace(',', '.')); };
+      return { code: v[0].toUpperCase(), name: v[1], true_vertical_m: n(v[2]), true_horizontal_m: n(v[3]) };
+    }).filter(function (s) { return s.code || s.name || s.true_vertical_m != null || s.true_horizontal_m != null; });
+    var base = mode === 'edit' && HUSS.app.state.project ? { created_at: HUSS.app.state.project.created_at } : {};
+    return HUSS.io.project.create(Object.assign(base, {
       project_code: els.code.value.trim().toUpperCase(),
       title: els.title.value.trim(),
       template: els.template.value,
@@ -79,8 +115,9 @@
       foot_tolerance_mm: numberOf(els.foot),
       snap_radius_mm: numberOf(els.snap),
       suggestions: { figure: els.sugFigure.checked, ceiling: els.sugCeiling.checked, wall: els.sugWall.checked },
-      exclusion_criteria: excl
-    });
+      exclusion_criteria: excl,
+      structures: structures
+    }));
   }
 
   /** Readable list of validation errors. */
@@ -104,20 +141,33 @@
     return v.project;
   }
 
-  function download() {
+  /** Saves: downloads the project file and opens the project (a new one starts with the Sheets screen). */
+  function save() {
     var p = check();
     if (!p) return;
-    var name = HUSS.io.project.fileName(p);
-    HUSS.io.files.downloadText(name, HUSS.io.project.serialize(p), 'application/json');
-    els.saved.textContent = HUSS.t('pf_saved', { name: name });
-    els.saved.hidden = false;
+    HUSS.io.files.downloadText(HUSS.io.project.fileName(p), HUSS.io.project.serialize(p), 'application/json');
+    HUSS.ui.home.enter(p, mode === 'new' ? 'sheets' : (HUSS.app.state.lastScreen || 'score'));
   }
 
-  function use() {
-    var p = check();
-    if (!p) return;
-    HUSS.app.setProject(p);
-    HUSS.app.show('score');
+  function openNew() {
+    mode = 'new';
+    fill(HUSS.io.project.create({}));
+    els.heading.textContent = HUSS.t('pf_title');
+    els.save.textContent = HUSS.t('pf_create');
+    els.errors.hidden = true;
+    els.saved.hidden = true;
+    HUSS.app.show('project');
+  }
+
+  function openEdit(p) {
+    if (!p) return openNew();
+    mode = 'edit';
+    fill(p);
+    els.heading.textContent = HUSS.t('pf_edit_title', { code: p.project_code });
+    els.save.textContent = HUSS.t('pf_save_changes');
+    els.errors.hidden = true;
+    els.saved.hidden = true;
+    HUSS.app.show('project');
   }
 
   function init() {
@@ -126,13 +176,15 @@
       ref: $('pf-ref'), min: $('pf-min'), foot: $('pf-foot'), snap: $('pf-snap'),
       sugFigure: $('pf-sug-figure'), sugCeiling: $('pf-sug-ceiling'), sugWall: $('pf-sug-wall'),
       exclList: $('pf-excl-list'), exclAdd: $('pf-excl-add'), rules: $('pf-rules'),
-      errors: $('pf-errors'), saved: $('pf-saved'), download: $('pf-download'), use: $('pf-use')
+      errors: $('pf-errors'), saved: $('pf-saved'), save: $('pf-save'), cancel: $('pf-cancel'),
+      stBody: $('pf-structures').querySelector('tbody'), stAdd: $('pf-st-add'), heading: $('pf-heading')
     };
     fill(HUSS.io.project.create({}));
     els.exclAdd.addEventListener('click', function () { addExclusionRow('', '').focus(); });
-    els.download.addEventListener('click', download);
-    els.use.addEventListener('click', use);
+    els.stAdd.addEventListener('click', function () { addStructureRow().focus(); });
+    els.save.addEventListener('click', save);
+    els.cancel.addEventListener('click', function () { HUSS.ui.home.show(); });
   }
 
-  HUSS.ui.projectForm = { init: init, read: read, describe: describe };
+  HUSS.ui.projectForm = { init: init, read: read, describe: describe, openNew: openNew, openEdit: openEdit };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

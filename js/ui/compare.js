@@ -46,7 +46,7 @@
   function update() {
     var t = HUSS.ui.results.currentTables();
     var live = HUSS.ui.results.liveSource(), src = live ? [live].concat(files) : files;
-    merged = src.length ? HUSS.io.merge.merge(src, t.key, t.structures) : null;
+    merged = src.length ? HUSS.io.merge.merge(src, t.key, t.structures, { defaultStructure: t.defaultStructure }) : null;
     els.files.textContent = '';
     if (live) { var lli = document.createElement('li'); lli.appendChild(document.createElement('span')).textContent = live.name; els.files.appendChild(lli); }
     files.forEach(function (f, idx) {

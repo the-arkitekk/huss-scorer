@@ -1,13 +1,15 @@
 /* HuSS Scorer — js/io/project.js
  * Project file <project_code>.huss.json (spec 5.1): create, validate, read, write. DOM-free.
- * The project file holds no personal data.
+ * The project file holds no personal data. Since format version 2 it also holds the structures
+ * with their true dimensions (Blind mode never shows them while scoring).
  */
 (function (root) {
   'use strict';
   var HUSS = root.HUSS = root.HUSS || {};
   HUSS.io = HUSS.io || {};
 
-  var FORMAT = 'huss-project', FORMAT_VERSION = 1;
+  var FORMAT = 'huss-project', FORMAT_VERSION = 2, READABLE_VERSIONS = [1, 2];
+  var MAX_STRUCTURES = 50;
   var CODE_RE = /^[A-Z0-9-]{1,32}$/;
   var EXCL_RE = /^excl_[a-z0-9_]{1,40}$/;
 
@@ -41,6 +43,7 @@
       snap_radius_mm: d.snap_radius_mm,
       suggestions: { figure: true, ceiling: true, wall: true },
       exclusion_criteria: DEFAULT_EXCLUSIONS.map(function (e) { return { id: e.id, label: e.label }; }),
+      structures: [],                // [{ code, name, true_vertical_m, true_horizontal_m }]
       rules_version: HUSS.config.RULES_VERSION,
       created_at: HUSS.measure.record.isoLocal(now || new Date())
     };
@@ -53,7 +56,7 @@
   /**
    * Checks a project object. Returns { ok, errors: [{ field, code }], project } where project is
    * a normalised copy (missing optional fields filled with defaults).
-   * Error codes: not_project, format_version, required, pattern, range, template, type, exclusion.
+   * Error codes: not_project, format_version, required, pattern, range, template, type, exclusion, structure.
    */
   function validate(obj) {
     var errors = [];
@@ -62,9 +65,10 @@
       err('format', 'not_project');
       return { ok: false, errors: errors, project: null };
     }
-    if (obj.format_version !== FORMAT_VERSION) err('format_version', 'format_version');
+    if (READABLE_VERSIONS.indexOf(obj.format_version) < 0) err('format_version', 'format_version');
     var p = create({}, null);
     Object.keys(obj).forEach(function (k) { p[k] = obj[k]; });
+    p.format_version = FORMAT_VERSION; // a version 1 file is read as version 2 without structures
 
     if (typeof p.project_code !== 'string' || !p.project_code) err('project_code', 'required');
     else if (!CODE_RE.test(p.project_code)) err('project_code', 'pattern');
@@ -91,6 +95,24 @@
           e.id === 'excl_other' || seen[e.id] || typeof e.label !== 'string' || !e.label.trim() || e.label.length > 120;
         if (bad) err('exclusion_criteria[' + i + ']', 'exclusion');
         else seen[e.id] = true;
+      });
+    }
+    var st = p.structures;
+    if (!Array.isArray(st) || st.length > MAX_STRUCTURES) err('structures', 'type');
+    else {
+      var codes = {};
+      p.structures = st.map(function (s, i) {
+        var pos = function (v) { return v === null || v === undefined || v === '' ? null : v; };
+        var o = s && typeof s === 'object' ? {
+          code: typeof s.code === 'string' ? s.code.trim().toUpperCase() : '', name: typeof s.name === 'string' ? s.name.trim() : '',
+          true_vertical_m: pos(s.true_vertical_m), true_horizontal_m: pos(s.true_horizontal_m)
+        } : null;
+        var num = function (v) { return v === null || (isNum(v) && v > 0 && v < 1000); };
+        var bad = !o || !CODE_RE.test(o.code) || codes[o.code] || o.name.length > 120 ||
+          !num(o.true_vertical_m) || !num(o.true_horizontal_m) || (o.true_vertical_m === null && o.true_horizontal_m === null);
+        if (bad) err('structures[' + i + ']', 'structure');
+        else codes[o.code] = true;
+        return o;
       });
     }
     if (typeof p.rules_version !== 'string') err('rules_version', 'type');
@@ -126,6 +148,24 @@
     };
   }
 
+  /**
+   * The project's structures as a structures table (the shape of io.tables.parseStructures), or
+   * null when it has none.
+   */
+  function structuresTable(p) {
+    if (!p || !p.structures || !p.structures.length) return null;
+    var rows = {};
+    p.structures.forEach(function (s) {
+      rows[s.code] = { structure_name: s.name, true_vertical_m: s.true_vertical_m, true_horizontal_m: s.true_horizontal_m };
+    });
+    return { ok: true, rows: rows, errors: [] };
+  }
+
+  /** The only structure of a one-structure project (every sheet shows it), else null. */
+  function singleStructure(p) {
+    return p && p.structures && p.structures.length === 1 ? p.structures[0].code : null;
+  }
+
   /** A valid criterion id from a label: excl_ + lowercase ASCII letters, digits and underscores. */
   function exclusionId(label, taken) {
     var map = { 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'İ': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u' };
@@ -140,7 +180,7 @@
   var api = {
     FORMAT: FORMAT, FORMAT_VERSION: FORMAT_VERSION, DEFAULT_EXCLUSIONS: DEFAULT_EXCLUSIONS, RANGES: RANGES,
     create: create, validate: validate, serialize: serialize, parse: parse, fileName: fileName,
-    paramsOf: paramsOf, exclusionId: exclusionId
+    paramsOf: paramsOf, exclusionId: exclusionId, structuresTable: structuresTable, singleStructure: singleStructure
   };
   HUSS.io.project = api;
   if (typeof module === 'object' && module.exports) module.exports = api;

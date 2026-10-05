@@ -141,4 +141,4 @@ One row per drawing scored by both raters.
 | Code list (Sheets screen) | `sheet_code`, `template`, `generated_at` |
 | Calibration key (Sheets screen) | `sheet_code`, `layout`, `figure_mm`, `ceiling_mm`, `distance_mm`, `template`, `generated_at` |
 | Subsample list | one sheet code per line (or a CSV with a `sheet_code` column) |
-| Project file `<project_code>.huss.json` | project settings (spec 5.1); no personal data |
+| Project file `<project_code>.huss.json` | project settings (spec 5.1) and, from format version 2, `structures`: `code`, `name`, `true_vertical_m`, `true_horizontal_m`; no personal data |

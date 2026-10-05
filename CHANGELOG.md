@@ -24,6 +24,12 @@ Rules version 1.3.
 - Calibration sheets and calibration check (spec 10.3).
 - Guide and About screen; documents in docs/; citation and archive metadata.
 
+### After the pilot feedback
+- Main menu at start (new project, open project file, continue the last project; try without a project, calibration test, guide); no New project tab inside a project; "HuSS Scorer" opens the menu.
+- Structures with their true dimensions in the project file (format 2); one-structure projects need no key table; the Tables screen holds the key table only.
+- Results and Compare use the drawings scored in this session without a CSV.
+- Calibration test moved out of the Sheets and Results screens into its own screen.
+
 ### Rules
 - 1.1: red drawn below the floor line counts as standing on it.
 - 1.2: the figure is always measured from the head top to the floor line.

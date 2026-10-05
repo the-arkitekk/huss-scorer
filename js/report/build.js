@@ -149,7 +149,7 @@
     if (p.unfinished.length) items.push(T('rp_p_unfinished', { n: p.unfinished.length, list: p.unfinished.map(function (d) { return d.sheet_code + ' (' + d.rater_code + ')'; }).join(', ') }));
     if (p.not_measured.length) items.push(T('rp_p_not_measured', { n: p.not_measured.length, list: p.not_measured.join(', ') }));
     return '<section class="rp-section rp-checks"><h2>' + esc(T('rp_checks')) + '</h2>' +
-      (items.length ? '<ul>' + items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>' : '<p class="rp-ok">' + esc(T('rp_checks_ok')) + '</p>') + '</section>';
+      (items.length ? '<ul>' + items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>' : '<p class="rp-ok">' + esc(T(p.single_structure ? 'rp_checks_ok_single' : 'rp_checks_ok')) + '</p>') + '</section>';
   }
 
   /** The report body (cards, charts, tables) as an HTML fragment. */

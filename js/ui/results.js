@@ -9,10 +9,9 @@
 
   var els = {};
   var files = [];                                   // [{ name, records, exclusionIds }]
-  var tables = { source: 'screen', key: null, structures: null };
+  var tables = { key: null, structures: null };     // loaded on this screen from files (override the study's)
   var merged = null, model = null;
-  var raterPick = null;
-  var calKey = null;                               // calibration key (spec 10.3), when loaded                            // the rater chosen in the report bar ('' = all), null = default
+  var raterPick = null;                            // the rater chosen in the report bar ('' = all), null = default
 
   function $(id) { return document.getElementById(id); }
 
@@ -61,33 +60,24 @@
     return live ? [live].concat(files) : files.slice();
   }
 
-  function screenTables() {
-    var d = HUSS.ui.tablesForm && HUSS.ui.tablesForm.data;
-    if (!d) return { key: null, structures: null };
-    var T = HUSS.io.tables;
-    var st = d.structures.filter(function (r) { return r.structure_code; });
-    var key = d.key.filter(function (r) { return r.sheet_code || r.participant_code || r.structure_code; });
-    return {
-      key: key.length ? T.parseKey(T.keyToCSV(key)) : null,
-      structures: st.length ? T.parseStructures(T.structuresToCSV(st)) : null
-    };
-  }
-
+  /**
+   * Key, structures and default structure used for E: files loaded on this screen first, then the
+   * study's own (the Tables screen's key, the project's structures), then the tables loaded for
+   * Open mode on the Score screen. A one-structure project needs no key.
+   */
   function currentTables() {
-    if (tables.source === 'files') return { key: tables.key, structures: tables.structures };
-    var t = screenTables(), q = HUSS.ui.queue && HUSS.ui.queue.tables;
-    // Nothing on the Tables screen: the tables loaded for Open mode on the Score screen, if any.
-    if (!t.key && !t.structures && q && (q.key || q.structures)) return { key: q.key, structures: q.structures };
-    return t;
+    var s = HUSS.app.studyTables(), q = HUSS.ui.queue && HUSS.ui.queue.tables;
+    return {
+      key: tables.key || s.key || (q && q.key) || null,
+      structures: tables.structures || s.structures || (q && q.structures) || null,
+      defaultStructure: tables.key ? null : s.defaultStructure,
+      from: { key: tables.key ? 'file' : s.key ? 'tables' : q && q.key ? 'score' : null, structures: tables.structures ? 'file' : s.structures ? 'project' : q && q.structures ? 'score' : null }
+    };
   }
 
   function loadTable(kind, file) {
     HUSS.io.files.readText(file).then(function (text) {
       var r = kind === 'key' ? HUSS.io.tables.parseKey(text) : HUSS.io.tables.parseStructures(text);
-      if (tables.source !== 'files') {
-        var s = screenTables();
-        tables = { source: 'files', key: s.key, structures: s.structures };
-      }
       tables[kind] = r;
       els.tableErrors.hidden = r.ok;
       els.tableErrors.textContent = r.ok ? '' : HUSS.t('res_table_errors', { name: file.name, n: r.errors.length });
@@ -123,10 +113,12 @@
       li.appendChild(span); li.appendChild(b);
       els.files.appendChild(li);
     });
-    var t = currentTables();
-    els.tablesStatus.textContent = !t.key && !t.structures ? HUSS.t('res_tables_none')
-      : HUSS.t(tables.source === 'files' ? 'res_tables_files' : 'res_tables_screen', { s: count(t.structures), k: count(t.key) });
-    els.useScreen.disabled = tables.source !== 'files';
+    var t = currentTables(), parts = [];
+    parts.push(t.structures ? HUSS.t('res_st_from_' + t.from.structures, { n: count(t.structures) }) : HUSS.t('res_st_none'));
+    if (t.key) parts.push(HUSS.t('res_key_from_' + t.from.key, { n: count(t.key) }));
+    else parts.push(HUSS.t(t.defaultStructure ? 'res_key_single' : 'res_key_none', { code: t.defaultStructure }));
+    els.tablesStatus.textContent = parts.join(' ');
+    els.useScreen.hidden = !tables.key && !tables.structures;
   }
 
   function renderRaters() {
@@ -166,19 +158,12 @@
   function update() {
     var t = currentTables();
     var src = sources();
-    merged = src.length ? HUSS.io.merge.merge(src, t.key, t.structures) : null;
+    merged = src.length ? HUSS.io.merge.merge(src, t.key, t.structures, { defaultStructure: t.defaultStructure }) : null;
     renderInputs();
     els.merged.textContent = merged ? HUSS.t('res_merged', { n: merged.counts.rows, m: merged.counts.measured, e: merged.counts.excluded }) : '';
     els.dlMerged.disabled = els.dlExcel.disabled = !merged;
     renderRaters();
     renderReport();
-    renderCalibration();
-  }
-
-  function renderCalibration() {
-    if (!calKey) { els.cal.innerHTML = ''; return; }
-    var rows = merged ? merged.rows : [];
-    els.cal.innerHTML = HUSS.report.calibration.html(HUSS.report.calibration.check(rows, calKey));
   }
 
   // ------------------------------------------------------------ exports
@@ -244,7 +229,6 @@
       files: $('res-files'), input: $('res-input'), fileErrors: $('res-file-errors'), tablesStatus: $('res-tables-status'),
       tableErrors: $('res-table-errors'), useScreen: $('res-use-screen'), keyInput: $('res-key-input'), structuresInput: $('res-structures-input'),
       merged: $('res-merged'), dlMerged: $('res-dl-merged'), dlExcel: $('res-dl-excel'),
-      cal: $('res-cal'), calInput: $('res-cal-input'),
       rater: $('res-rater'), method: $('res-method'), print: $('res-print'), dlHtml: $('res-dl-html'), report: $('res-report')
     };
     var style = document.createElement('style');
@@ -258,7 +242,7 @@
       readFiles(Array.prototype.filter.call(list, function (f) { return /\.csv$/i.test(f.name); }));
     });
     $('res-clear').addEventListener('click', function () { files = []; els.fileErrors.hidden = true; update(); });
-    els.useScreen.addEventListener('click', function () { tables = { source: 'screen', key: null, structures: null }; els.tableErrors.hidden = true; update(); });
+    els.useScreen.addEventListener('click', function () { tables = { key: null, structures: null }; els.tableErrors.hidden = true; update(); });
     $('res-load-key').addEventListener('click', function () { els.keyInput.value = ''; els.keyInput.click(); });
     $('res-load-structures').addEventListener('click', function () { els.structuresInput.value = ''; els.structuresInput.click(); });
     els.keyInput.addEventListener('change', function () { if (els.keyInput.files[0]) loadTable('key', els.keyInput.files[0]); });
@@ -270,17 +254,6 @@
       if (merged) HUSS.io.files.downloadText(projectBase() + '_merged_excel-view.csv', HUSS.io.csv.toExcelView(merged.rows, merged.columns));
     });
     els.rater.addEventListener('change', function () { raterPick = els.rater.value; renderReport(); });
-    $('res-load-cal').addEventListener('click', function () { els.calInput.value = ''; els.calInput.click(); });
-    els.calInput.addEventListener('change', function () {
-      var f = els.calInput.files[0];
-      if (!f) return;
-      HUSS.io.files.readText(f).then(function (text) {
-        var k = HUSS.report.calibration.parseKey(text);
-        calKey = k.ok ? k : null;
-        if (!k.ok) els.cal.innerHTML = '<p class="rp-note">' + HUSS.report.charts.esc(HUSS.t('cal_bad', { name: f.name })) + '</p>';
-        else renderCalibration();
-      });
-    });
     els.method.addEventListener('change', renderReport);
     els.print.addEventListener('click', printReport);
     els.dlHtml.addEventListener('click', function () {
@@ -288,5 +261,5 @@
     });
   }
 
-  HUSS.ui.results = { init: init, onShow: onShow, screenTables: screenTables, currentTables: currentTables, liveSource: liveSource, get merged() { return merged; }, get files() { return files; } };
+  HUSS.ui.results = { init: init, onShow: onShow, currentTables: currentTables, liveSource: liveSource, get merged() { return merged; }, get files() { return files; } };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
