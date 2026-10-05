@@ -46,6 +46,8 @@
       SAMPLE_STEP_MM: 1,
       FLOOR_END_MARGIN_MM: 2,
       FLOOR_DARK_RATIO_MIN: 0.6,
+      FLOOR_SLACK_MM: 0.6,         // the floor line may lie this far off its expected place (askew print or scan);
+                                   // the ground hatching starts 0.7 mm below it, so it is not taken for the line
       TIE_EPS: 0.05                // ratios closer than this count as a tie
     },
     ALIGN: {

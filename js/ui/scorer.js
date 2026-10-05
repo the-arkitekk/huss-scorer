@@ -85,6 +85,7 @@
     els.cardSheet.hidden = false;
     els.cardActions.hidden = false;
     els.codeCheck.hidden = true;
+    els.laterNote.hidden = true;
     els.sheetTitle.textContent = c.title;
   }
 
@@ -155,6 +156,8 @@
     view.setShowMask(els.chkMask.checked);
 
     els.sheetTitle.textContent = c.title;
+    els.laterNote.hidden = !c.note;
+    els.laterNote.textContent = c.note || '';
     if (c.chip) {
       var chip = document.createElement('span');
       chip.className = 'chip ' + c.chip;
@@ -749,6 +752,8 @@
   function startManual(img, c, prm, why) {
     s = null; ctx = c; press = null; drag = null;
     els.codeCheck.hidden = true;
+    els.laterNote.hidden = !c.note;
+    els.laterNote.textContent = c.note || '';
     ui.placing = null; ui.dragging = null;
     els.mmCorners.checked = true;
     man = { img: img, prm: prm, why: why, method: 'corners', clicks: [], error: null, hover: null, busy: false };
@@ -993,7 +998,7 @@
       cardSheet: $('card-sheet'), cardHandles: $('card-handles'), cardValues: $('card-values'), cardFlags: $('card-flags'),
       cardExclusion: $('card-exclusion'), cardView: $('card-view'), cardActions: $('card-actions'),
       handleTable: $('handle-table'), valueTable: $('value-table'), flagList: $('flag-list'),
-      exclList: $('excl-list'), chkCode: $('chk-code'), codePic: $('code-pic'), codeCheck: $('code-check'), chkNmV: $('chk-nm-v'), chkNmH: $('chk-nm-h'), inNote: $('in-note'),
+      exclList: $('excl-list'), chkCode: $('chk-code'), codePic: $('code-pic'), codeCheck: $('code-check'), laterNote: $('later-note'), chkNmV: $('chk-nm-v'), chkNmH: $('chk-nm-h'), inNote: $('in-note'),
       chkColor: $('chk-color'), chkContrast: $('chk-contrast'), chkMask: $('chk-mask'), chkGuides: $('chk-guides'), chkSnap: $('chk-snap'),
       btnConfirm: $('btn-confirm'), btnPrev: $('btn-prev'), btnLater: $('btn-later'), confirmStatus: $('confirm-status'),
       btnFit: $('btn-fit'), btnZoomIn: $('btn-zoom-in'), btnZoomOut: $('btn-zoom-out'),

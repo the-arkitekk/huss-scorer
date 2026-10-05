@@ -148,13 +148,20 @@
   }
 
   /** Dark-sample ratio along a page-space polyline sample set. */
-  function darkRatio(img, H, pts, threshold) {
-    var dark = 0, total = 0, Hm = HUSS.image.homography;
+  /**
+   * Share of the page points that are dark in the image. slackY (mm): a point also counts when
+   * it is dark that far above or below (a thin printed line a little off its expected place on
+   * a sheet printed or scanned slightly askew).
+   */
+  function darkRatio(img, H, pts, threshold, slackY) {
+    var dark = 0, total = 0, Hm = HUSS.image.homography, sl = slackY || 0;
     for (var i = 0; i < pts.length; i++) {
-      var p = Hm.apply(H, pts[i][0], pts[i][1]);
-      var v = sampleLuma(img, p[0], p[1]);
       total++;
-      if (v !== null && v <= threshold) dark++;
+      for (var dy = -sl; dy <= sl + 1e-9; dy += sl ? 0.15 : 1) {
+        var p = Hm.apply(H, pts[i][0], pts[i][1] + dy);
+        var v = sampleLuma(img, p[0], p[1]);
+        if (v !== null && v <= threshold) { dark++; break; }
+      }
     }
     return total ? dark / total : 0;
   }
@@ -181,7 +188,7 @@
       if (!H) continue;
       results.push({
         quarter: k, H: H, corners: dst,
-        floorRatio: darkRatio(img, H, floorPts, threshold),
+        floorRatio: darkRatio(img, H, floorPts, threshold, cfg.FLOOR_SLACK_MM),
         markRatio: darkRatio(img, H, markPts, threshold)
       });
     }

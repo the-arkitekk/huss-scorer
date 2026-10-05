@@ -262,6 +262,7 @@
     start_need_rater: '• enter your rater code',
     start_need_mode: '• choose Blind or Open',
     previous_first: 'This is the first drawing: there is no previous one yet.',
+    later_round: 'End of the queue: back to the drawings set aside with Review later ({n} left).',
     no_scans: 'No JPEG or PNG files were found.',
     reading_codes: 'Reading sheet codes {i} / {n}…',
     dup_title: 'The same sheet code appears in more than one scan',

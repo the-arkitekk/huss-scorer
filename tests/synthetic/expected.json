@@ -971,6 +971,60 @@
       ]
     }
   },
+  "S18": {
+    "description": "Floor band printed askew to the corner marks (0.5 mm low at the left end, on its place at the right): automatic alignment",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "K4M3N",
+      "floor_y": 180.44306049822063,
+      "axis_x": 40,
+      "head_y": 160.54306049822063,
+      "raw_foot_y": 180.54306049822063,
+      "foot_y": 180.44306049822063,
+      "ceiling_y": 120.44306049822063,
+      "wall_x": 160,
+      "ceiling_at_axis_y": 120.44306049822063,
+      "wall_at_floor_x": 160,
+      "ceiling_spread": 0,
+      "wall_spread": 0,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 120,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 10.251256281407032,
+      "est_vertical_at_axis_m": 5.125628140703516,
+      "est_horizontal_at_floor_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
   "B1": {
     "description": "Structure boxes (3): pencil cross in box 2",
     "template": "A4L",

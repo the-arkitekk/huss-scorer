@@ -42,6 +42,7 @@ const BASE = {
   wallSlope: 0,             // wall x change per mm up from the floor (positive: leans right)
   wallWave: null,           // { amp, period } mm: sinusoidal wobble of the wall
   calibration: null,        // calibration layout index: the printed calibration page instead of a drawing
+  floorTilt: null,          // [dy at the left end, dy at the right end] mm: the floor band printed askew to the corner marks
   structures: null,         // structure codes: two or more print the structure boxes
   boxMarks: []              // [{ box (0-based), kind: 'cross' | 'tick' | 'fill' | 'dot' | 'stray', color: grey level or 'red' }]
 };
@@ -68,6 +69,7 @@ const SCENES = {
     ceilingSlope: -0.035, ceilingWave: { amp: 0.5, period: 30 }, wallSlope: 0.04, wallWave: { amp: 0.3, period: 20 }
   },
   S17: { description: 'Clearly slanted ceiling (rising 12 mm): flag_ceiling_uneven', ceilingSlope: -0.1 },
+  S18: { description: 'Floor band printed askew to the corner marks (0.5 mm low at the left end, on its place at the right): automatic alignment', floorTilt: [0.5, 0] },
   B1: { description: 'Structure boxes (3): pencil cross in box 2', structures: ['DN1', 'DN2', 'DN3'], boxMarks: [{ box: 1, kind: 'cross', color: 60 }] },
   B2: { description: 'Structure boxes (5): light pencil tick in box 4, page turned 180 degrees', structures: ['A', 'B', 'C', 'D', 'E'], boxMarks: [{ box: 3, kind: 'tick', color: 160 }], quarterTurns: 2 },
   B3: { description: 'Structure boxes (16): box 16 filled in red, JPEG 60 and noise', structures: Array.from({ length: 16 }, (_, i) => 'S' + (i + 1)), boxMarks: [{ box: 15, kind: 'fill', color: 'red' }], jpegQuality: 60, noise: 4 },
@@ -164,11 +166,22 @@ function mulberry32(seed) {
  * Printed template, drawn from the same items as the PDF and the print view
  * (HUSS.sheet.template.items). Text becomes one block per glyph (glyph width, cap height).
  */
-function templateGroups(T, code, missingCorner, calibration, structures) {
+function templateGroups(T, code, missingCorner, calibration, structures, floorTilt) {
   const shapes = [], PT = 72 / 25.4, label = HUSS.config.DEFAULTS.sheet_label, colored = {};
   const skip = missingCorner >= 0 ? T.corners[missingCorner] : null;
   const glyphW = (ch, it) => HUSS.sheet.pdf.widthPt(ch, it.font, it.size_pt) / PT;
-  const all = calibration != null ? HUSS.sheet.template.calibrationItems(T, code, label, calibration) : HUSS.sheet.template.items(T, code, label, structures);
+  let all = calibration != null ? HUSS.sheet.template.calibrationItems(T, code, label, calibration) : HUSS.sheet.template.items(T, code, label, structures);
+  if (floorTilt) {
+    // Everything printed along the floor line (line, hatching, start mark, label) moved by dy(x).
+    const dy = (x) => floorTilt[0] + (floorTilt[1] - floorTilt[0]) * (x - T.floor.x0) / (T.floor.x1 - T.floor.x0);
+    const near = (y) => Math.abs(y - T.floor.y) < 8;
+    all = all.map((it) => {
+      if (it.k === 'line' && near(it.y1)) return Object.assign({}, it, { y1: it.y1 + dy(it.x1), y2: it.y2 + dy(it.x2) });
+      if (it.k === 'poly' && near(it.pts[0][1])) return Object.assign({}, it, { pts: it.pts.map(([x, y]) => [x, y + dy(x)]) });
+      if (it.k === 'text' && near(it.y)) return Object.assign({}, it, { y: it.y + dy(it.x) });
+      return it;
+    });
+  }
   for (const it of all) {
     if (it.color) {
       const key = it.color.join(','), list = colored[key] || (colored[key] = []);
@@ -236,9 +249,11 @@ function boxMarkShapes(T, m) {
 /** Builds the page description and the ground truth for one scene. */
 function buildPage(p) {
   const T = HUSS.sheet.template.get(p.template);
-  const floorY = T.floor.y;
+  // the floor line where the figure stands (S18: the printed band is askew, so it is off y = 180 there)
+  const tilt = p.floorTilt, ax = HUSS.sheet.template.markX(T) + p.figure.dx;
+  const floorY = T.floor.y + (tilt ? tilt[0] + (tilt[1] - tilt[0]) * (ax - T.floor.x0) / (T.floor.x1 - T.floor.x0) : 0);
   if (p.calibration != null) return calibrationPage(T, p);
-  const groups = templateGroups(T, p.code, p.missingCorner, null, p.structures);
+  const groups = templateGroups(T, p.code, p.missingCorner, null, p.structures, p.floorTilt);
   for (const m of p.boxMarks) groups.push({ color: m.color === 'red' ? RED : grey(m.color), shapes: boxMarkShapes(T, m) });
   p = Object.assign({}, p, { ceilingY: floorY - p.ceilingRel, wallX: HUSS.sheet.template.markX(T) + p.wallRel });
 

@@ -491,3 +491,13 @@ test('B1-B6: structure boxes read (cross, light tick, red fill under JPEG, none,
   assert.equal(s1.boxes.status, 'not_printed');
   assert.equal(HUSS.measure.flags.toolFlags(s1, { axis_x: s1.suggestions.axis_x, axis_placement: 'auto', foot_y: s1.suggestions.foot_y, figure_mm: 20 }, params, HUSS.config).flag_structure_mark, false);
 });
+
+test('S18: floor band printed askew to the corner marks -> aligned automatically (no manual alignment)', () => {
+  const r = run('S18'), a = r.a, t = r.t;
+  checkCommon('S18', r);
+  assert.equal(a.align.method, 'auto');
+  checkRedFigure('S18', a, t);
+  const m = measure(a, t);
+  near(m.comp.est_vertical_m, t.est_vertical_m, t.est_vertical_m * TOL.est_rel, 'S18 est vertical');
+  near(m.comp.est_horizontal_m, t.est_horizontal_m, t.est_horizontal_m * TOL.est_rel, 'S18 est horizontal');
+});

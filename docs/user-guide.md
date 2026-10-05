@@ -22,9 +22,9 @@ HuSS Scorer runs in the browser: open `index.html` (double-click, no installatio
 ## 4. Scoring (raters)
 
 1. Open the project (main menu: **Open project file…** or **Continue**). **Score** screen: enter your **rater code**, choose **Blind** (no file names, structures or numbers on screen) or **Open**. Until these are set (and the project code, without a project) the buttons that open scans are locked; pointing at one says what is still needed.
-2. **Choose folder…** In Blind mode the structure boxes are covered on screen. The sheet codes are read from the QR codes (or from the printed characters when a QR code is damaged) and the drawings come in sheet-code order.
+2. **Choose folder…** In Blind mode the structure boxes are covered on screen. The sheet codes are read from the QR codes (or from the printed characters when a QR code is damaged) and the drawings come in sheet-code order. A scan whose code cannot be read keeps its place in the folder (right after the scan before it).
 3. For each drawing: head, foot, ceiling and opposite wall are suggested; if they are right, press **Enter**. A code read from the QR code needs no check. When it was read from the printed characters (damaged QR code) or typed in, a picture of the printed code appears right above **Confirm and next**: compare and tick **Same as the code printed on the sheet** (`K`). Otherwise drag a handle near the right line (it snaps to the line's average), or press its number (1–4) and click. Tick exclusion criteria or "not measurable" where needed.
-4. **Review later** (`D`) puts a drawing at the end. **Previous** (`Shift+Enter`) goes back to the drawing you saw just before, step by step.
+4. **Review later** (`D`) sets a drawing aside; after the end of the queue the tool goes back to those drawings and says so. **Previous** (`Shift+Enter`) goes back to the drawing you saw just before, step by step.
 5. **Download CSV** saves the session (the tool also reminds you every 20 drawings). The browser keeps an autosave; **Resume from CSV…** with the same folder restores a session on any computer.
 6. A second rater who scores only part of the drawings loads the **Subsample list…** before choosing the folder.
 

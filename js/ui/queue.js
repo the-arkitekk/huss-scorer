@@ -333,7 +333,7 @@
     return { title: c.title, sheetCode: c.sheetCode, codeSource: c.codeSource, lookup: c.lookup, qrAfterManual: true };
   }
 
-  function openCurrent() {
+  function openCurrent(note) {
     var item = S().current(sess);
     if (!item) return;
     var prev = $('btn-prev'), first = !visited.length && sess.index === 0;
@@ -341,7 +341,7 @@
     if (first) prev.setAttribute('data-need', HUSS.t('previous_first')); else prev.removeAttribute('data-need');
     openedAt = Date.now();
     updateSummary();
-    HUSS.ui.scorer.openItem(files[item.key], itemContext(item));
+    HUSS.ui.scorer.openItem(files[item.key], Object.assign(itemContext(item), { note: note || null }));
   }
 
   /** Adds the time spent on the current drawing since it was opened. */
@@ -416,8 +416,10 @@
       if (isComplete()) HUSS.ui.scorer.setFinishMode(true);
       return;
     }
+    // Past the end of the queue, back to the drawings set aside: say so (it looks like a jump back).
+    var back = S().byKey(sess, sess.order[i]).status === 'deferred';
     moveTo(i);
-    openCurrent();
+    openCurrent(back ? HUSS.t('later_round', { n: S().progress(sess).deferred }) : null);
   }
 
   function afterSave() {

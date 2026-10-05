@@ -11,13 +11,18 @@ function scan(name, code, i) {
   return { name, size: 1000 + i, lastModified: 1700000000000 + i, sheet_code: code, template: code ? 'A4L' : null };
 }
 
-test('queue: ascending sheet codes, unreadable scans last by file name', () => {
+test('queue: ascending sheet codes; an unreadable scan follows the scan before it in the folder', () => {
   const sess = S.create({ rater_code: 'EY', mode: 'blind' });
   S.addItems(sess, [scan('b.jpg', 'CV94Y', 1), scan('z.jpg', null, 2), scan('a.jpg', '6QHJ4', 3), scan('y.jpg', null, 4), scan('c.jpg', '66J34', 5)]);
   const order = sess.order.map((k) => S.byKey(sess, k));
-  assert.deepEqual(order.map((i) => i.sheet_code || i.name), ['66J34', '6QHJ4', 'CV94Y', 'y.jpg', 'z.jpg']);
-  assert.equal(S.unreadNumber(sess, order[3]), 1);
-  assert.equal(S.unreadNumber(sess, order[4]), 2);
+  // folder: a 6QHJ4, b CV94Y, c 66J34, y ?, z ?  ->  y and z come after 66J34
+  assert.deepEqual(order.map((i) => i.sheet_code || i.name), ['66J34', 'y.jpg', 'z.jpg', '6QHJ4', 'CV94Y']);
+  assert.equal(S.unreadNumber(sess, order[1]), 1);
+  assert.equal(S.unreadNumber(sess, order[2]), 2);
+  // file names in file manager order (2 before 10); an unreadable first file leads the queue
+  const s2 = S.create({ rater_code: 'EY', mode: 'blind' });
+  S.addItems(s2, [scan('Untitled10.jpeg', 'LJ5QR', 1), scan('Untitled2.jpeg', 'PEE52', 2), scan('Untitled3.jpeg', null, 3), scan('Untitled1.jpeg', null, 4), scan('Untitled4.jpeg', 'GQKQD', 5)]);
+  assert.deepEqual(s2.order.map((k) => S.byKey(s2, k)).map((i) => i.sheet_code || i.name), ['Untitled1.jpeg', 'GQKQD', 'LJ5QR', 'PEE52', 'Untitled3.jpeg']);
   assert.deepEqual(S.progress(sess), { done: 0, deferred: 0, total: 5, position: 1 });
 });
 

@@ -1,8 +1,8 @@
 /* HuSS Scorer — js/io/session.js
  * A scoring session over a folder of scans (spec 8.1, 8.4, 5.2, 5.5). DOM-free.
  *
- * Items are the scans; the queue runs in ascending sheet code order (spec 8.4), scans whose
- * code could not be read go last. Each item may carry a CSV record (measured, excluded or
+ * Items are the scans; the queue runs in ascending sheet code order (spec 8.4). A scan whose
+ * code could not be read keeps its place in the folder: it follows the scan before it. Each item may carry a CSV record (measured, excluded or
  * deferred). Records restore the handles exactly (resume from CSV or autosave).
  */
 (function (root) {
@@ -95,14 +95,29 @@
     return { found: Object.keys(seen).length, missing: codes.filter(function (c) { return !seen[c]; }), left: before - sess.items.length };
   }
 
-  /** Queue order: readable codes ascending, then unreadable scans by file name. */
+  /** File name order as a file manager shows it (Scan 2 before Scan 10). */
+  function byName(a, b) {
+    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+  }
+
+  /**
+   * Queue order: readable codes ascending. A scan whose code could not be read (it needs manual
+   * alignment, or the code typed) comes right after the readable scan before it in the folder,
+   * so it turns up in its turn instead of at the end.
+   */
   function buildOrder(sess) {
     var cur = sess.order[sess.index];
     var coded = sess.items.filter(function (it) { return isRead(it); });
-    var rest = sess.items.filter(function (it) { return !isRead(it); });
     coded.sort(function (a, b) { return a.sheet_code < b.sheet_code ? -1 : a.sheet_code > b.sheet_code ? 1 : 0; });
-    rest.sort(function (a, b) { return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; });
-    sess.order = coded.concat(rest).map(function (it) { return it.key; });
+    var after = {}, head = [], prev = null;
+    sess.items.slice().sort(byName).forEach(function (it) {
+      if (isRead(it)) { prev = it.key; return; }
+      if (prev) (after[prev] = after[prev] || []).push(it.key);
+      else head.push(it.key);
+    });
+    var order = head.slice();
+    coded.forEach(function (it) { order.push(it.key); if (after[it.key]) order = order.concat(after[it.key]); });
+    sess.order = order;
     var i = cur ? sess.order.indexOf(cur) : -1;
     sess.index = i >= 0 ? i : 0;
   }
