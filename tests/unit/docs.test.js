@@ -23,20 +23,20 @@ test('data dictionary: every measurement, merged and comparison column is descri
   assert.deepEqual(missing, []);
 });
 
-test('example scans (demo/demo-scans.js): a valid one-structure project and ten JPEG scans, small enough to load', () => {
+test('example scans (demo/demo-scans.js): a valid three-structure project and ten JPEG scans, small enough to load', () => {
   const path = require('node:path'), fs = require('node:fs');
   const file = path.join(__dirname, '..', '..', 'demo', 'demo-scans.js');
   require(file);
   const d = HUSS.demoData;
   const v = HUSS.io.project.validate(JSON.parse(JSON.stringify(d.project)));
   assert.equal(v.ok, true, JSON.stringify(v.errors));
-  assert.equal(HUSS.io.project.singleStructure(v.project), 'ROOM');
+  assert.deepEqual(v.project.structures.map((s) => s.code), ['S1', 'S2', 'S3'], 'the codes printed under the boxes of the example sheets');
   assert.equal(d.scans.length, 10);
   for (const sc of d.scans) {
     const head = Buffer.from(sc.data.slice(0, 8), 'base64');
     assert.ok(head[0] === 0xFF && head[1] === 0xD8, sc.name + ' is a JPEG');
     assert.ok(/^example-\d\d\.jpeg$/.test(sc.name));
   }
-  assert.ok(fs.statSync(file).size < 4.5 * 1024 * 1024, 'the demo file stays small');
+  assert.ok(fs.statSync(file).size < 10 * 1024 * 1024, 'the demo file stays below 10 MB');
   assert.ok(fs.readFileSync(path.join(__dirname, '..', '..', '.github', 'workflows', 'pages.yml'), 'utf8').includes(' demo '), 'published with the site');
 });

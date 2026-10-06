@@ -2,12 +2,12 @@
 
 HuSS Scorer runs in the browser: open `index.html` (double-click, no installation, no internet). Images and data never leave the computer; nothing is uploaded.
 
-To see the tool at work without scans of your own: main menu → **Try with example scans**. Ten trial drawings of one remembered room (ceiling 4 m, opposite wall 7 m) open in an Open mode session (rater code DEMO); after confirming them, Results shows the report.
+To see the tool at work without scans of your own: main menu → **Try with example scans**. Ten trial drawings of a three-structure project (S1 3 m / 6 m, S2 4 m / 7 m, S3 5 m / 8 m) open in an Open mode session (rater code DEMO). The structure of each sheet is read from its marked box and shown under the sheet code; two sheets are unmarked and one is marked twice: choose their structure in the list there. Some drawings are wrong on purpose (a pencil figure, a section in red, a curved wall, a ceiling at the edge of the sheet): place those handles by hand. After confirming them, Results shows the report by structure.
 
 ## 1. Before the study (project owner)
 
 1. **Main menu → New project:** fill in the form (project code, template A4L or A3L, reference height, minimum figure size, foot tolerance, snap radius, which suggestions are on, the **structures** with their true ceiling height and distance, exclusion criteria) and **Create project**. The file `<project_code>.huss.json` is downloaded; send it to the raters. Clicking **HuSS Scorer** at the top left always opens the main menu (Back to it, Edit project, Continue).
-2. **Sheets:** choose the number of sheets and **Download PDF** (or **Print…**). Print at 100 % ("actual size"), one-sided; the centres of the two top corner squares must be 277 mm apart on A4L (400 mm on A3L). Keep the code list CSV. A project with two or more structures (at most 16) gets a row of **structure boxes** below the floor line, one per structure with its code.
+2. **Sheets:** choose the number of sheets and **Download PDF** (or **Print…**). Print at 100 % ("actual size"), one-sided, without margins ("Margins: None"); the centres of the two top corner squares must be 277 mm apart on A4L (400 mm on A3L). Keep the code list CSV. A project with two or more structures (at most 16) gets a row of **structure boxes** below the floor line, one per structure with its code.
 3. **Calibration (once per printer and scanner):** main menu → **Calibration test**: Download PDF and the calibration key, print in colour at 100 %, scan, score, and read the check on the same screen.
 
 ## 2. During the study (desk coordinator)

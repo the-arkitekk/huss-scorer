@@ -2,6 +2,8 @@
 
 ## 0.2.0 (unreleased)
 
+- Example scans renewed: trial 5, ten drawings of a three-structure project on structure-box sheets (two unmarked, one marked twice, some drawn wrong on purpose), at 300 dpi (recompressed; at 150 or 200 dpi some QR codes and suggestions came out differently). The main menu, the guide and `demo/README.md` say what to do when the structure is not clear.
+- Sheets: "Print at 100% (actual size), not fit to page, without margins".
 - Main menu: **Try with example scans**: ten trial 3 scans (150 dpi, `demo/demo-scans.js`, loaded only when chosen, also from disk) and an example project with one structure; an Open mode session starts at once (rater code DEMO). Made with `tests/tools/make-demo.js`; published with the Pages site.
 - Ceiling drawn only right of the figure: a speck near the axis or a faint line start no longer hides the line (it was missed at 200 dpi).
 

@@ -2,10 +2,13 @@
 //
 //   node tests/tools/make-demo.js        (macOS: uses sips to scale the JPEGs)
 //
-// Takes ten trial 3 scans from samples/real, scales them to 150 dpi (JPEG quality 70) and writes
-// demo/demo-scans.js: a classic script (works when index.html is opened from disk, unlike fetch)
-// that sets HUSS.demoData = { project, scans: [{ name, data (base64 JPEG) }] }. The main menu
-// loads it only when the example is chosen.
+// Takes the ten trial 5 scans from samples/real (sheets of a three-structure project with the
+// structure boxes, marked as a desk coordinator would, two unmarked and one marked twice; some
+// drawn wrong on purpose), keeps them at 300 dpi but recompresses them (JPEG quality 50; at lower
+// resolutions some QR codes and suggestions came out differently) and writes demo/demo-scans.js:
+// a classic script (works when index.html is opened from disk, unlike fetch) that sets
+// HUSS.demoData = { project, scans: [{ name, data (base64 JPEG) }] }. The main menu loads it only
+// when the example is chosen.
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
@@ -14,26 +17,26 @@ const { execFileSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..', '..');
 const SRC = path.join(ROOT, 'samples', 'real'), OUT = path.join(ROOT, 'demo');
-const MAX_PX = 1754;   // A4 long side at 150 dpi
-const QUALITY = 70;
+const MAX_PX = 3508;   // A4 long side at 300 dpi: the scans as they were made
+const QUALITY = 50;    // the lowest quality that gives the same readings as the original scans
 
-// [file in samples/real, what it shows]
+// [file in samples/real, what it shows and what to do]
 const SCANS = [
-  ['trial3_01_Q4J87.jpeg', 'drawn as asked'],
-  ['trial3_02_QQZZX.jpeg', 'scanned upside down: the tool turns the page'],
-  ['trial3_03_92PUH.jpeg', 'ceiling rising about 3 cm: its average is measured; flagged'],
-  ['trial3_04_HV93Z.jpeg', 'wall leaning strongly: its average is measured; flagged'],
-  ['trial3_05_GGNEV.jpeg', 'wavy ceiling and wall'],
-  ['trial3_08_93ZUF.jpeg', 'figure floating above the floor line: flagged'],
-  ['trial3_10_AZPYZ.jpeg', 'figure 2 cm beside the start mark: flagged'],
-  ['trial3_11_XA569.jpeg', 'ceiling drawn only right of the figure'],
-  ['trial3_12_ZHQMJ.jpeg', 'QR code scribbled over: the code is read from the printed characters (tick K)'],
-  ['trial3_13_A4P6Y.jpeg', 'a corner torn off: aligned from the other three corners']
+  ['trial5_01_ZD897.jpeg', 'boxes S2 and S3 both marked: choose the structure (Open mode list, or the Tables screen)'],
+  ['trial5_02_ZT8GX.jpeg', 'no structure box marked: choose the structure; the ceiling rises'],
+  ['trial5_03_6NL8Y.jpeg', 'S1; thick hatched walls: the inner face (nearer the figure) is measured'],
+  ['trial5_04_KYRZJ.jpeg', 'S3; a very small figure (flagged) and a curved wall: place the wall by hand'],
+  ['trial5_05_YQEHG.jpeg', 'S1; a detailed figure, drawn as asked'],
+  ['trial5_06_7P4HN.jpeg', 'S3 (box filled in); figure in pencil, not red: place head and foot by hand; double lines'],
+  ['trial5_07_XLXPH.jpeg', 'S2; a small figure, sketchy lines'],
+  ['trial5_08_E8LF8.jpeg', 'S1; section drawn in red pen: place ceiling and wall by hand and tick "colour not as instructed"'],
+  ['trial5_09_6T3WA.jpeg', 'S2; drawn as asked'],
+  ['trial5_10_MHZ62.jpeg', 'no structure box marked: choose the structure; ceiling drawn at the top edge (place it by hand), leaning wall']
 ];
 
 const project = {
   format: 'huss-project', format_version: 2, project_code: 'HUSS-EXAMPLE',
-  title: 'Example scans: one remembered room (ceiling 4 m, opposite wall 7 m)',
+  title: 'Example scans: three structures, each sheet marked with its structure box',
   template: 'A4L', sheet_label: 'figure', ref_height_m: 1.7, min_figure_mm: 10, foot_tolerance_mm: 4, snap_radius_mm: 1.5,
   suggestions: { figure: true, ceiling: true, wall: true },
   exclusion_criteria: [
@@ -41,8 +44,13 @@ const project = {
     { id: 'excl_not_standing_full', label: 'Figure not standing or not full height' },
     { id: 'excl_not_along_axis', label: 'Section not drawn along the viewing axis' }
   ],
-  structures: [{ code: 'ROOM', name: 'Remembered room', true_vertical_m: 4, true_horizontal_m: 7 }],
-  rules_version: '1.3', created_at: '2026-10-05T12:00:00+03:00'
+  // as in samples/real/trial5_DENEME06.huss.json
+  structures: [
+    { code: 'S1', name: 'Room S1 (3 m / 6 m)', true_vertical_m: 3, true_horizontal_m: 6 },
+    { code: 'S2', name: 'Room S2 (4 m / 7 m)', true_vertical_m: 4, true_horizontal_m: 7 },
+    { code: 'S3', name: 'Room S3 (5 m / 8 m)', true_vertical_m: 5, true_horizontal_m: 8 }
+  ],
+  rules_version: '1.3', created_at: '2026-10-06T12:00:00+03:00'
 };
 
 fs.mkdirSync(OUT, { recursive: true });
@@ -53,13 +61,15 @@ const scans = SCANS.map(([file, note], i) => {
   return { name: 'example-' + String(i + 1).padStart(2, '0') + '.jpeg', from: file, note, data };
 });
 const js = '/* HuSS Scorer — demo/demo-scans.js: example scans for "Try with example scans".\n' +
-  ' * Generated by tests/tools/make-demo.js from samples/real (the author\'s trial 3, shared with his\n' +
+  ' * Generated by tests/tools/make-demo.js from samples/real (the author\'s trial 5, shared with his\n' +
   ' * consent); do not edit. Loaded only when the example is chosen on the main menu. */\n' +
   '(function (root) {\n  \'use strict\';\n  var HUSS = root.HUSS = root.HUSS || {};\n  HUSS.demoData = ' +
   JSON.stringify({ project, scans: scans.map(({ name, from, note, data }) => ({ name, from, note, data })) }) +
   ';\n})(typeof globalThis !== \'undefined\' ? globalThis : this);\n';
 fs.writeFileSync(path.join(OUT, 'demo-scans.js'), js);
-const readme = '# Example scans\n\n`demo-scans.js` holds ten scans of the author\'s trial 3 (from `samples/real`, scaled to 150 dpi) and an example project with one structure: a remembered room, ceiling 4 m, opposite wall 7 m. Main menu → **Try with example scans** loads them and starts an Open mode session (rater code DEMO); nothing is uploaded.\n\nMade with `node tests/tools/make-demo.js`.\n\n| File | From | Shows |\n|---|---|---|\n' +
+const readme = '# Example scans\n\n`demo-scans.js` holds the ten scans of the author\'s trial 5 (from `samples/real`, 300 dpi, recompressed) and an example project with **three structures**: S1 (ceiling 3 m, opposite wall 6 m), S2 (4 m / 7 m) and S3 (5 m / 8 m). Each sheet has the structure boxes; the desk coordinator marked one, but two sheets were left unmarked and one was marked twice, and some drawings are wrong on purpose. Main menu → **Try with example scans** loads them and starts an Open mode session (rater code DEMO); nothing is uploaded.\n\n' +
+  '**Different structures.** The structure of each sheet comes from its marked box. In Open mode it is shown under the sheet code; for an unmarked or doubly marked sheet choose it from the list there. In Blind mode (and afterwards) Results lists the drawings without a structure; **Add them to the Tables screen** puts their codes in the key table, where only the structure is chosen.\n\n' +
+  'Made with `node tests/tools/make-demo.js`.\n\n| File | From | Shows |\n|---|---|---|\n' +
   scans.map((s) => '| ' + s.name + ' | ' + s.from + ' | ' + s.note + ' |').join('\n') + '\n';
 fs.writeFileSync(path.join(OUT, 'README.md'), readme);
 console.log('demo/demo-scans.js', Math.round(js.length / 1024) + ' KB', scans.length + ' scans');
