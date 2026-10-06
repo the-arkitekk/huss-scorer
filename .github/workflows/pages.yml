@@ -1,5 +1,6 @@
 # Publishes the tool on GitHub Pages (a static site: index.html, css/, js/ and the documents).
-# Enable it in the repository settings: Pages -> Source: GitHub Actions.
+# Enable it in the repository settings: Pages -> Source: GitHub Actions. Skipped while the repository
+# is private (Pages for private repositories needs a paid GitHub plan).
 name: pages
 on:
   push:
@@ -14,6 +15,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   deploy:
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages

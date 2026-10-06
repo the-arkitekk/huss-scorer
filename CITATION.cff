@@ -1,6 +1,5 @@
 # Citation metadata (https://citation-file-format.github.io/).
-# To complete before the first public release: the ORCID and affiliation of the author, the
-# repository URL and, after the Zenodo release, the DOI.
+# To complete after the first archived release: the DOI from Zenodo.
 cff-version: 1.2.0
 message: "If you use HuSS Scorer, please cite it as below."
 title: "HuSS Scorer"
@@ -13,8 +12,8 @@ type: software
 authors:
   - family-names: "Yıldırım"
     given-names: "Erdem"
-    # orcid: "https://orcid.org/0000-0000-0000-0000"
-    # affiliation: ""
+    orcid: "https://orcid.org/0000-0002-8829-5274"
+    affiliation: "Dokuz Eylul University"
 version: "0.2.0"
 license: MIT
 keywords:
@@ -24,5 +23,5 @@ keywords:
   - section drawing
   - image analysis
   - research software
-# repository-code: "https://github.com/<account>/huss-scorer"
+repository-code: "https://github.com/the-arkitekk/huss-scorer"
 # doi: "10.5281/zenodo.<id>"

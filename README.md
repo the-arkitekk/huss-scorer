@@ -115,7 +115,7 @@ npm test
 
 ## Citation and archive
 
-`CITATION.cff` and `.zenodo.json` hold the citation and archive metadata (the author's ORCID, affiliation, repository URL and DOI are to be filled in before the first public release). `.github/workflows/` runs the tests on every push and publishes the tool on GitHub Pages once Pages is enabled with "GitHub Actions" as source. `CHANGELOG.md` lists the changes.
+`CITATION.cff` and `.zenodo.json` hold the citation and archive metadata (the DOI follows the first archived release). Repository: https://github.com/the-arkitekk/huss-scorer (private for now). `.github/workflows/` runs the tests on every push and, once the repository is public and Pages is enabled with "GitHub Actions" as source, publishes the tool on GitHub Pages. `CHANGELOG.md` lists the changes.
 
 ## Licence
 

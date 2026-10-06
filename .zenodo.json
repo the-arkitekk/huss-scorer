@@ -3,7 +3,7 @@
   "upload_type": "software",
   "description": "Semi-automatic, offline scorer for HuSS (Human-Scaled Section) drawings. It aligns scanned sheets, suggests the figure, ceiling and wall, lets a rater confirm or correct, and merges, reports and compares the results. Plain HTML, CSS and JavaScript; runs in the browser; images and data never leave the computer.",
   "creators": [
-    { "name": "Yıldırım, Erdem" }
+    { "name": "Yıldırım, Erdem", "affiliation": "Dokuz Eylul University", "orcid": "0000-0002-8829-5274" }
   ],
   "license": "MIT",
   "keywords": ["spatial cognition", "architectural scale", "drawing task", "section drawing", "image analysis", "research software"],
