@@ -70,7 +70,7 @@
         E_PAIRS.forEach(function (p) { row[p[0]] = row.status === 'measured' ? E(row[p[1]], row[p[2]]) : null; });
         return;
       }
-      var mark = row.structure_mark || null;
+      var mark = HUSS.io.tables.markCode(row, structures); // the box: its code, or its number with today's structures
       var fromKey = k && k.structure_code ? k.structure_code : null;
       row.participant_code = k ? k.participant_code || null : null;
       row.structure_code = fromKey || mark || defaultStructure;

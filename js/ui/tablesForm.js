@@ -1,15 +1,18 @@
 /* HuSS Scorer — js/ui/tablesForm.js
- * Tables screen: the key table (sheet -> participant, structure) entered by the desk coordinator.
+ * Tables screen: the key table (sheet -> participant, structure).
+ * Every scored sheet (this session and the measurement files on Results) is listed by itself with
+ * the structure its marked box gives (grey rows, not stored). Editing such a row makes it the
+ * coordinator's own row, which then wins over the box; rows can also be typed or imported.
  * The structures and their true dimensions belong to the project (New project / Edit project).
- * Sheet codes are checked while typing. Kept in the browser as a convenience; the downloaded CSV
- * is the record.
+ * Sheet codes are checked while typing. Own rows are kept in the browser as a convenience; the
+ * downloaded CSV is the record.
  */
 (function (root) {
   'use strict';
   var HUSS = root.HUSS = root.HUSS || {};
   HUSS.ui = HUSS.ui || {};
 
-  var els = {}, data = { key: [] }, pendingNote = '';
+  var els = {}, data = { key: [] };
 
   function $(id) { return document.getElementById(id); }
 
@@ -18,10 +21,44 @@
     return 'huss:v1:tables:' + (p ? p.project_code : 'NOPROJECT');
   }
 
+  /** Only the coordinator's own rows are stored; the rows from the boxes are made again each time. */
   function persist() {
     var saved = HUSS.io.autosave.load(storeKey()) || {};
-    saved.key = data.key;
+    saved.key = data.key.filter(function (r) { return !r.auto; }).map(function (r) {
+      return { sheet_code: r.sheet_code, participant_code: r.participant_code, structure_code: r.structure_code };
+    });
     HUSS.io.autosave.save(storeKey(), saved);
+  }
+
+  /** A grey row from a box becomes the coordinator's own row when it is changed. */
+  function own(r) { r.auto = false; }
+
+  /**
+   * Scored sheets (this session and the files added on Results) with the structure of their box:
+   * { CODE: structure code or null }.
+   */
+  function boxStructures() {
+    var R = HUSS.ui.results, st = HUSS.io.project.structuresTable(HUSS.app.state.project), out = {};
+    (R && R.sources ? R.sources() : []).forEach(function (src) {
+      src.records.forEach(function (rec) {
+        if (!rec.sheet_code) return;
+        var c = HUSS.io.tables.markCode(rec, st);
+        if (!(rec.sheet_code in out) || c) out[rec.sheet_code] = c || null;
+      });
+    });
+    return out;
+  }
+
+  /** The grey rows: scored sheets without an own row. Own rows learn what their box says. */
+  function addBoxRows() {
+    var box = boxStructures(), have = {};
+    data.key.forEach(function (r) {
+      if (r.sheet_code) have[r.sheet_code] = true;
+      r.box = r.sheet_code in box ? box[r.sheet_code] : undefined;
+    });
+    Object.keys(box).sort().forEach(function (code) {
+      if (!have[code]) data.key.push({ sheet_code: code, participant_code: '', structure_code: box[code] || '', auto: true, box: box[code] });
+    });
   }
 
   function projectBase() {
@@ -83,14 +120,16 @@
     tb.textContent = '';
     data.key.forEach(function (r, idx) {
       var tr = document.createElement('tr');
-      tr.appendChild(cell(input(r.sheet_code, 'upper', function (v) { r.sheet_code = HUSS.sheet.code.normalize(v); changedKey(); })));
-      tr.appendChild(cell(input(r.participant_code, 'upper', function (v) { r.participant_code = v.trim().toUpperCase(); changedKey(); })));
+      if (r.auto) tr.className = 'from-box';
+      tr.appendChild(cell(input(r.sheet_code, 'upper', function (v) { own(r); r.sheet_code = HUSS.sheet.code.normalize(v); changedKey(); })));
+      tr.appendChild(cell(input(r.participant_code, 'upper', function (v) { own(r); r.participant_code = v.trim().toUpperCase(); changedKey(); })));
       var st = structureField(r, idx);
       tr.appendChild(cell(st));
       var prob = document.createElement('td');
       prob.className = 'problem';
       tr.appendChild(prob);
-      tr.appendChild(cell(removeButton(function () { data.key.splice(idx, 1); persist(); renderKey(); })));
+      // a scored sheet stays listed; only own rows can be removed (the box then counts again)
+      tr.appendChild(cell(r.auto ? null : removeButton(function () { data.key.splice(idx, 1); persist(); onShow(); })));
       tb.appendChild(tr);
     });
     renderKeyProblems();
@@ -110,32 +149,15 @@
         f.appendChild(o);
       });
       f.value = r.structure_code || '';
-      f.addEventListener('change', function () { r.structure_code = f.value; changedKey(); });
+      f.addEventListener('change', function () { own(r); r.structure_code = f.value; changedKey(); });
     } else {
-      f = input(r.structure_code, 'upper', function (v) { r.structure_code = v.trim().toUpperCase(); changedKey(); });
+      f = input(r.structure_code, 'upper', function (v) { own(r); r.structure_code = v.trim().toUpperCase(); changedKey(); });
       f.setAttribute('list', 'tb-structure-codes');
     }
     f.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && idx === data.key.length - 1) { e.preventDefault(); addKeyRow(); }
     });
     return f;
-  }
-
-  /** Rows for sheets whose structure is not known yet (from Results): only the structure is left to choose. */
-  function addSheets(codes) {
-    load();
-    var have = {};
-    data.key.forEach(function (r) { if (r.sheet_code) have[r.sheet_code] = true; });
-    data.key = data.key.filter(isFilled);
-    var added = 0;
-    (codes || []).forEach(function (c) {
-      if (have[c]) return;
-      have[c] = true;
-      data.key.push({ sheet_code: c, participant_code: '', structure_code: '' });
-      added++;
-    });
-    persist();
-    pendingNote = added ? HUSS.t('tb_added', { n: added }) : '';
   }
 
   function changedKey() {
@@ -149,14 +171,22 @@
     var codes = structureCodes();
     Array.prototype.forEach.call(els.keyBody.children, function (tr, idx) {
       var r = data.key[idx];
+      tr.classList.toggle('from-box', !!r.auto);
+      var inputs = tr.querySelectorAll('input, select'), td = tr.children[3];
+      if (r.auto) {
+        // a scored sheet as its box says: fine with a structure, to be chosen without one
+        inputs[0].classList.remove('invalid'); inputs[2].classList.remove('invalid');
+        td.className = r.structure_code ? 'ok-mark' : 'problem';
+        td.textContent = HUSS.t(r.structure_code ? 'tb_from_box' : 'tb_no_box');
+        return;
+      }
       var probs = HUSS.io.tables.keyRowProblems(r, data.key, codes);
-      var inputs = tr.querySelectorAll('input, select');
       inputs[0].classList.toggle('invalid', probs.indexOf('bad_sheet_code') >= 0 || probs.indexOf('duplicate') >= 0);
       inputs[2].classList.toggle('invalid', probs.indexOf('unknown_structure') >= 0);
-      var td = tr.children[3];
-      var shown = isFilled(r) ? probs : []; // a row with only the preset structure is still empty
+      var shown = isFilled(r) ? probs.map(function (p) { return HUSS.t(PROBLEM_TEXT[p]); }) : []; // a row with only the preset structure is still empty
+      var note = r.box && r.structure_code && r.box !== r.structure_code ? HUSS.t('tb_box_differs', { box: r.box }) : '';
       td.className = shown.length ? 'problem' : 'ok-mark';
-      td.textContent = shown.length ? shown.map(function (p) { return HUSS.t(PROBLEM_TEXT[p]); }).join(', ') : (r.sheet_code ? '✓' : '');
+      td.textContent = shown.length ? shown.concat(note ? [note] : []).join(', ') : (r.sheet_code ? '✓' + (note ? ' ' + note : '') : '');
     });
     updateStatus();
   }
@@ -173,14 +203,16 @@
     return !!(r.sheet_code || r.participant_code);
   }
 
+  /** The coordinator's own rows (the key table proper: it wins over the boxes). */
   function keyRows() {
-    return data.key.filter(isFilled);
+    return data.key.filter(function (r) { return !r.auto && isFilled(r); });
   }
 
   function updateStatus() {
-    var codes = structureCodes(), filled = keyRows();
+    var codes = structureCodes(), filled = keyRows(), auto = data.key.filter(function (r) { return r.auto; });
     var bad = filled.filter(function (r) { return HUSS.io.tables.keyRowProblems(r, data.key, codes).length; }).length;
-    els.keyStatus.textContent = HUSS.t('tb_key_count', { n: filled.length, bad: bad });
+    var open = auto.filter(function (r) { return !r.structure_code; }).length;
+    els.keyStatus.textContent = HUSS.t('tb_key_count2', { own: filled.length, box: auto.length - open, open: open, bad: bad });
   }
 
   function importKey(text) {
@@ -195,14 +227,20 @@
         structure_code: (r[col('structure_code')] || '').trim().toUpperCase()
       };
     });
+    var n = data.key.length;
     persist();
-    renderKey();
-    els.keyStatus.textContent += ' ' + HUSS.t('tb_imported', { n: data.key.length });
+    onShow();
+    els.keyStatus.textContent += ' ' + HUSS.t('tb_imported', { n: n });
   }
 
-  /** The key table as io.tables.parseKey reads it (rows with problems left out), or null when empty. */
+  /**
+   * The key table as io.tables.parseKey reads it (rows with problems left out), or null when
+   * empty: the coordinator's own rows, read from the browser store (the rows from the boxes are
+   * not needed here, Merge reads the boxes itself).
+   */
   function keyTable() {
-    var rows = keyRows();
+    var saved = HUSS.io.autosave.load(storeKey());
+    var rows = (saved && saved.key ? saved.key : []).filter(isFilled);
     return rows.length ? HUSS.io.tables.parseKey(HUSS.io.tables.keyToCSV(rows)) : null;
   }
 
@@ -213,10 +251,10 @@
 
   function onShow() {
     load();
+    addBoxRows();
     if (!data.key.length) data.key.push({ sheet_code: '', participant_code: '', structure_code: structures().length === 1 ? structures()[0].code : '' });
     renderStructures();
     renderKey();
-    if (pendingNote) { els.keyStatus.textContent += ' ' + pendingNote; pendingNote = ''; }
   }
 
   function init() {
@@ -230,10 +268,11 @@
       if (els.keyInput.files[0]) HUSS.io.files.readText(els.keyInput.files[0]).then(importKey);
     });
     $('tb-key-download').addEventListener('click', function () {
-      HUSS.io.files.downloadText(projectBase() + '_key.csv', HUSS.io.tables.keyToCSV(keyRows()));
+      // the whole picture: own rows and the scored sheets with the structure of their box
+      HUSS.io.files.downloadText(projectBase() + '_key.csv', HUSS.io.tables.keyToCSV(data.key.filter(function (r) { return isFilled(r) && (!r.auto || r.structure_code); })));
     });
     load();
   }
 
-  HUSS.ui.tablesForm = { init: init, onShow: onShow, importKey: importKey, addSheets: addSheets, keyTable: function () { load(); return keyTable(); }, get data() { return data; } };
+  HUSS.ui.tablesForm = { init: init, onShow: onShow, importKey: importKey, keyTable: keyTable, get data() { return data; } };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

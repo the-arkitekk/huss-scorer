@@ -151,6 +151,7 @@
       code_source: m.sheet_code ? (m.code_source || 'manual') : null,
       align_method: a.align.method,
       structure_mark: m.structure_mark || null, structure_mark_source: m.structure_mark ? (m.structure_mark_source || 'mark') : null,
+      structure_mark_box: a.boxes && a.boxes.printed >= 2 && a.boxes.status === 'one' ? a.boxes.index + 1 : null,
       px_per_mm_x: a.align.px_per_mm_x, px_per_mm_y: a.align.px_per_mm_y,
       rotation_deg: a.align.rotation_deg, align_residual_mm: a.align.residual_mm,
       corner_tl_x_px: c.tl[0], corner_tl_y_px: c.tl[1], corner_tr_x_px: c.tr[0], corner_tr_y_px: c.tr[1],

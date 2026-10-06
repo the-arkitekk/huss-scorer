@@ -488,6 +488,7 @@ test('B1-B6: structure boxes read (cross, light tick, red fill under JPEG, none,
       meta: { project_code: 'VR3005', rater_code: 'AB', sheet_code: r.t.sheet_code, mode: 'blind', exclusions: {}, structure_mark: HUSS.detect.boxes.codeOf(a.boxes, codes), structure_mark_source: 'mark' }
     }));
     assert.equal(rec.structure_mark, index == null ? null : codes[index], id);
+    assert.equal(rec.structure_mark_box, index == null ? null : index + 1, id + ': box number kept for later mapping');
     assert.equal(rec.flag_structure_mark, status !== 'one', `${id}: flag`);
     near(a.suggestions.ceiling_y, r.t.ceiling_y, TOL.snap_mm, `${id} ceiling`);
     near(a.suggestions.wall_x, r.t.wall_x, TOL.snap_mm, `${id} wall`);

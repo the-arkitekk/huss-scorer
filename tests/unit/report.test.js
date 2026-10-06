@@ -231,3 +231,35 @@ test('report: Show as ratio (1 + E) in the cards, error charts and By structure 
   // the merged rows (and so the merged CSV) are not touched by the display choice
   assert.equal(csv.toCSV(m.rows, m.columns), before);
 });
+
+test('structure from the box number: a structure added to the project after scoring is found; the key table still wins', () => {
+  const st2 = { rows: { S1: {}, S2: {} }, order: ['S1', 'S2'] };
+  const st3 = tables.parseStructures('structure_code,structure_name,true_vertical_m,true_horizontal_m\r\nS1,a,3,6\r\nS2,b,4,7\r\nS3,c,5,8\r\n');
+  assert.deepEqual(st3.order, ['S1', 'S2', 'S3']);
+  // box 3 marked while the project had two structures: no code written then, only the box number
+  assert.equal(tables.markCode({ structure_mark: null, structure_mark_box: 3 }, st2), null);
+  assert.equal(tables.markCode({ structure_mark: null, structure_mark_box: 3 }, st3), 'S3');
+  assert.equal(tables.markCode({ structure_mark: 'S1', structure_mark_box: 2 }, st3), 'S1', 'the code written at scoring time first');
+  assert.equal(tables.markCode({ structure_mark_box: null }, st3), null);
+  const { r1 } = sample();
+  const recs = [Object.assign({}, r1[0], { structure_mark: null, structure_mark_box: 3, est_vertical_m: 5.5 }), Object.assign({}, r1[1], { structure_mark: null, structure_mark_box: 2 })];
+  let m = HUSS.io.merge.merge([asFile('ab.csv', recs)], null, st3);
+  const row = (i) => m.rows.find((r) => r.sheet_code === CODES[i]);
+  assert.equal(row(0).structure_code, 'S3'); assert.equal(row(0).structure_source, 'mark');
+  near(row(0).E_vertical, 0.1, 1e-9, 'E with the S3 true height');
+  assert.equal(row(1).structure_code, 'S2');
+  m = HUSS.io.merge.merge([asFile('ab.csv', recs)], tables.parseKey(`sheet_code,participant_code,structure_code\r\n${CODES[0]},P1,S1\r\n`), st3);
+  assert.equal(row(0).structure_code, 'S1', 'an own key row is used instead of the box');
+  assert.deepEqual(m.problems.mark_differs.map((d) => d.mark), ['S3']);
+});
+
+test('error charts by structure leave out drawings whose structure is not known (they have no error)', () => {
+  const { r1 } = sample();
+  const recs = r1.slice(0, 6).map((r, i) => Object.assign({}, r, { structure_mark: i < 4 ? 'HALL' : null }));
+  const m = HUSS.io.merge.merge([asFile('ab.csv', recs)], null, tables.parseStructures(STRUCT_TEXT));
+  assert.equal(m.problems.no_structure.length, 2);
+  const frag = B.fragment(B.model(m, { rater: 'AB' }));
+  const chart = frag.slice(frag.indexOf('data-chart="e-structure-v"'), frag.indexOf('data-chart="e-structure-h"'));
+  assert.ok(chart.includes('Exhibition hall') && !chart.includes(HUSS.t('rp_no_structure')), 'no empty "Structure not known" group');
+  assert.ok(frag.includes(HUSS.t('rp_no_structure')), 'still listed in the By structure table');
+});

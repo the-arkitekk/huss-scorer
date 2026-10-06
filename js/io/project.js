@@ -160,7 +160,8 @@
     p.structures.forEach(function (s) {
       rows[s.code] = { structure_name: s.name, true_vertical_m: s.true_vertical_m, true_horizontal_m: s.true_horizontal_m };
     });
-    return { ok: true, rows: rows, errors: [] };
+    // order: the structures in the project's order, which is the order of the boxes on the sheets
+    return { ok: true, rows: rows, order: p.structures.map(function (s) { return s.code; }), errors: [] };
   }
 
   /** The only structure of a one-structure project (every sheet shows it), else null. */

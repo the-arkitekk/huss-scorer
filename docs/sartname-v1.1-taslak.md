@@ -51,6 +51,7 @@ Eklenecek maddeler:
 
 > - Kalibrasyon anahtarı (CSV): `sheet_code, layout, figure_mm, ceiling_mm, distance_mm, template, generated_at`.
 > - Anahtar tablosunda katılımcı kodu isteğe bağlıdır; bir satırda katılımcı ya da yapıdan en az biri bulunur. Anahtardaki yapı kutudakinin yerine geçer.
+> - Ölçüm satırına işaretli kutunun numarası da yazılır (`structure_mark_box`); proje sonradan değişse (örneğin yapı eklense) de yapı bu numaradan bulunur. Tables ekranı puanlanan bütün kâğıtları kutudaki yapıyla kendiliğinden listeler; elle değiştirilen satır kutunun yerine geçer.
 > - Birleştirmede yapı sırası: anahtar tablosu, kâğıttaki kutu, projenin tek yapısı (`structure_source`: `key`, `mark`, `rater`, `project`). Anahtar ile kutu farklıysa veri denetiminde listelenir.
 > - Birleştirilmiş CSV'nin ek sütunları: `participant_code, structure_code, structure_source, structure_name, true_vertical_m, true_horizontal_m, E_vertical, E_horizontal`, yedek E sütunları, `source_file`, anahtarın ek sütunları (`key_*`).
 

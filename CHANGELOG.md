@@ -2,6 +2,8 @@
 
 ## 0.2.0 (unreleased)
 
+- Structure boxes: the number of the marked box is kept (`structure_mark_box`), so a structure added to the project after scoring is still found (a box 3 marked while the project had two structures gave no structure). The Tables screen lists every scored sheet with the structure of its box (grey rows); changing a row makes it your own, used instead of the box, with "(the box says …)" when they differ. Results no longer copies sheets into the key table.
+- Error charts by structure: drawings whose structure is not known (no error) are left out instead of showing an empty "Structure not known" group; colours of the structures stay the same with or without them.
 - Example scans renewed: trial 5, ten drawings of a three-structure project on structure-box sheets (two unmarked, one marked twice, some drawn wrong on purpose), at 300 dpi (recompressed; at 150 or 200 dpi some QR codes and suggestions came out differently). The main menu, the guide and `demo/README.md` say what to do when the structure is not clear.
 - Sheets: "Print at 100% (actual size), not fit to page, without margins".
 - Main menu: **Try with example scans**: ten trial 3 scans (150 dpi, `demo/demo-scans.js`, loaded only when chosen, also from disk) and an example project with one structure; an Open mode session starts at once (rater code DEMO). Made with `tests/tools/make-demo.js`; published with the Pages site.

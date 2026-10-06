@@ -45,7 +45,9 @@
     var arows = S.analysisRows(rows, null, opts.method || 'main');
     var structures = S.byStructure(arows);
     var colorOf = {};
-    structures.forEach(function (s, i) { colorOf[s.structure_code || ''] = HUSS.report.charts.PALETTE[i % HUSS.report.charts.PALETTE.length]; });
+    // colours for the known structures in turn (the same with or without unknown ones), grey for unknown
+    var P = HUSS.report.charts.PALETTE, known = 0;
+    structures.forEach(function (s) { colorOf[s.structure_code || ''] = s.structure_code ? P[known++ % P.length] : '#9aa0aa'; });
     return {
       opts: opts, view: viewOf(opts.show), rows: rows, arows: arows, structures: structures, colorOf: colorOf,
       overview: S.overview(rows, arows),
@@ -84,12 +86,15 @@
     var label = function (s) { return s.structure_name || s.structure_code || T('rp_no_structure'); };
     var isE = function (f) { return f === 'E_v' || f === 'E_h'; };
     var val = function (r, f) { return isE(f) ? V.v(r[f]) : r[f]; }; // errors as chosen (Show as); metres as they are
+    var hasValue = function (g) { return g.values.some(function (v) { return typeof v === 'number' && isFinite(v); }); };
+    // groups without a value (drawings whose structure is not known have no error) are left out
     var groupsOf = function (field) {
       return structs.map(function (s) {
         return { label: label(s), color: m.colorOf[s.structure_code || ''], values: m.arows.filter(function (r) { return (r.structure_code || null) === s.structure_code; }).map(function (r) { return val(r, field); }) };
-      });
+      }).filter(hasValue);
     };
-    var legend = structs.length > 1 ? structs.map(function (s) { return { label: label(s), color: m.colorOf[s.structure_code || ''] }; }) : [];
+    var withTrue = structs.filter(function (s) { return s.true_v != null || s.true_h != null; });
+    var legend = withTrue.length > 1 ? withTrue.map(function (s) { return { label: label(s), color: m.colorOf[s.structure_code || ''] }; }) : [];
     var pts = function (fx, fy) {
       return m.arows.map(function (r) { return { x: val(r, fx), y: val(r, fy), color: m.colorOf[r.structure_code || ''] }; });
     };

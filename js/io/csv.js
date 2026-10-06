@@ -61,6 +61,7 @@
     cols('str', ['code_source', 'align_method']),
     // structure box marked on the sheet by the desk coordinator (or chosen by the rater in Open mode)
     cols('str', ['structure_mark', 'structure_mark_source']),
+    cols('int', ['structure_mark_box']),
     cols('pxmm', ['px_per_mm_x', 'px_per_mm_y']),
     cols('deg', ['rotation_deg']),
     cols('mm', ['align_residual_mm']),

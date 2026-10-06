@@ -254,6 +254,7 @@ table.grid input.upper { text-transform: uppercase; font-family: ui-monospace, M
 table.grid input.invalid { border-color: var(--warn); background: var(--warn-bg); }
 table.grid td.problem { font-size: 11px; color: var(--warn); white-space: nowrap; }
 table.grid td.ok-mark { color: var(--ok); font-size: 12px; }
+table.grid tr.from-box input, table.grid tr.from-box select { color: var(--ink-2); background: var(--surface-2); }
 @media (max-width: 1100px) { .page-grid-tables { grid-template-columns: 1fr; } }
 
 /* Manual alignment (spec 7.5) */

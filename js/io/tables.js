@@ -58,7 +58,7 @@
    * Returns { ok, rows: { CODE: { structure_name, true_vertical_m, true_horizontal_m } }, errors }.
    */
   function parseStructures(text) {
-    var t = rowsOf(text), out = {}, errors = [];
+    var t = rowsOf(text), out = {}, errors = [], order = [];
     var need = ['structure_code', 'structure_name', 'true_vertical_m', 'true_horizontal_m'];
     if (need.some(function (h) { return t.header.indexOf(h) < 0; })) return { ok: false, rows: {}, errors: [{ line: 1, code: 'missing_columns' }] };
     t.rows.forEach(function (r) {
@@ -67,8 +67,22 @@
       if (out[r.structure_code]) { errors.push({ line: r._line, code: 'duplicate' }); return; }
       if (Number.isNaN(v) || Number.isNaN(hz) || (v !== null && v <= 0) || (hz !== null && hz <= 0)) { errors.push({ line: r._line, code: 'bad_number' }); return; }
       out[r.structure_code] = { structure_name: r.structure_name, true_vertical_m: v, true_horizontal_m: hz };
+      order.push(r.structure_code);
     });
-    return { ok: errors.length === 0, rows: out, errors: errors };
+    return { ok: errors.length === 0, rows: out, order: order, errors: errors };
+  }
+
+  /**
+   * The structure a measurement record gets from the box marked on its sheet: the code written at
+   * scoring time, else the box number mapped onto the structures as they are now (box n = the
+   * n-th structure). So a structure added to the project afterwards is found too. Or null.
+   */
+  function markCode(rec, structures) {
+    if (rec.structure_mark) return rec.structure_mark;
+    var n = rec.structure_mark_box;
+    if (!(n >= 1) || !structures || !structures.rows) return null;
+    var codes = structures.order || Object.keys(structures.rows);
+    return n <= codes.length ? codes[n - 1] : null;
   }
 
   /** What Open mode shows for one sheet: participant, structure, true values (or nulls). */
@@ -112,7 +126,7 @@
   }
 
   var api = {
-    parseKey: parseKey, parseStructures: parseStructures, lookup: lookup,
+    parseKey: parseKey, parseStructures: parseStructures, lookup: lookup, markCode: markCode,
     structuresToCSV: structuresToCSV, keyToCSV: keyToCSV, keyRowProblems: keyRowProblems, num: num
   };
   HUSS.io.tables = api;

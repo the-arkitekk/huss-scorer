@@ -30,6 +30,7 @@ Every column HuSS Scorer writes. Rules version 1.3, tool version 0.2.0.
 | `code_source` | text | Where the sheet code came from: `qr` (QR code), `ocr` (the printed characters, when the QR code could not be read) or `manual` (typed). |
 | `structure_mark` | text | Structure code of the box the desk coordinator marked on the sheet (projects with two or more structures), or the structure the rater chose in Open mode. Empty when no box is clearly marked. |
 | `structure_mark_source` | text | `mark` (read from the box) or `rater` (chosen in Open mode). |
+| `structure_mark_box` | integer | Number of the one clearly marked box (1 = first, as printed from left to right), whatever the project said at scoring time; empty when none or several are marked. Merge and the Tables screen map it onto the project's structures, so a structure added afterwards is found too. |
 
 ### Alignment
 

@@ -2,7 +2,7 @@
 
 `demo-scans.js` holds the ten scans of the author's trial 5 (from `samples/real`, 300 dpi, recompressed) and an example project with **three structures**: S1 (ceiling 3 m, opposite wall 6 m), S2 (4 m / 7 m) and S3 (5 m / 8 m). Each sheet has the structure boxes; the desk coordinator marked one, but two sheets were left unmarked and one was marked twice, and some drawings are wrong on purpose. Main menu → **Try with example scans** loads them and starts an Open mode session (rater code DEMO); nothing is uploaded.
 
-**Different structures.** The structure of each sheet comes from its marked box. In Open mode it is shown under the sheet code; for an unmarked or doubly marked sheet choose it from the list there. In Blind mode (and afterwards) Results lists the drawings without a structure; **Add them to the Tables screen** puts their codes in the key table, where only the structure is chosen.
+**Different structures.** The structure of each sheet comes from its marked box. In Open mode it is shown under the sheet code; for an unmarked or doubly marked sheet choose it from the list there. In Blind mode (and afterwards) the **Tables** screen lists every scored sheet with the structure of its box; choose it there for the sheets without a clear box, or change it where a box was marked wrongly (your row is used instead of the box).
 
 Made with `node tests/tools/make-demo.js`.
 

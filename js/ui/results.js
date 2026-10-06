@@ -237,10 +237,7 @@
       rater: $('res-rater'), method: $('res-method'), show: $('res-show'), print: $('res-print'), dlHtml: $('res-dl-html'), report: $('res-report'),
       keyNeeded: $('res-key-needed'), keyNeededText: $('res-key-needed-text')
     };
-    $('res-go-tables').addEventListener('click', function () {
-      if (merged) HUSS.ui.tablesForm.addSheets(merged.problems.no_structure);
-      HUSS.app.show('tables');
-    });
+    $('res-go-tables').addEventListener('click', function () { HUSS.app.show('tables'); }); // the sheets are listed there
     var style = document.createElement('style');
     style.id = 'rp-style';
     style.textContent = HUSS.report.build.CSS;
@@ -272,5 +269,5 @@
     });
   }
 
-  HUSS.ui.results = { init: init, onShow: onShow, currentTables: currentTables, liveSource: liveSource, get merged() { return merged; }, get files() { return files; } };
+  HUSS.ui.results = { init: init, onShow: onShow, currentTables: currentTables, liveSource: liveSource, sources: sources, get merged() { return merged; }, get files() { return files; } };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
