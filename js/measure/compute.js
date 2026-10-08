@@ -40,9 +40,11 @@
    * Derived values of section 7.10, plus backup values:
    * - measured to the lowest red point (figure_red_mm, est_*_red_m; rules 1.0 for a floating figure);
    * - with the ceiling where its line crosses the axis and the wall where its line stands on the
-   *   floor (est_vertical_at_axis_m, est_horizontal_at_floor_m; rules 1.0-1.2 instead of averages).
+   *   floor (est_vertical_at_axis_m, est_horizontal_at_floor_m; rules 1.0-1.2 instead of averages);
+   * - with the averages of the lines also where rules 1.4 takes a point for a slanted line
+   *   (est_vertical_avg_m, est_horizontal_avg_m; rules 1.3).
    * h: { head_y, foot_y, ceiling_y, wall_x, axis_x, floor_y_axis, red_bottom_y,
-   *      ceiling_at_axis_y, wall_at_floor_x } (mm, nullable)
+   *      ceiling_at_axis_y, wall_at_floor_x, ceiling_avg_y, wall_avg_x } (mm, nullable)
    * p: { ref_height_m, min_figure_mm }
    */
   function compute(h, p) {
@@ -67,6 +69,10 @@
       wall_at_floor_x_mm: has('wall_at_floor_x') ? h.wall_at_floor_x : null,
       est_vertical_at_axis_m: null,
       est_horizontal_at_floor_m: null,
+      ceiling_avg_y_mm: has('ceiling_avg_y') ? h.ceiling_avg_y : null,
+      wall_avg_x_mm: has('wall_avg_x') ? h.wall_avg_x : null,
+      est_vertical_avg_m: null,
+      est_horizontal_avg_m: null,
       flag_figure_small: null
     };
     if (has('head_y') && has('foot_y')) out.figure_mm = h.foot_y - h.head_y;
@@ -90,6 +96,12 @@
     }
     if (has('wall_at_floor_x') && has('axis_x')) {
       out.est_horizontal_at_floor_m = estimate(h.wall_at_floor_x - h.axis_x, out.figure_mm, p.ref_height_m);
+    }
+    if (has('ceiling_avg_y') && has('floor_y_axis')) {
+      out.est_vertical_avg_m = estimate(h.floor_y_axis - h.ceiling_avg_y, out.figure_mm, p.ref_height_m);
+    }
+    if (has('wall_avg_x') && has('axis_x')) {
+      out.est_horizontal_avg_m = estimate(h.wall_avg_x - h.axis_x, out.figure_mm, p.ref_height_m);
     }
     if (isNum(out.figure_mm) && isNum(p.min_figure_mm)) out.flag_figure_small = out.figure_mm < p.min_figure_mm;
     return out;

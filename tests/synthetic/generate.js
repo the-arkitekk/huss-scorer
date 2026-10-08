@@ -69,6 +69,8 @@ const SCENES = {
     ceilingSlope: -0.035, ceilingWave: { amp: 0.5, period: 30 }, wallSlope: 0.04, wallWave: { amp: 0.3, period: 20 }
   },
   S17: { description: 'Clearly slanted ceiling (rising 12 mm): flag_ceiling_uneven', ceilingSlope: -0.1 },
+  S19: { description: 'Ceiling rising steeply (about 17 degrees): rules 1.4 measures it right above the figure', ceilingSlope: -0.3 },
+  S20: { description: 'Wall leaning strongly (about 17 degrees): rules 1.4 measures it where it stands on the floor', wallSlope: 0.3 },
   S18: { description: 'Floor band printed askew to the corner marks (0.5 mm low at the left end, on its place at the right): automatic alignment', floorTilt: [0.5, 0] },
   B1: { description: 'Structure boxes (3): pencil cross in box 2', structures: ['DN1', 'DN2', 'DN3'], boxMarks: [{ box: 1, kind: 'cross', color: 60 }] },
   B2: { description: 'Structure boxes (5): light pencil tick in box 4, page turned 180 degrees', structures: ['A', 'B', 'C', 'D', 'E'], boxMarks: [{ box: 3, kind: 'tick', color: 160 }], quarterTurns: 2 },

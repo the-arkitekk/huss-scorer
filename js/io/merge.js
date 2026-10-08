@@ -18,7 +18,9 @@
     ['E_vertical_at_axis', 'est_vertical_at_axis_m', 'true_vertical_m'],
     ['E_horizontal_at_floor', 'est_horizontal_at_floor_m', 'true_horizontal_m'],
     ['E_vertical_red', 'est_vertical_red_m', 'true_vertical_m'],
-    ['E_horizontal_red', 'est_horizontal_red_m', 'true_horizontal_m']
+    ['E_horizontal_red', 'est_horizontal_red_m', 'true_horizontal_m'],
+    ['E_vertical_avg', 'est_vertical_avg_m', 'true_vertical_m'],
+    ['E_horizontal_avg', 'est_horizontal_avg_m', 'true_horizontal_m']
   ];
 
   function time(rec) {

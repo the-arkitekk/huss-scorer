@@ -9,7 +9,7 @@ Made with `node tests/tools/make-demo.js`.
 | File | From | Shows |
 |---|---|---|
 | example-01.jpeg | trial5_01_ZD897.jpeg | boxes S2 and S3 both marked: choose the structure (Open mode list, or the Tables screen) |
-| example-02.jpeg | trial5_02_ZT8GX.jpeg | no structure box marked: choose the structure; the ceiling rises |
+| example-02.jpeg | trial5_02_ZT8GX.jpeg | no structure box marked: choose the structure; the wall leans more than 10°, so it is measured where it stands on the floor |
 | example-03.jpeg | trial5_03_6NL8Y.jpeg | S1; thick hatched walls: the inner face (nearer the figure) is measured |
 | example-04.jpeg | trial5_04_KYRZJ.jpeg | S3; a very small figure (flagged) and a curved wall: place the wall by hand |
 | example-05.jpeg | trial5_05_YQEHG.jpeg | S1; a detailed figure, drawn as asked |

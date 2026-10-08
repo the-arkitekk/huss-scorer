@@ -55,7 +55,7 @@ Eklenecek maddeler:
 > - Birleştirmede yapı sırası: anahtar tablosu, kâğıttaki kutu, projenin tek yapısı (`structure_source`: `key`, `mark`, `rater`, `project`). Anahtar ile kutu farklıysa veri denetiminde listelenir.
 > - Birleştirilmiş CSV'nin ek sütunları: `participant_code, structure_code, structure_source, structure_name, true_vertical_m, true_horizontal_m, E_vertical, E_horizontal`, yedek E sütunları, `source_file`, anahtarın ek sütunları (`key_*`).
 
-## 6. Puanlama kuralları (rules_version 1.3)
+## 6. Puanlama kuralları (rules_version 1.4)
 
 Neden: Kural 3'te havada ya da zeminin altına taşan figür; kural 4–5'te serbest el çizgisinin eğikliği ve titremesi. Gerçek tavan düz, gerçek duvar dik ve gerçek değer tek bir sayı olduğu için çizginin tek bir noktası elin hatasını taşır.
 
@@ -64,6 +64,8 @@ Neden: Kural 3'te havada ya da zeminin altına taşan figür; kural 4–5'te ser
 > 4. Tavan yüksekliği zemin çizgisinden tavana ölçülür. Tavan, çizgisinin figür ekseninden karşı duvarın 1 mm öncesine kadar olan kısmının **ortalamasıdır** (karşı duvar yoksa çizginin gittiği yere kadar). Tavan figürün üstüne kadar uzanmıyorsa (yalnızca figür ile duvar arasında çizilmişse) başladığı yerden itibaren ortalanır. Kural 8: yalnızca hiç tavan çizgisi yoksa düşey eksen ölçülemez sayılır. Her sütunda çizginin ortası alınır; köşeye bitişik son 1 mm alınmaz.
 >
 > 5. Yatay uzaklık figürün düşey ekseninden karşı duvara ölçülür. Duvar, çizgisinin zeminin 1 mm üstünden tavanın 1 mm altına kadar olan kısmının **ortalamasıdır**.
+>
+> Kurallar 1.4: çizgiye oturtulan düz doğru 10°'den fazla eğikse (tavan yataydan, duvar düşeyden) ortalama alınmaz: tavan figürün tam üstünde (eksende) zeminden düşey olarak, duvar zemine bastığı yerde ölçülür. Ortalamalar yedek sütunlarda kalır; eğim ve kullanılan esas (`ceiling_basis`, `wall_basis`) CSV'ye yazılır.
 >
 > Çizgi ortalamasından 5 mm'den fazla saparsa `flag_ceiling_uneven` ya da `flag_wall_uneven` konur. Eksen üstündeki tavan noktası ve zemindeki duvar noktası (kurallar 1.2) yedek sütunlarda tutulur.
 

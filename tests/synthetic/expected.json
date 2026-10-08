@@ -971,6 +971,114 @@
       ]
     }
   },
+  "S19": {
+    "description": "Ceiling rising steeply (about 17 degrees): rules 1.4 measures it right above the figure",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "TCDGB",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 102.15,
+      "wall_x": 160,
+      "ceiling_at_axis_y": 120,
+      "wall_at_floor_x": 160,
+      "ceiling_spread": 17.849999999999994,
+      "wall_spread": 0,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 77.85,
+      "distance_mm": 120,
+      "est_vertical_m": 6.650502512562812,
+      "est_horizontal_m": 10.251256281407032,
+      "est_vertical_at_axis_m": 5.125628140703516,
+      "est_horizontal_at_floor_m": 10.251256281407032,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
+  "S20": {
+    "description": "Wall leaning strongly (about 17 degrees): rules 1.4 measures it where it stands on the floor",
+    "template": "A4L",
+    "dpi": 300,
+    "rotation_deg": 0,
+    "quarter_turns": 0,
+    "image_width_px": 3650,
+    "image_height_px": 2622,
+    "truth": {
+      "sheet_code": "5F2PN",
+      "floor_y": 180,
+      "axis_x": 40,
+      "head_y": 160.1,
+      "raw_foot_y": 180.1,
+      "foot_y": 180,
+      "ceiling_y": 120,
+      "wall_x": 169,
+      "ceiling_at_axis_y": 120,
+      "wall_at_floor_x": 161.05000000000004,
+      "ceiling_spread": 0,
+      "wall_spread": 8.699999999999989,
+      "figure_mm": 19.900000000000006,
+      "ceiling_mm": 60,
+      "distance_mm": 129,
+      "est_vertical_m": 5.125628140703516,
+      "est_horizontal_m": 11.02010050251256,
+      "est_vertical_at_axis_m": 5.125628140703516,
+      "est_horizontal_at_floor_m": 10.340954773869347,
+      "flags": {
+        "flag_red_not_found": false,
+        "flag_figure_off_mark": false,
+        "flag_foot_off_floor": false,
+        "flag_figure_small": false
+      },
+      "corners_px": [
+        [
+          188.9763779527559,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          188.9763779527559
+        ],
+        [
+          3460.629921259843,
+          2433.0708661417325
+        ],
+        [
+          188.9763779527559,
+          2433.0708661417325
+        ]
+      ]
+    }
+  },
   "S18": {
     "description": "Floor band printed askew to the corner marks (0.5 mm low at the left end, on its place at the right): automatic alignment",
     "template": "A4L",

@@ -2,7 +2,7 @@
 
 Semi-automatic scorer for HuSS (Human-Scaled Section) drawings. The tool suggests, the rater confirms or corrects. Everything runs in the browser; images and data never leave the computer.
 
-Status: **v0.2.0, rules 1.3, pilot version** — Phases 1–3 of the specification (`huss-scorer-sartname-v1.md`, Turkish, section 13) are done: alignment, suggestions, folder sessions, own QR code, Results with merge and report, Compare, calibration, documents. Changes from the specification are collected in `docs/sartname-v1.1-taslak.md` (draft for the author). See `huss-scorer-sartname-v1.md` (technical specification, Turkish), section 13.
+Status: **v0.2.0, rules 1.4, pilot version** — Phases 1–3 of the specification (`huss-scorer-sartname-v1.md`, Turkish, section 13) are done: alignment, suggestions, folder sessions, own QR code, Results with merge and report, Compare, calibration, documents. Changes from the specification are collected in `docs/sartname-v1.1-taslak.md` (draft for the author). See `huss-scorer-sartname-v1.md` (technical specification, Turkish), section 13.
 
 ## Use
 
@@ -84,6 +84,7 @@ Afterwards everything runs as usual: QR code (the scan gets its code if it can b
 - **1.1** Rule 3 (foot): red drawn more than 0.5 mm below the floor line counts as standing on the line (flagged).
 - **1.2** Rule 3 (foot): the figure is always measured from the head top to the floor line, also when it floats above the line. A red trace ending more than `foot_tolerance_mm` off the line (either side) sets `flag_foot_off_floor`; the default is 4 mm since trial 3 (spec: 0.5 mm), where freehand figures ended 0–3 mm above the line and the deliberately floating one 5.8 mm. It is a project setting. The lowest red point and the values measured to it are kept as backup columns: `red_bottom_y_mm`, `figure_red_mm`, `est_vertical_red_m`, `est_horizontal_red_m`.
 - **1.3** Rules 4 and 5 (ceiling, wall): a freehand line is slanted and wobbly, while the real ceiling is flat and the real wall upright, so a single point of it carries the hand's error. The ceiling is now the **average** of its line from the figure axis to the opposite wall, the wall the average of its line from the floor to the ceiling; the last 1 mm next to a corner is left out (thicker ink where lines meet). In each column (ceiling) or row (wall) the middle of the line is measured (rule 1). The rules 1.2 points are kept as backup columns: `ceiling_at_axis_y_mm` (where the ceiling line crosses the axis), `wall_at_floor_x_mm` (where the wall stands on the floor), `est_vertical_at_axis_m`, `est_horizontal_at_floor_m`. `ceiling_spread_mm` and `wall_spread_mm` give the largest deviation of the line from its average; above 5 mm `flag_ceiling_uneven` / `flag_wall_uneven` is set (the freehand ceilings of the trial scans deviate 2–4 mm; `LINE.UNEVEN_MM` in `js/config.js`).
+- **1.4** Rules 4 and 5: a ceiling or wall slanted more than 10° (straight line fitted through it) is a deliberate shape, not an unsteady hand: the ceiling is measured right above the figure (on the axis), the wall where it stands on the floor. The averages are kept as backup columns (`ceiling_avg_y_mm`, `wall_avg_x_mm`, `est_vertical_avg_m`, `est_horizontal_avg_m`); `ceiling_slant_deg`, `wall_slant_deg`, `ceiling_basis`, `wall_basis` say how each value was taken (`LINE.SLANT_DEG`).
 
 ## QR code
 

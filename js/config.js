@@ -12,7 +12,7 @@
     // 1.1: rule 3 — red drawn below the floor line counts as standing on the line (flagged).
     // 1.2: rule 3 — the figure is always measured from the head top to the floor line;
     //      a red trace ending off the line is flagged, its own bottom kept as a backup value.
-    RULES_VERSION: '1.3',
+    RULES_VERSION: '1.4',
 
     // Project-level defaults (spec 5.1). Phase 2 reads these from the project file.
     DEFAULTS: {
@@ -163,6 +163,7 @@
       TURN_SLOPE: 1,               // a line turning steeper than this (45 degrees) over TURN_RUN_MM ends there (a corner)
       TURN_RUN_MM: 0.5,
       TURN_SLACK_MM: 0.3,          // allowance for pencil texture in that test
+      SLANT_DEG: 10,               // rules 1.4: a line slanted more than this is measured at one point, not averaged
       UNEVEN_MM: 5                 // flag_ceiling_uneven / flag_wall_uneven above this largest deviation
                                    // (freehand ceilings in the trial scans deviate 2-4 mm; 5 marks a clearly slanted line)
     },

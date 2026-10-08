@@ -95,7 +95,8 @@
   var METHODS = {
     main: { est_v: 'est_vertical_m', est_h: 'est_horizontal_m', E_v: 'E_vertical', E_h: 'E_horizontal' },
     points: { est_v: 'est_vertical_at_axis_m', est_h: 'est_horizontal_at_floor_m', E_v: 'E_vertical_at_axis', E_h: 'E_horizontal_at_floor' },
-    red: { est_v: 'est_vertical_red_m', est_h: 'est_horizontal_red_m', E_v: 'E_vertical_red', E_h: 'E_horizontal_red' }
+    red: { est_v: 'est_vertical_red_m', est_h: 'est_horizontal_red_m', E_v: 'E_vertical_red', E_h: 'E_horizontal_red' },
+    avg: { est_v: 'est_vertical_avg_m', est_h: 'est_horizontal_avg_m', E_v: 'E_vertical_avg', E_h: 'E_horizontal_avg' }
   };
 
   /** Measured (not excluded) rows of one rater (or all when rater is null), with the method's values. */

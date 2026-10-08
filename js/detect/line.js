@@ -8,6 +8,10 @@
  * figure, from where it starts) to 1 mm before the opposite wall, the wall from
  * 1 mm above the floor to 1 mm below the ceiling. Where the line runs into a crossing line or
  * turns by more than 45 degrees (a corner, also a rounded one) the last 1 mm before it is left out.
+ * Rules 1.4: a line slanted more than SLANT_DEG (a straight line fitted through it, against the
+ * horizontal for the ceiling, the vertical for the wall) is measured at one point instead: the
+ * ceiling right above the figure (on the axis, or its end nearest to it), the wall where it
+ * stands on the floor.
  */
 (function (root) {
   'use strict';
@@ -97,15 +101,30 @@
    */
   function summarize(a, f, horizontal, point) {
     var R = a.R, n = f.pts.length;
-    if (n / R < a.config.LINE.MIN_LENGTH_MM) return { pos: point, spread: null, followed: false, pts: [] };
+    if (n / R < a.config.LINE.MIN_LENGTH_MM) return { pos: point, average: null, spread: null, slant_deg: null, followed: false, pts: [] };
     var sum = 0, i;
     for (i = 0; i < n; i++) sum += f.pts[i][1];
     var mean = sum / n / R, spread = 0;
     for (i = 0; i < n; i++) spread = Math.max(spread, Math.abs(f.pts[i][1] / R - mean));
     return {
-      pos: mean, spread: spread, followed: true, junction: f.junction,
+      pos: mean, average: mean, spread: spread, slant_deg: slant(f.pts), followed: true, junction: f.junction,
       pts: f.pts.map(function (p) { return horizontal ? [p[0] / R, p[1] / R] : [p[1] / R, p[0] / R]; })
     };
+  }
+
+  /** Slant (degrees) of the straight line fitted through the samples: across against along. */
+  function slant(pts) {
+    var n = pts.length, sa = 0, sc = 0, saa = 0, sac = 0;
+    for (var i = 0; i < n; i++) { var A = pts[i][0], C = pts[i][1]; sa += A; sc += C; saa += A * A; sac += A * C; }
+    var d = n * saa - sa * sa;
+    return d > 0 ? Math.atan(Math.abs((n * sac - sa * sc) / d)) * 180 / Math.PI : 0;
+  }
+
+  /** Rules 1.4: the average, or the point (at_axis / at_floor) when the line is too slanted. */
+  function choose(a, r, point, pointName) {
+    if (r.followed && r.slant_deg > a.config.LINE.SLANT_DEG) { r.pos = point; r.basis = pointName; }
+    else r.basis = r.followed ? 'average' : null;
+    return r;
   }
 
   function cached(a, key, fn) {
@@ -158,7 +177,7 @@
       }
       r.at_axis = r.followed && from > a0 ? r.pts[0][1] : yAtAxis;
       r.from_x = r.followed ? r.pts[0][0] : axisX;
-      return r;
+      return choose(a, r, r.at_axis, 'axis');
     });
   }
 
@@ -198,7 +217,7 @@
       var f = thr == null ? { pts: [], junction: false } : follow(a.dm, false, a0, a1, xAtFloor * R, thr, o);
       var r = summarize(a, f, false, xAtFloor);
       r.at_floor = xAtFloor;
-      return r;
+      return choose(a, r, xAtFloor, 'floor');
     });
   }
 

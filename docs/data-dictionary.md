@@ -1,6 +1,6 @@
 # Data dictionary
 
-Every column HuSS Scorer writes. Rules version 1.3, tool version 0.2.0.
+Every column HuSS Scorer writes. Rules version 1.4, tool version 0.2.0.
 
 **Conventions**
 
@@ -23,7 +23,7 @@ Every column HuSS Scorer writes. Rules version 1.3, tool version 0.2.0.
 | `measured_at` | text | Time of confirmation, ISO 8601 with offset. |
 | `duration_s` | integer | Seconds spent on the drawing, summed over visits. |
 | `tool_version` | text | HuSS Scorer version. |
-| `rules_version` | text | Scoring rules version (1.3: line averages). |
+| `rules_version` | text | Scoring rules version (1.3: line averages; 1.4: points for lines slanted more than 10°). |
 | `template` | text | Sheet template, `A4L` or `A3L`. |
 | `file_name` | text | Name of the scan file (for finding it; carries no meaning). |
 | `image_width_px`, `image_height_px` | integer | Size of the scan. |
@@ -51,8 +51,8 @@ Every column HuSS Scorer writes. Rules version 1.3, tool version 0.2.0.
 | `axis_x_mm` | mm | Figure axis: centre of the red figure, or the start mark. |
 | `head_y_mm` | mm | Head top (rule 2). |
 | `foot_y_mm` | mm | Foot: the floor line (rule 3, rules 1.2). |
-| `ceiling_y_mm` | mm | Ceiling: the average of the ceiling line from the axis to 1 mm before the opposite wall (rule 4, rules 1.3). |
-| `wall_x_mm` | mm | Opposite wall: the average of the wall line from 1 mm above the floor to 1 mm below the ceiling (rule 5, rules 1.3). |
+| `ceiling_y_mm` | mm | Ceiling: the average of the ceiling line from the axis to 1 mm before the opposite wall; for a line slanted more than 10°, the point right above the figure (rule 4, rules 1.4). See `ceiling_basis`. |
+| `wall_x_mm` | mm | Opposite wall: the average of the wall line from 1 mm above the floor to 1 mm below the ceiling; for a line slanted more than 10°, where it stands on the floor (rule 5, rules 1.4). See `wall_basis`. |
 | `head_x_px` … `wall_y_px` | px | The same points in the scan (head, foot, floor and ceiling on the axis; wall on the floor line). |
 | `head_placement`, `foot_placement`, `ceiling_placement`, `wall_placement` | text | How the handle ended up: `suggested` (the tool's suggestion kept), `snapped` (moved and snapped to a line), `manual` (placed by hand, no snap). |
 | `axis_placement` | text | `auto` or `manual` (moved by hand). |
@@ -86,6 +86,10 @@ Kept so that earlier rules can be compared with the current ones.
 | `wall_at_floor_x_mm` | mm | Where the wall line stands, 1–6 mm above the floor line (rules 1.0–1.2). |
 | `est_vertical_at_axis_m`, `est_horizontal_at_floor_m` | m | Estimates with those two points. |
 | `ceiling_spread_mm`, `wall_spread_mm` | mm | Largest deviation of the followed line from its average. |
+| `ceiling_slant_deg`, `wall_slant_deg` | degrees | Slant of a straight line fitted through the followed line: the ceiling against the horizontal, the wall against the vertical. |
+| `ceiling_basis`, `wall_basis` | text | How the handle's value was taken: `average` (the line's average), `axis` (ceiling: right above the figure) or `floor` (wall: on the floor) for a line slanted more than 10°, `manual` (placed by hand, not on a line). |
+| `ceiling_avg_y_mm`, `wall_avg_x_mm` | mm | The averages of the lines (rules 1.3), also where a point was taken. |
+| `est_vertical_avg_m`, `est_horizontal_avg_m` | m | Estimates with those averages. |
 
 ### Flags, decisions, note
 
@@ -121,6 +125,7 @@ All measurement columns, then:
 | `E_vertical`, `E_horizontal` | E | Error ratio: (estimate − true) / true; empty for excluded drawings and not measurable axes. |
 | `E_vertical_at_axis`, `E_horizontal_at_floor` | E | E of the rules 1.2 backup estimates. |
 | `E_vertical_red`, `E_horizontal_red` | E | E of the estimates with `figure_red_mm`. |
+| `E_vertical_avg`, `E_horizontal_avg` | E | E of the estimates with the line averages (rules 1.3). |
 | `source_file` | text | The measurement CSV the record came from. |
 | `key_<name>` | text | Any extra column of the key table. |
 

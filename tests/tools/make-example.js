@@ -28,7 +28,8 @@ function decode(file) {
 function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const P = HUSS.detect.pipeline, prm = HUSS.config.DEFAULTS, records = [], key = [], states = [];
-  const scans = fs.readdirSync(SRC).filter((f) => /\.jpe?g$/i.test(f)).sort();
+  // trials 1-3 only: they all show the one remembered room (trials 4 and 5 are other projects)
+  const scans = fs.readdirSync(SRC).filter((f) => /^trial[123]_.*\.jpe?g$/i.test(f)).sort();
   scans.forEach((f, i) => {
     const img = decode(path.join(SRC, f));
     const rc = P.readCode(img, { template: 'A4L', params: prm });

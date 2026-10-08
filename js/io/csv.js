@@ -84,6 +84,12 @@
     cols('mm', ['ceiling_at_axis_y_mm', 'wall_at_floor_x_mm']),
     cols('m', ['est_vertical_at_axis_m', 'est_horizontal_at_floor_m']),
     cols('mm', ['ceiling_spread_mm', 'wall_spread_mm']),
+    // rules 1.4: slant of the fitted line, how the value was taken (average, axis / floor point,
+    // manual), and the averages kept where a point was taken
+    cols('deg', ['ceiling_slant_deg', 'wall_slant_deg']),
+    cols('str', ['ceiling_basis', 'wall_basis']),
+    cols('mm', ['ceiling_avg_y_mm', 'wall_avg_x_mm']),
+    cols('m', ['est_vertical_avg_m', 'est_horizontal_avg_m']),
     cols('bool', [
       'flag_red_not_found', 'flag_figure_small', 'flag_figure_off_mark', 'flag_foot_off_floor',
       'flag_multiple_red', 'flag_axis_moved', 'flag_manual_alignment', 'flag_alignment_warning',
@@ -107,7 +113,7 @@
     cols('str', ['participant_code', 'structure_code', 'structure_source', 'structure_name']),
     cols('m', ['true_vertical_m', 'true_horizontal_m']),
     cols('E', ['E_vertical', 'E_horizontal']),
-    cols('E', ['E_vertical_at_axis', 'E_horizontal_at_floor', 'E_vertical_red', 'E_horizontal_red']),
+    cols('E', ['E_vertical_at_axis', 'E_horizontal_at_floor', 'E_vertical_red', 'E_horizontal_red', 'E_vertical_avg', 'E_horizontal_avg']),
     cols('str', ['source_file'])
   );
 

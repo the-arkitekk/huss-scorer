@@ -393,7 +393,39 @@ test('S16: freehand ceiling and wall -> averages suggested and snapped to; backu
   near(rec.wall_spread_mm, t.wall_spread, 0.2, 'S16 wall spread');
   assert.equal(rec.flag_ceiling_uneven, false);
   assert.equal(rec.flag_wall_uneven, false);
-  assert.equal(rec.rules_version, '1.3');
+  assert.equal(rec.rules_version, HUSS.config.RULES_VERSION);
+  // slight slants (under 10 degrees): the averages are measured (rules 1.4), and kept as such
+  assert.equal(rec.ceiling_basis, 'average'); assert.equal(rec.wall_basis, 'average');
+  assert.ok(rec.ceiling_slant_deg > 1 && rec.ceiling_slant_deg < 10, 'ceiling slant ' + rec.ceiling_slant_deg);
+  near(rec.ceiling_avg_y_mm, rec.ceiling_y_mm, 0.01, 'S16 average = measured');
+  near(rec.est_vertical_avg_m, rec.est_vertical_m, 0.002, 'S16 est average = main (handle at 0.01 mm)');
+});
+
+test('S19, S20: lines slanted more than 10 degrees -> the point is measured (ceiling on the axis, wall at the floor); the average kept as backup', () => {
+  for (const id of ['S19', 'S20']) {
+    const r = run(id), a = r.a, t = r.t;
+    checkCommon(id, r);
+    checkRedFigure(id, a, t);
+    const rec = HUSS.measure.record.buildRecord(acceptedState(a));
+    if (id === 'S19') {
+      assert.equal(rec.ceiling_basis, 'axis', 'S19 ceiling basis');
+      assert.ok(rec.ceiling_slant_deg > 10, 'S19 slant ' + rec.ceiling_slant_deg);
+      near(rec.ceiling_y_mm, t.ceiling_at_axis_y, TOL.snap_mm, 'S19 ceiling right above the figure');
+      near(rec.ceiling_avg_y_mm, t.ceiling_y, 0.4, 'S19 the average kept');
+      near(rec.est_vertical_m, rec.est_vertical_at_axis_m, 0.002, 'S19 main = point');
+      assert.equal(rec.wall_basis, 'average');
+      // a handle dropped near the line on the axis snaps to that point
+      const sn = P.snapCeiling(a, a.suggestions.axis_x, t.ceiling_at_axis_y + 0.8, params.snap_radius_mm, rec.wall_x_mm);
+      assert.equal(sn.snapped, true); near(sn.pos, t.ceiling_at_axis_y, TOL.snap_mm, 'S19 snapped');
+    } else {
+      assert.equal(rec.wall_basis, 'floor', 'S20 wall basis');
+      assert.ok(rec.wall_slant_deg > 10, 'S20 slant ' + rec.wall_slant_deg);
+      near(rec.wall_x_mm, t.wall_at_floor_x, TOL.snap_mm, 'S20 wall where it stands on the floor');
+      near(rec.wall_avg_x_mm, t.wall_x, 0.4, 'S20 the average kept');
+      near(rec.est_horizontal_m, rec.est_horizontal_at_floor_m, 0.002, 'S20 main = point');
+      assert.equal(rec.ceiling_basis, 'average');
+    }
+  }
 });
 
 test('S17: clearly slanted ceiling -> flag_ceiling_uneven; not measurable clears the backup columns', () => {

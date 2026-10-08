@@ -23,7 +23,7 @@ const QUALITY = 50;    // the lowest quality that gives the same readings as the
 // [file in samples/real, what it shows and what to do]
 const SCANS = [
   ['trial5_01_ZD897.jpeg', 'boxes S2 and S3 both marked: choose the structure (Open mode list, or the Tables screen)'],
-  ['trial5_02_ZT8GX.jpeg', 'no structure box marked: choose the structure; the ceiling rises'],
+  ['trial5_02_ZT8GX.jpeg', 'no structure box marked: choose the structure; the wall leans more than 10°, so it is measured where it stands on the floor'],
   ['trial5_03_6NL8Y.jpeg', 'S1; thick hatched walls: the inner face (nearer the figure) is measured'],
   ['trial5_04_KYRZJ.jpeg', 'S3; a very small figure (flagged) and a curved wall: place the wall by hand'],
   ['trial5_05_YQEHG.jpeg', 'S1; a detailed figure, drawn as asked'],
@@ -50,7 +50,7 @@ const project = {
     { code: 'S2', name: 'Room S2 (4 m / 7 m)', true_vertical_m: 4, true_horizontal_m: 7 },
     { code: 'S3', name: 'Room S3 (5 m / 8 m)', true_vertical_m: 5, true_horizontal_m: 8 }
   ],
-  rules_version: '1.3', created_at: '2026-10-06T12:00:00+03:00'
+  rules_version: '1.4', created_at: '2026-10-06T12:00:00+03:00'
 };
 
 fs.mkdirSync(OUT, { recursive: true });

@@ -40,8 +40,8 @@
   }
 
   /**
-   * The drawn lines under the ceiling and wall handles (rules 1.3): the line whose average lies
-   * within the snap radius of the handle, or null. Gives the backup points, the spread and the
+   * The drawn lines under the ceiling and wall handles (rules 1.3, 1.4): the line whose measured
+   * position (its average, or its point when slanted) lies within the snap radius of the handle, or null. Gives the backup points, the spread and the
    * stretch drawn on screen.
    */
   function lines(s) {
@@ -61,7 +61,9 @@
       axis_x: h.axis.x, floor_y_axis: floorAxis,
       red_bottom_y: a.red.found ? a.red.raw_foot_y : null,
       ceiling_at_axis_y: ln.ceiling ? ln.ceiling.at_axis : null,
-      wall_at_floor_x: ln.wall ? ln.wall.at_floor : null
+      wall_at_floor_x: ln.wall ? ln.wall.at_floor : null,
+      ceiling_avg_y: ln.ceiling ? ln.ceiling.average : null,
+      wall_avg_x: ln.wall ? ln.wall.average : null
     }, s.params);
     var spread = {
       ceiling: ln.ceiling && !s.meta.vertical_not_measurable ? ln.ceiling.spread : null,
@@ -177,22 +179,29 @@
     ['figure_mm', 'figure_from_floor_mm', 'foot_floor_gap_mm', 'ceiling_mm', 'distance_mm', 'ref_height_m',
       'scale_mm_per_m', 'est_vertical_m', 'est_horizontal_m', 'est_vertical_alt_m', 'est_horizontal_alt_m',
       'red_bottom_y_mm', 'figure_red_mm', 'est_vertical_red_m', 'est_horizontal_red_m',
-      'ceiling_at_axis_y_mm', 'wall_at_floor_x_mm', 'est_vertical_at_axis_m', 'est_horizontal_at_floor_m'
+      'ceiling_at_axis_y_mm', 'wall_at_floor_x_mm', 'est_vertical_at_axis_m', 'est_horizontal_at_floor_m',
+      'ceiling_avg_y_mm', 'wall_avg_x_mm', 'est_vertical_avg_m', 'est_horizontal_avg_m'
     ].forEach(function (k) { rec[k] = comp[k]; });
     rec.ceiling_spread_mm = d.spread.ceiling;
     rec.wall_spread_mm = d.spread.wall;
+    // rules 1.4: how each handle's value was taken: the line's average, its point (slanted line), or by hand
+    var basis = function (line, placement) { return placement == null ? null : placement === 'manual' || !line || !line.basis ? 'manual' : line.basis; };
+    rec.ceiling_slant_deg = d.lines.ceiling && d.lines.ceiling.followed ? d.lines.ceiling.slant_deg : null;
+    rec.wall_slant_deg = d.lines.wall && d.lines.wall.followed ? d.lines.wall.slant_deg : null;
+    rec.ceiling_basis = basis(d.lines.ceiling, rec.ceiling_placement);
+    rec.wall_basis = basis(d.lines.wall, rec.wall_placement);
     HUSS.measure.flags.TOOL_FLAGS.forEach(function (k) { rec[k] = flags[k]; });
     var ex = m.exclusions || {};
     exclusionIds(s.params).forEach(function (k) { rec[k] = !!ex[k]; });
     // An axis marked "not measurable" carries no values (its handle may still be on screen).
     if (m.vertical_not_measurable) {
       ['ceiling_y_mm', 'ceiling_x_px', 'ceiling_y_px', 'ceiling_mm', 'est_vertical_m', 'est_vertical_alt_m', 'est_vertical_red_m', 'ceiling_placement',
-        'ceiling_at_axis_y_mm', 'est_vertical_at_axis_m', 'ceiling_spread_mm']
+        'ceiling_at_axis_y_mm', 'est_vertical_at_axis_m', 'ceiling_spread_mm', 'ceiling_avg_y_mm', 'est_vertical_avg_m', 'ceiling_slant_deg', 'ceiling_basis']
         .forEach(function (k) { rec[k] = null; });
     }
     if (m.horizontal_not_measurable) {
       ['wall_x_mm', 'wall_x_px', 'wall_y_px', 'distance_mm', 'est_horizontal_m', 'est_horizontal_alt_m', 'est_horizontal_red_m', 'wall_placement',
-        'wall_at_floor_x_mm', 'est_horizontal_at_floor_m', 'wall_spread_mm']
+        'wall_at_floor_x_mm', 'est_horizontal_at_floor_m', 'wall_spread_mm', 'wall_avg_x_mm', 'est_horizontal_avg_m', 'wall_slant_deg', 'wall_basis']
         .forEach(function (k) { rec[k] = null; });
     }
     return rec;
