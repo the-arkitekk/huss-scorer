@@ -2,3 +2,8 @@
 node_modules/
 .claude/
 test_scans/
+# screenshots and other files dropped into the project folder
+/*.jpg
+/*.jpeg
+/*.png
+/*.pdf

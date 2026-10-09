@@ -14,7 +14,7 @@ authors:
     given-names: "Erdem"
     orcid: "https://orcid.org/0000-0002-8829-5274"
     affiliation: "Dokuz Eylul University"
-version: "0.2.0"
+version: "0.3.0"
 license: MIT
 keywords:
   - spatial cognition

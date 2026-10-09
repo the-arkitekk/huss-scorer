@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.2.0 (unreleased)
+## 0.3.0 (rules 1.5)
+
+- **Rules 1.5**: a ceiling or wall drawn with its thickness (a band at least 2 mm deep, often hatched) is measured at its face towards the figure: the underside of the slab, the inner face of the wall. The face is followed instead of the middle of a line, so the hatching inside does not pull the value (trial drawing 8JK9T: ceiling 57.0 mm instead of 57.9 mm). New columns `ceiling_thick`, `wall_thick`, `ceiling_thickness_mm`, `wall_thickness_mm`. Synthetic page S21.
+- Example scans: twenty drawings of a two-structure project (S1: ceiling 3 m, opposite wall 6 m; S2: 7 m / 14 m), all drawn by the author, as were all drawings used in developing the tool. They are the only scans in the repository: the earlier trial scans were removed, also from its history.
+
+## 0.2.0
 
 - **Rules 1.4**: a ceiling or wall slanted more than 10° (straight line fitted through it) is measured at one point: the ceiling right above the figure, the wall where it stands on the floor. New columns `ceiling_slant_deg`, `wall_slant_deg`, `ceiling_basis`, `wall_basis`, and the averages as backups (`ceiling_avg_y_mm`, `wall_avg_x_mm`, `est_vertical_avg_m`, `est_horizontal_avg_m`, merged `E_vertical_avg`, `E_horizontal_avg`); the report can show "line averages only (rules 1.3)". In the trial scans 92PUH (ceiling 12°), HV93Z (wall 14°) and ZT8GX (wall 12°) change. Synthetic pages S19, S20. Example data (trials 1-3 only) regenerated.
 - Structure boxes: the number of the marked box is kept (`structure_mark_box`), so a structure added to the project after scoring is still found (a box 3 marked while the project had two structures gave no structure). The Tables screen lists every scored sheet with the structure of its box (grey rows); changing a row makes it your own, used instead of the box, with "(the box says …)" when they differ. Results no longer copies sheets into the key table.

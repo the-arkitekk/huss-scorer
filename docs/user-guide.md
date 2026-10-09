@@ -2,7 +2,7 @@
 
 HuSS Scorer runs in the browser: open `index.html` (double-click, no installation, no internet). Images and data never leave the computer; nothing is uploaded.
 
-To see the tool at work without scans of your own: main menu → **Try with example scans**. Ten trial drawings of a three-structure project (S1 3 m / 6 m, S2 4 m / 7 m, S3 5 m / 8 m) open in an Open mode session (rater code DEMO). The structure of each sheet is read from its marked box and shown under the sheet code; two sheets are unmarked and one is marked twice: choose their structure in the list there. Some drawings are wrong on purpose (a pencil figure, a section in red, a curved wall, a ceiling at the edge of the sheet): place those handles by hand. After confirming them, Results shows the report by structure.
+To see the tool at work without scans of your own: main menu → **Try with example scans**. Twenty drawings of a two-structure project (S1: ceiling 3 m, opposite wall 6 m; S2: 7 m / 14 m) open in an Open mode session (rater code DEMO). The structure of each sheet is read from its marked box and shown under the sheet code. After confirming them, Results shows the report by structure. All drawings, the examples and every drawing used in developing the tool, were made by the author, Erdem Yıldırım.
 
 ## 1. Before the study (project owner)
 

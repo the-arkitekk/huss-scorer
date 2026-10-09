@@ -190,18 +190,24 @@
     rec.wall_slant_deg = d.lines.wall && d.lines.wall.followed ? d.lines.wall.slant_deg : null;
     rec.ceiling_basis = basis(d.lines.ceiling, rec.ceiling_placement);
     rec.wall_basis = basis(d.lines.wall, rec.wall_placement);
+    // rules 1.5: drawn with its thickness, so measured at the face towards the figure
+    var thick = function (line) { return line && line.followed ? !!line.thick : null; };
+    rec.ceiling_thick = thick(d.lines.ceiling);
+    rec.wall_thick = thick(d.lines.wall);
+    rec.ceiling_thickness_mm = rec.ceiling_thick ? d.lines.ceiling.thickness : null;
+    rec.wall_thickness_mm = rec.wall_thick ? d.lines.wall.thickness : null;
     HUSS.measure.flags.TOOL_FLAGS.forEach(function (k) { rec[k] = flags[k]; });
     var ex = m.exclusions || {};
     exclusionIds(s.params).forEach(function (k) { rec[k] = !!ex[k]; });
     // An axis marked "not measurable" carries no values (its handle may still be on screen).
     if (m.vertical_not_measurable) {
       ['ceiling_y_mm', 'ceiling_x_px', 'ceiling_y_px', 'ceiling_mm', 'est_vertical_m', 'est_vertical_alt_m', 'est_vertical_red_m', 'ceiling_placement',
-        'ceiling_at_axis_y_mm', 'est_vertical_at_axis_m', 'ceiling_spread_mm', 'ceiling_avg_y_mm', 'est_vertical_avg_m', 'ceiling_slant_deg', 'ceiling_basis']
+        'ceiling_at_axis_y_mm', 'est_vertical_at_axis_m', 'ceiling_spread_mm', 'ceiling_avg_y_mm', 'est_vertical_avg_m', 'ceiling_slant_deg', 'ceiling_basis', 'ceiling_thick', 'ceiling_thickness_mm']
         .forEach(function (k) { rec[k] = null; });
     }
     if (m.horizontal_not_measurable) {
       ['wall_x_mm', 'wall_x_px', 'wall_y_px', 'distance_mm', 'est_horizontal_m', 'est_horizontal_alt_m', 'est_horizontal_red_m', 'wall_placement',
-        'wall_at_floor_x_mm', 'est_horizontal_at_floor_m', 'wall_spread_mm', 'wall_avg_x_mm', 'est_horizontal_avg_m', 'wall_slant_deg', 'wall_basis']
+        'wall_at_floor_x_mm', 'est_horizontal_at_floor_m', 'wall_spread_mm', 'wall_avg_x_mm', 'est_horizontal_avg_m', 'wall_slant_deg', 'wall_basis', 'wall_thick', 'wall_thickness_mm']
         .forEach(function (k) { rec[k] = null; });
     }
     return rec;

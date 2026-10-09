@@ -90,6 +90,9 @@
     cols('str', ['ceiling_basis', 'wall_basis']),
     cols('mm', ['ceiling_avg_y_mm', 'wall_avg_x_mm']),
     cols('m', ['est_vertical_avg_m', 'est_horizontal_avg_m']),
+    // rules 1.5: an element drawn with its thickness, measured at its face towards the figure
+    cols('bool', ['ceiling_thick', 'wall_thick']),
+    cols('mm', ['ceiling_thickness_mm', 'wall_thickness_mm']),
     cols('bool', [
       'flag_red_not_found', 'flag_figure_small', 'flag_figure_off_mark', 'flag_foot_off_floor',
       'flag_multiple_red', 'flag_axis_moved', 'flag_manual_alignment', 'flag_alignment_warning',

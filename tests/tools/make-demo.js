@@ -1,14 +1,15 @@
 // Developer tool: the example scans behind "Try with example scans" on the main menu.
 //
-//   node tests/tools/make-demo.js        (macOS: uses sips to scale the JPEGs)
+//   node tests/tools/make-demo.js [folder]     (macOS: uses sips to recompress the JPEGs)
 //
-// Takes the ten trial 5 scans from samples/real (sheets of a three-structure project with the
-// structure boxes, marked as a desk coordinator would, two unmarked and one marked twice; some
-// drawn wrong on purpose), keeps them at 300 dpi but recompresses them (JPEG quality 50; at lower
-// resolutions some QR codes and suggestions came out differently) and writes demo/demo-scans.js:
-// a classic script (works when index.html is opened from disk, unlike fetch) that sets
-// HUSS.demoData = { project, scans: [{ name, data (base64 JPEG) }] }. The main menu loads it only
-// when the example is chosen.
+// Takes the twenty demonstration scans (default: test_scans/Demonstration, kept out of the
+// repository) of a two-structure project, drawn by the author, keeps them at 300 dpi but
+// recompresses them (at lower resolutions some QR codes and suggestions came out differently)
+// (for each scan the lowest JPEG quality that the tool reads exactly as the original scan) and
+// writes demo/demo-scans.js: a classic script (works when index.html is opened from disk,
+// unlike fetch) that sets HUSS.demoData = { project, credit, scans: [{ name, data (base64 JPEG) }] }.
+// The main menu loads it only when the example is chosen. These are the only scans in the
+// repository.
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
@@ -16,27 +17,21 @@ const os = require('node:os');
 const { execFileSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..', '..');
-const SRC = path.join(ROOT, 'samples', 'real'), OUT = path.join(ROOT, 'demo');
+const SRC = process.argv[2] ? path.resolve(process.argv[2]) : path.join(ROOT, 'test_scans', 'Demonstration');
+const OUT = path.join(ROOT, 'demo');
 const MAX_PX = 3508;   // A4 long side at 300 dpi: the scans as they were made
-const QUALITY = 50;    // the lowest quality that gives the same readings as the original scans
+const QUALITIES = [40, 50, 60, 70, 80, 90]; // tried in turn for each scan
 
-// [file in samples/real, what it shows and what to do]
-const SCANS = [
-  ['trial5_01_ZD897.jpeg', 'boxes S2 and S3 both marked: choose the structure (Open mode list, or the Tables screen)'],
-  ['trial5_02_ZT8GX.jpeg', 'no structure box marked: choose the structure; the wall leans more than 10°, so it is measured where it stands on the floor'],
-  ['trial5_03_6NL8Y.jpeg', 'S1; thick hatched walls: the inner face (nearer the figure) is measured'],
-  ['trial5_04_KYRZJ.jpeg', 'S3; a very small figure (flagged) and a curved wall: place the wall by hand'],
-  ['trial5_05_YQEHG.jpeg', 'S1; a detailed figure, drawn as asked'],
-  ['trial5_06_7P4HN.jpeg', 'S3 (box filled in); figure in pencil, not red: place head and foot by hand; double lines'],
-  ['trial5_07_XLXPH.jpeg', 'S2; a small figure, sketchy lines'],
-  ['trial5_08_E8LF8.jpeg', 'S1; section drawn in red pen: place ceiling and wall by hand and tick "colour not as instructed"'],
-  ['trial5_09_6T3WA.jpeg', 'S2; drawn as asked'],
-  ['trial5_10_MHZ62.jpeg', 'no structure box marked: choose the structure; ceiling drawn at the top edge (place it by hand), leaning wall']
-];
+const CREDIT = 'All drawings, these examples and every drawing used in developing the tool, were made by the author, Erdem Yıldırım.';
+
+// What some sheets show (by sheet code); every sheet has its structure box marked.
+const NOTES = {
+  '8JK9T': 'ceiling slab and wall drawn thick and hatched: measured at the underside and at the inner face (rules 1.5)'
+};
 
 const project = {
   format: 'huss-project', format_version: 2, project_code: 'HUSS-EXAMPLE',
-  title: 'Example scans: three structures, each sheet marked with its structure box',
+  title: 'Example scans: twenty drawings of two structures by the author',
   template: 'A4L', sheet_label: 'figure', ref_height_m: 1.7, min_figure_mm: 10, foot_tolerance_mm: 4, snap_radius_mm: 1.5,
   suggestions: { figure: true, ceiling: true, wall: true },
   exclusion_criteria: [
@@ -44,32 +39,57 @@ const project = {
     { id: 'excl_not_standing_full', label: 'Figure not standing or not full height' },
     { id: 'excl_not_along_axis', label: 'Section not drawn along the viewing axis' }
   ],
-  // as in samples/real/trial5_DENEME06.huss.json
+  // the codes printed under the boxes of the example sheets
   structures: [
     { code: 'S1', name: 'Room S1 (3 m / 6 m)', true_vertical_m: 3, true_horizontal_m: 6 },
-    { code: 'S2', name: 'Room S2 (4 m / 7 m)', true_vertical_m: 4, true_horizontal_m: 7 },
-    { code: 'S3', name: 'Room S3 (5 m / 8 m)', true_vertical_m: 5, true_horizontal_m: 8 }
+    { code: 'S2', name: 'Room S2 (7 m / 14 m)', true_vertical_m: 7, true_horizontal_m: 14 }
   ],
-  rules_version: '1.4', created_at: '2026-10-06T12:00:00+03:00'
+  rules_version: '1.5', created_at: '2026-10-09T12:00:00+03:00'
 };
 
+const HUSS = require('../unit/_load.js');
+const src = fs.readFileSync(path.join(__dirname, 'inspect.js'), 'utf8');
+const readBmp = new Function('fs', src.match(/function readBmp[\s\S]*?\n}\n/)[0] + 'return readBmp;')(fs);
+
 fs.mkdirSync(OUT, { recursive: true });
-const tmp = path.join(os.tmpdir(), 'huss-demo.jpeg');
-const scans = SCANS.map(([file, note], i) => {
-  execFileSync('sips', ['-Z', String(MAX_PX), '-s', 'formatOptions', String(QUALITY), path.join(SRC, file), '--out', tmp], { stdio: 'ignore' });
+const files = fs.readdirSync(SRC).filter((f) => /\.jpe?g$/i.test(f)).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+const tmp = path.join(os.tmpdir(), 'huss-demo.jpeg'), bmp = path.join(os.tmpdir(), 'huss-demo.bmp');
+const prm = HUSS.io.project.paramsOf(HUSS.io.project.validate(JSON.parse(JSON.stringify(project))).project);
+/** What the tool reads from a JPEG file: code, box, estimates (to compare recompressed with original). */
+function reading(jpeg) {
+  execFileSync('sips', ['-s', 'format', 'bmp', jpeg, '--out', bmp], { stdio: 'ignore' });
+  const a = HUSS.detect.pipeline.analyze(readBmp(bmp), { template: 'A4L', params: prm });
+  if (!a.ok) return { code: '?', box: null, est: [null, null] };
+  const s = a.suggestions;
+  const c = HUSS.measure.compute.compute({ head_y: s.head_y, foot_y: s.foot_y, ceiling_y: s.ceiling_y, wall_x: s.wall_x, axis_x: s.axis_x, floor_y_axis: HUSS.detect.pipeline.floorY(a, s.axis_x) }, prm);
+  return { code: a.qr.found ? a.qr.sheet_code : '?', box: HUSS.detect.boxes.codeOf(a.boxes, project.structures), est: [c.est_vertical_m, c.est_horizontal_m] };
+}
+const same = (p, q) => p.code === q.code && p.box === q.box && p.est.every((v, k) => (v == null) === (q.est[k] == null) && (v == null || Math.abs(v - q.est[k]) <= 0.005 * v));
+const scans = files.map((file, i) => {
+  const original = reading(path.join(SRC, file));
+  let q, r;
+  for (q of QUALITIES) {
+    execFileSync('sips', ['-Z', String(MAX_PX), '-s', 'formatOptions', String(q), path.join(SRC, file), '--out', tmp], { stdio: 'ignore' });
+    r = reading(tmp);
+    if (same(r, original)) break;
+  }
+  if (!same(r, original)) console.warn('  ' + file + ': read differently even at quality ' + q);
   const data = fs.readFileSync(tmp).toString('base64');
-  return { name: 'example-' + String(i + 1).padStart(2, '0') + '.jpeg', from: file, note, data };
+  return { name: 'example-' + String(i + 1).padStart(2, '0') + '.jpeg', from: file, code: r.code, box: r.box, note: NOTES[r.code] || '', data, est: r.est, quality: q };
 });
 const js = '/* HuSS Scorer — demo/demo-scans.js: example scans for "Try with example scans".\n' +
-  ' * Generated by tests/tools/make-demo.js from samples/real (the author\'s trial 5, shared with his\n' +
-  ' * consent); do not edit. Loaded only when the example is chosen on the main menu. */\n' +
+  ' * Generated by tests/tools/make-demo.js; do not edit. ' + CREDIT + '\n' +
+  ' * Loaded only when the example is chosen on the main menu. */\n' +
   '(function (root) {\n  \'use strict\';\n  var HUSS = root.HUSS = root.HUSS || {};\n  HUSS.demoData = ' +
-  JSON.stringify({ project, scans: scans.map(({ name, from, note, data }) => ({ name, from, note, data })) }) +
+  JSON.stringify({ project, credit: CREDIT, scans: scans.map(({ name, data }) => ({ name, data })) }) +
   ';\n})(typeof globalThis !== \'undefined\' ? globalThis : this);\n';
 fs.writeFileSync(path.join(OUT, 'demo-scans.js'), js);
-const readme = '# Example scans\n\n`demo-scans.js` holds the ten scans of the author\'s trial 5 (from `samples/real`, 300 dpi, recompressed) and an example project with **three structures**: S1 (ceiling 3 m, opposite wall 6 m), S2 (4 m / 7 m) and S3 (5 m / 8 m). Each sheet has the structure boxes; the desk coordinator marked one, but two sheets were left unmarked and one was marked twice, and some drawings are wrong on purpose. Main menu → **Try with example scans** loads them and starts an Open mode session (rater code DEMO); nothing is uploaded.\n\n' +
-  '**Different structures.** The structure of each sheet comes from its marked box. In Open mode it is shown under the sheet code; for an unmarked or doubly marked sheet choose it from the list there. In Blind mode (and afterwards) the **Tables** screen lists every scored sheet with the structure of its box; choose it there for the sheets without a clear box, or change it where a box was marked wrongly (your row is used instead of the box).\n\n' +
-  'Made with `node tests/tools/make-demo.js`.\n\n| File | From | Shows |\n|---|---|---|\n' +
-  scans.map((s) => '| ' + s.name + ' | ' + s.from + ' | ' + s.note + ' |').join('\n') + '\n';
+const readme = '# Example scans\n\n' + CREDIT + '\n\n' +
+  '`demo-scans.js` holds twenty scanned drawings (300 dpi, recompressed) and an example project with **two structures**: S1 (ceiling 3 m, opposite wall 6 m) and S2 (ceiling 7 m, opposite wall 14 m). Each sheet has the structure boxes, and the desk coordinator marked the one drawn. Main menu → **Try with example scans** loads them and starts an Open mode session (rater code DEMO); nothing is uploaded.\n\n' +
+  '**Different structures.** The structure of each sheet comes from its marked box: in Open mode it is shown under the sheet code (and can be changed from the list there). The **Tables** screen lists every scored sheet with the structure of its box; change it there where a box was marked wrongly (your row is used instead of the box). Results then shows the errors by structure.\n\n' +
+  'Made with `node tests/tools/make-demo.js` from the original scans (not in the repository).\n\n| File | Sheet code | Box | Shows |\n|---|---|---|---|\n' +
+  scans.map((s) => '| ' + s.name + ' | ' + s.code + ' | ' + (s.box || '–') + ' | ' + s.note + ' |').join('\n') + '\n';
 fs.writeFileSync(path.join(OUT, 'README.md'), readme);
+const f2 = (v) => v == null ? '-' : v.toFixed(2);
 console.log('demo/demo-scans.js', Math.round(js.length / 1024) + ' KB', scans.length + ' scans');
+scans.forEach((s) => console.log(' ', s.name, s.from, s.code, s.box, f2(s.est[0]), f2(s.est[1]), 'q' + s.quality));

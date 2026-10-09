@@ -1,6 +1,6 @@
 # Data dictionary
 
-Every column HuSS Scorer writes. Rules version 1.4, tool version 0.2.0.
+Every column HuSS Scorer writes. Rules version 1.5, tool version 0.3.0.
 
 **Conventions**
 
@@ -23,7 +23,7 @@ Every column HuSS Scorer writes. Rules version 1.4, tool version 0.2.0.
 | `measured_at` | text | Time of confirmation, ISO 8601 with offset. |
 | `duration_s` | integer | Seconds spent on the drawing, summed over visits. |
 | `tool_version` | text | HuSS Scorer version. |
-| `rules_version` | text | Scoring rules version (1.3: line averages; 1.4: points for lines slanted more than 10°). |
+| `rules_version` | text | Scoring rules version (1.3: line averages; 1.4: points for lines slanted more than 10°; 1.5: thick elements at their face towards the figure). |
 | `template` | text | Sheet template, `A4L` or `A3L`. |
 | `file_name` | text | Name of the scan file (for finding it; carries no meaning). |
 | `image_width_px`, `image_height_px` | integer | Size of the scan. |
@@ -51,8 +51,8 @@ Every column HuSS Scorer writes. Rules version 1.4, tool version 0.2.0.
 | `axis_x_mm` | mm | Figure axis: centre of the red figure, or the start mark. |
 | `head_y_mm` | mm | Head top (rule 2). |
 | `foot_y_mm` | mm | Foot: the floor line (rule 3, rules 1.2). |
-| `ceiling_y_mm` | mm | Ceiling: the average of the ceiling line from the axis to 1 mm before the opposite wall; for a line slanted more than 10°, the point right above the figure (rule 4, rules 1.4). See `ceiling_basis`. |
-| `wall_x_mm` | mm | Opposite wall: the average of the wall line from 1 mm above the floor to 1 mm below the ceiling; for a line slanted more than 10°, where it stands on the floor (rule 5, rules 1.4). See `wall_basis`. |
+| `ceiling_y_mm` | mm | Ceiling: the average of the ceiling line from the axis to 1 mm before the opposite wall; for a line slanted more than 10°, the point right above the figure; for a slab drawn with its thickness, its underside (rule 4, rules 1.5). See `ceiling_basis`, `ceiling_thick`. |
+| `wall_x_mm` | mm | Opposite wall: the average of the wall line from 1 mm above the floor to 1 mm below the ceiling; for a line slanted more than 10°, where it stands on the floor; for a wall drawn with its thickness, its inner face (rule 5, rules 1.5). See `wall_basis`, `wall_thick`. |
 | `head_x_px` … `wall_y_px` | px | The same points in the scan (head, foot, floor and ceiling on the axis; wall on the floor line). |
 | `head_placement`, `foot_placement`, `ceiling_placement`, `wall_placement` | text | How the handle ended up: `suggested` (the tool's suggestion kept), `snapped` (moved and snapped to a line), `manual` (placed by hand, no snap). |
 | `axis_placement` | text | `auto` or `manual` (moved by hand). |
@@ -90,6 +90,8 @@ Kept so that earlier rules can be compared with the current ones.
 | `ceiling_basis`, `wall_basis` | text | How the handle's value was taken: `average` (the line's average), `axis` (ceiling: right above the figure) or `floor` (wall: on the floor) for a line slanted more than 10°, `manual` (placed by hand, not on a line). |
 | `ceiling_avg_y_mm`, `wall_avg_x_mm` | mm | The averages of the lines (rules 1.3), also where a point was taken. |
 | `est_vertical_avg_m`, `est_horizontal_avg_m` | m | Estimates with those averages. |
+| `ceiling_thick`, `wall_thick` | 0/1 | The element is drawn with its thickness (a band at least 2 mm deep, often hatched): it is measured at its face towards the figure, the ceiling at the underside, the wall at the inner face (rules 1.5). |
+| `ceiling_thickness_mm`, `wall_thickness_mm` | mm | Typical depth of that band behind the face (hatching gaps up to 1.2 mm bridged); empty when not thick. |
 
 ### Flags, decisions, note
 

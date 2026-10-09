@@ -1,20 +1,32 @@
 # Example scans
 
-`demo-scans.js` holds the ten scans of the author's trial 5 (from `samples/real`, 300 dpi, recompressed) and an example project with **three structures**: S1 (ceiling 3 m, opposite wall 6 m), S2 (4 m / 7 m) and S3 (5 m / 8 m). Each sheet has the structure boxes; the desk coordinator marked one, but two sheets were left unmarked and one was marked twice, and some drawings are wrong on purpose. Main menu → **Try with example scans** loads them and starts an Open mode session (rater code DEMO); nothing is uploaded.
+All drawings, these examples and every drawing used in developing the tool, were made by the author, Erdem Yıldırım.
 
-**Different structures.** The structure of each sheet comes from its marked box. In Open mode it is shown under the sheet code; for an unmarked or doubly marked sheet choose it from the list there. In Blind mode (and afterwards) the **Tables** screen lists every scored sheet with the structure of its box; choose it there for the sheets without a clear box, or change it where a box was marked wrongly (your row is used instead of the box).
+`demo-scans.js` holds twenty scanned drawings (300 dpi, recompressed) and an example project with **two structures**: S1 (ceiling 3 m, opposite wall 6 m) and S2 (ceiling 7 m, opposite wall 14 m). Each sheet has the structure boxes, and the desk coordinator marked the one drawn. Main menu → **Try with example scans** loads them and starts an Open mode session (rater code DEMO); nothing is uploaded.
 
-Made with `node tests/tools/make-demo.js`.
+**Different structures.** The structure of each sheet comes from its marked box: in Open mode it is shown under the sheet code (and can be changed from the list there). The **Tables** screen lists every scored sheet with the structure of its box; change it there where a box was marked wrongly (your row is used instead of the box). Results then shows the errors by structure.
 
-| File | From | Shows |
-|---|---|---|
-| example-01.jpeg | trial5_01_ZD897.jpeg | boxes S2 and S3 both marked: choose the structure (Open mode list, or the Tables screen) |
-| example-02.jpeg | trial5_02_ZT8GX.jpeg | no structure box marked: choose the structure; the wall leans more than 10°, so it is measured where it stands on the floor |
-| example-03.jpeg | trial5_03_6NL8Y.jpeg | S1; thick hatched walls: the inner face (nearer the figure) is measured |
-| example-04.jpeg | trial5_04_KYRZJ.jpeg | S3; a very small figure (flagged) and a curved wall: place the wall by hand |
-| example-05.jpeg | trial5_05_YQEHG.jpeg | S1; a detailed figure, drawn as asked |
-| example-06.jpeg | trial5_06_7P4HN.jpeg | S3 (box filled in); figure in pencil, not red: place head and foot by hand; double lines |
-| example-07.jpeg | trial5_07_XLXPH.jpeg | S2; a small figure, sketchy lines |
-| example-08.jpeg | trial5_08_E8LF8.jpeg | S1; section drawn in red pen: place ceiling and wall by hand and tick "colour not as instructed" |
-| example-09.jpeg | trial5_09_6T3WA.jpeg | S2; drawn as asked |
-| example-10.jpeg | trial5_10_MHZ62.jpeg | no structure box marked: choose the structure; ceiling drawn at the top edge (place it by hand), leaning wall |
+Made with `node tests/tools/make-demo.js` from the original scans (not in the repository).
+
+| File | Sheet code | Box | Shows |
+|---|---|---|---|
+| example-01.jpeg | BAKKN | S1 |  |
+| example-02.jpeg | XF3TY | S1 |  |
+| example-03.jpeg | C2Q9D | S1 |  |
+| example-04.jpeg | 8JK9T | S1 | ceiling slab and wall drawn thick and hatched: measured at the underside and at the inner face (rules 1.5) |
+| example-05.jpeg | N4DNF | S1 |  |
+| example-06.jpeg | Q2ZKU | S1 |  |
+| example-07.jpeg | QHQFH | S1 |  |
+| example-08.jpeg | CATYX | S1 |  |
+| example-09.jpeg | Y6XC8 | S1 |  |
+| example-10.jpeg | MZ3FC | S2 |  |
+| example-11.jpeg | MF4XA | S2 |  |
+| example-12.jpeg | XA2N2 | S2 |  |
+| example-13.jpeg | A88WQ | S2 |  |
+| example-14.jpeg | 2VJNU | S2 |  |
+| example-15.jpeg | YMNH3 | S2 |  |
+| example-16.jpeg | GNZZJ | S2 |  |
+| example-17.jpeg | CW7PA | S2 |  |
+| example-18.jpeg | K93FT | S2 |  |
+| example-19.jpeg | 8TBQG | S2 |  |
+| example-20.jpeg | LM5H3 | S1 |  |

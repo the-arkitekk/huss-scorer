@@ -43,6 +43,7 @@ const BASE = {
   wallWave: null,           // { amp, period } mm: sinusoidal wobble of the wall
   calibration: null,        // calibration layout index: the printed calibration page instead of a drawing
   floorTilt: null,          // [dy at the left end, dy at the right end] mm: the floor band printed askew to the corner marks
+  thick: 0,                 // > 0: ceiling and wall drawn with this thickness (mm), hatched; the faces towards the figure are measured
   structures: null,         // structure codes: two or more print the structure boxes
   boxMarks: []              // [{ box (0-based), kind: 'cross' | 'tick' | 'fill' | 'dot' | 'stray', color: grey level or 'red' }]
 };
@@ -71,6 +72,7 @@ const SCENES = {
   S17: { description: 'Clearly slanted ceiling (rising 12 mm): flag_ceiling_uneven', ceilingSlope: -0.1 },
   S19: { description: 'Ceiling rising steeply (about 17 degrees): rules 1.4 measures it right above the figure', ceilingSlope: -0.3 },
   S20: { description: 'Wall leaning strongly (about 17 degrees): rules 1.4 measures it where it stands on the floor', wallSlope: 0.3 },
+  S21: { description: 'Ceiling slab and wall drawn 5 mm thick and hatched: rules 1.5 measures the underside and the inner face', thick: 5 },
   S18: { description: 'Floor band printed askew to the corner marks (0.5 mm low at the left end, on its place at the right): automatic alignment', floorTilt: [0.5, 0] },
   B1: { description: 'Structure boxes (3): pencil cross in box 2', structures: ['DN1', 'DN2', 'DN3'], boxMarks: [{ box: 1, kind: 'cross', color: 60 }] },
   B2: { description: 'Structure boxes (5): light pencil tick in box 4, page turned 180 degrees', structures: ['A', 'B', 'C', 'D', 'E'], boxMarks: [{ box: 3, kind: 'tick', color: 160 }], quarterTurns: 2 },
@@ -248,6 +250,18 @@ function boxMarkShapes(T, m) {
   throw new Error('bad mark ' + m.kind);
 }
 
+/**
+ * A slab over the ceiling line and a wall right of the wall line, drawn tk mm thick: the outer
+ * outlines and dense 45 degree hatching between them, 1.2 mm apart (as in trial drawing 8JK9T).
+ */
+function thickShapes(left, ceilingY, wallX, floorY, tk, pw) {
+  const out = [seg([left, ceilingY - tk], [wallX + tk, ceilingY - tk], pw), seg([wallX + tk, ceilingY - tk], [wallX + tk, floorY], pw)];
+  const hw = 0.35, step = 1.2;
+  for (let x = left + 1; x < wallX + tk - 1; x += step) out.push(seg([x, ceilingY - 0.5], [x + tk - 1, ceilingY - tk + 0.5], hw)); // slab
+  for (let y = ceilingY + 1; y < floorY - 1; y += step) out.push(seg([wallX + 0.5, y + tk - 1], [wallX + tk - 0.5, y], hw));       // wall
+  return out;
+}
+
 /** Builds the page description and the ground truth for one scene. */
 function buildPage(p) {
   const T = HUSS.sheet.template.get(p.template);
@@ -267,6 +281,7 @@ function buildPage(p) {
   const cy = (x) => p.ceilingY + p.ceilingSlope * (x - axisX) + wave(p.ceilingWave, x - axisX);  // ceiling y at x
   const wx = (y) => p.wallX + p.wallSlope * (floorY - y) + wave(p.wallWave, floorY - y);         // wall x at y
   if (!freehand) {
+    const tk = p.thick;
     groups.push({
       color: grey(p.pencil),
       shapes: [
@@ -274,6 +289,7 @@ function buildPage(p) {
         seg([left, p.ceilingY], [left, floorY], pw),
         seg([p.wallX, p.ceilingY], [p.wallX, floorY], pw)
       ].concat(p.wallDouble > 0 ? [seg([p.wallX + p.wallDouble, p.ceilingY], [p.wallX + p.wallDouble, floorY], pw)] : [])
+        .concat(tk > 0 ? thickShapes(left, p.ceilingY, p.wallX, floorY, tk, pw) : [])
     });
   } else {
     let yTop = p.ceilingY;                                   // where the wall meets the ceiling
@@ -333,6 +349,8 @@ function buildPage(p) {
     for (let x = axisX; x <= wallAvg - L.END_MM; x += 0.05) lineTruth.ceiling_spread = Math.max(lineTruth.ceiling_spread, Math.abs(cy(x) - ceilAvg));
     for (let y = ceilAvg + L.END_MM; y <= floorY - L.END_MM; y += 0.05) lineTruth.wall_spread = Math.max(lineTruth.wall_spread, Math.abs(wx(y) - wallAvg));
   }
+  // rules 1.5: a thick element is measured at its face towards the figure (the edge of the inner outline)
+  if (p.thick > 0) { ceilAvg = p.ceilingY + pw / 2; wallAvg = p.wallX - pw / 2; }
   handles.ceiling_y = ceilAvg;
   handles.wall_x = wallAvg;
   handles.ceiling_at_axis_y = lineTruth.ceiling_at_axis_y;

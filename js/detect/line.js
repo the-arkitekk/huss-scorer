@@ -12,6 +12,9 @@
  * horizontal for the ceiling, the vertical for the wall) is measured at one point instead: the
  * ceiling right above the figure (on the axis, or its end nearest to it), the wall where it
  * stands on the floor.
+ * Rules 1.5: an element drawn with its thickness (a slab or wall as a band, often hatched) is
+ * measured at its face towards the figure: the ceiling at the underside of the band, the wall at
+ * its inner face. The face is followed instead of the middle of a line.
  */
 (function (root) {
   'use strict';
@@ -68,6 +71,101 @@
       pts = pts.filter(function (p) { return Math.abs(p[0] - last) > o.end; });
     }
     return { pts: pts, junction: junction };
+  }
+
+  /**
+   * Follows the face of a thick element towards the figure (rules 1.5), along index a0 to a1,
+   * starting near cross position c0. inward: +1 when the figure's side has the larger cross values
+   * (ceiling: below the band), -1 otherwise (wall: left of it). In each sample the face is the first
+   * dark point coming from the figure's side; the depth of the band behind it (light gaps of the
+   * hatching up to THICK_GAP_MM bridged) is kept, so faceLine can tell a thick element from a plain
+   * or a double line. Returns { pts: [[along, face, depth px]], junction }.
+   */
+  function followFace(dm, horizontal, a0, a1, c0, inward, thr, o, L, R) {
+    var W = dm.width, H = dm.height, d = dm.data;
+    var crossMax = (horizontal ? H : W) - 1, alongMax = (horizontal ? W : H) - 1;
+    var raw = horizontal ? function (a, c) { return d[c * W + a]; } : function (a, c) { return d[a * W + c]; };
+    var get = function (a, c) { return (raw(a, Math.max(0, c - 1)) + raw(a, c) + raw(a, Math.min(crossMax, c + 1))) / 3; };
+    var thick = Math.round(L.THICK_MM * R), gapMax = Math.max(1, Math.round(L.THICK_GAP_MM * R));
+    var look = Math.max(2, Math.round(L.THICK_LOOK_MM * R)), first = Math.round(L.THICK_SEARCH_MM * R);
+    var depthAt = function (a, j) { // dark extent behind j, away from the figure, bridging short light gaps
+      var dark = 0, light = 0, k = j;
+      while (k >= 0 && k <= crossMax && light <= gapMax && dark + light < 4 * thick) {
+        if (get(a, k) >= thr) { dark += light + 1; light = 0; } else light++;
+        k -= inward;
+      }
+      return dark;
+    };
+    var step = a1 >= a0 ? 1 : -1, face = c0, pts = [], gap = 0, junction = false;
+    for (var a = a0; step > 0 ? a <= a1 : a >= a1; a += step) {
+      if (a < 0 || a > alongMax) break;
+      var reach = pts.length ? look : first;
+      var j = Math.round(face + inward * reach), stop = Math.round(face - inward * reach), found = -1;
+      if (pts.length && j >= 0 && j <= crossMax && get(a, j) >= thr) { junction = true; break; } // dark on the figure's side: a crossing element (the corner)
+      for (; inward > 0 ? j >= stop : j <= stop; j -= inward) {
+        if (j < 0 || j > crossMax) continue;
+        if (get(a, j) >= thr) { found = j; break; }
+      }
+      if (found < 0) {
+        if (++gap > (pts.length ? o.gap : o.startGap)) break;
+        continue;
+      }
+      var depth = depthAt(a, found);
+      // the face between the last light and the first dark sample, at the threshold
+      var vd = get(a, found), vl = get(a, Math.max(0, Math.min(crossMax, found + inward)));
+      var t = vd > vl ? Math.min(1, Math.max(0, (vd - thr) / (vd - vl))) : 0.5;
+      var c = found + 0.5 + inward * t;
+      // a turn (corner) against the samples a little before, both ends averaged over three samples;
+      // the face of a hatched band is ragged, so it gets a wider allowance than a line
+      var back = pts.length - o.turnRun;
+      if (back >= 1) {
+        var now = pts.length >= 2 ? (c + pts[pts.length - 1][1] + pts[pts.length - 2][1]) / 3 : c;
+        var then = (pts[Math.max(0, back - 1)][1] + pts[back][1] + pts[Math.min(pts.length - 1, back + 1)][1]) / 3;
+        if (Math.abs(now - then) > o.turnSlope * Math.abs(a + 0.5 - pts[back][0]) + Math.max(o.turnSlack, L.THICK_SLACK_MM * R)) { junction = true; break; }
+      }
+      face = c;
+      pts.push([a + 0.5, c, depth]);
+      gap = 0;
+    }
+    if (junction && pts.length) {
+      var last = pts[pts.length - 1][0];
+      pts = pts.filter(function (p) { return Math.abs(p[0] - last) > o.end; });
+    }
+    return { pts: pts, junction: junction };
+  }
+
+  /**
+   * The face of a thick element near cross position c0 (rules 1.5), summarized like a line, or
+   * null when the element there is not thick (or too short to tell).
+   */
+  function faceLine(a, horizontal, a0, a1, c0, inward, point, o) {
+    var R = a.R, L = a.config.LINE, dm = a.dm, crossMax = (horizontal ? dm.height : dm.width) - 1;
+    // the band's typical darkness near the start, for the threshold
+    var maxima = [], span = Math.round(L.THICK_SEARCH_MM * R);
+    c0 = Math.round(c0);
+    for (var k = 0; k < Math.round(L.STRENGTH_RUN_MM * R); k++) {
+      var aa = a0 + (a1 >= a0 ? k : -k), m = 0;
+      for (var c = Math.max(0, c0 - span); c <= Math.min(crossMax, c0 + span); c++) {
+        var v = horizontal ? dm.data[c * dm.width + aa] : dm.data[aa * dm.width + c];
+        if (v > m) m = v;
+      }
+      maxima.push(m);
+    }
+    maxima.sort(function (p, q) { return p - q; });
+    var typical = maxima.length ? maxima[Math.floor(maxima.length / 2)] : 0;
+    if (typical - dm.paper < L.MIN_CONTRAST) return null;
+    var thr = Math.max(dm.paper + L.MIN_CONTRAST, dm.paper + L.FOLLOW_FRACTION * (typical - dm.paper));
+    var of = Object.assign({}, o, { startGap: Math.round(L.STRENGTH_RUN_MM * R) });
+    var f = followFace(dm, horizontal, a0, a1, Math.round(c0), inward, thr, of, L, R);
+    var r = summarize(a, f, horizontal, point);
+    if (!r.followed) return null;
+    // a thick element: the band behind the face is at least THICK_MM deep along most of it
+    var depths = f.pts.map(function (p) { return p[2]; }).sort(function (p, q) { return p - q; });
+    var median = depths[Math.floor(depths.length / 2)];
+    if (median < L.THICK_MM * R) return null;
+    r.thick = true;
+    r.thickness = median / R;
+    return r;
   }
 
   /**
@@ -177,6 +275,13 @@
       }
       r.at_axis = r.followed && from > a0 ? r.pts[0][1] : yAtAxis;
       r.from_x = r.followed ? r.pts[0][0] : axisX;
+      // rules 1.5: a slab drawn with its thickness is measured at its underside
+      var face = faceLine(a, true, a0, a1, yAtAxis * R, 1, yAtAxis, o);
+      if (face && (!r.followed || face.pts.length >= 0.5 * r.pts.length)) {
+        face.at_axis = face.pts[0][1];
+        face.from_x = face.pts[0][0];
+        r = face;
+      } else r.thick = false;
       return choose(a, r, r.at_axis, 'axis');
     });
   }
@@ -217,7 +322,13 @@
       var f = thr == null ? { pts: [], junction: false } : follow(a.dm, false, a0, a1, xAtFloor * R, thr, o);
       var r = summarize(a, f, false, xAtFloor);
       r.at_floor = xAtFloor;
-      return choose(a, r, xAtFloor, 'floor');
+      // rules 1.5: a wall drawn with its thickness is measured at its inner face (towards the figure)
+      var face = faceLine(a, false, a0, a1, xAtFloor * R, -1, xAtFloor, o);
+      if (face && (!r.followed || face.pts.length >= 0.5 * r.pts.length)) {
+        face.at_floor = face.pts[0][0];
+        r = face;
+      } else r.thick = false;
+      return choose(a, r, r.at_floor, 'floor');
     });
   }
 
@@ -255,7 +366,7 @@
   }
 
   var api = {
-    follow: follow, ceilingLine: ceilingLine, wallLine: wallLine, ceilingNear: ceilingNear, wallNear: wallNear, rowsRight: rowsRight
+    follow: follow, followFace: followFace, faceLine: faceLine, options: options, ceilingLine: ceilingLine, wallLine: wallLine, ceilingNear: ceilingNear, wallNear: wallNear, rowsRight: rowsRight
   };
   HUSS.detect.line = api;
   if (typeof module === 'object' && module.exports) module.exports = api;

@@ -1,4 +1,4 @@
-# HuSS scoring rules (rules version 1.4)
+# HuSS scoring rules (rules version 1.5)
 
 HuSS (Human-Scaled Section) measures how accurately the scale of a space is perceived. The participant draws a standing person, 170 cm tall, on the start mark of the printed floor line, then the section of the space along the viewing direction up to the opposite wall, from memory and without a ruler. The scale comes from the figure.
 
@@ -12,7 +12,7 @@ Two axes are measured: **vertical** (ceiling height, primary) and **horizontal**
 4. **Ceiling height.** From the floor line to the ceiling. The ceiling is the **average** of its line from the figure axis to 1 mm before the opposite wall (without an opposite wall: as far as the line goes). A ceiling drawn only between the figure and the wall (not reaching over the figure) is averaged from where it starts. **A ceiling slanted more than 10°** (a straight line fitted through it, against the horizontal) is not averaged: it is measured right above the figure, vertically from the floor line on the figure axis (or at its end nearest to the figure). In each column the middle of the line is taken; the last 1 mm next to a corner is left out.
 5. **Distance.** From the figure axis to the opposite wall, along the floor line. The wall is the **average** of its line from 1 mm above the floor to 1 mm below the ceiling. **A wall slanted more than 10°** (against the vertical) is not averaged: the horizontal distance is measured where it stands on the floor.
 6. **Axis.** The vertical axis passes through the middle of the figure. If the figure is more than 5 mm from the start mark, `flag_figure_off_mark` is set; the axis still follows the figure.
-7. **Double lines and corrections.** With a double line or correction marks, the line nearer the figure (the inner face) is measured. The rater decides in the end.
+7. **Double lines, corrections and thick elements.** With a double line or correction marks, the line nearer the figure (the inner face) is measured. A ceiling or wall drawn with its thickness (a band at least 2 mm deep, often hatched) is measured at its face towards the figure: the ceiling at the underside of the band, the wall at its inner face (rules 1.5). The rater decides in the end.
 8. **Not measurable.** No ceiling line at all: the vertical axis is marked not measurable. No opposite wall, or a wall running off the page: the horizontal axis is marked not measurable.
 9. **No red figure.** The rater places the head and the foot; the drawing is not excluded, it is flagged (`flag_red_not_found`).
 10. **Small figure.** A figure smaller than `min_figure_mm` is not excluded, it is flagged (`flag_figure_small`).
@@ -40,3 +40,4 @@ A line slanted more than 10° is not a flat ceiling or an upright wall drawn by 
 | 1.3 | Ceiling and wall are the averages of their lines; the rules 1.2 points kept as backups; flags for clearly slanted lines. Foot tolerance default 4 mm (a project setting). |
 | 1.3 (addition) | A ceiling drawn only between the figure and the wall is measured (averaged from where it starts) instead of marking the height not measurable. Drawings measurable before give the same values. |
 | 1.4 | A ceiling or wall slanted more than 10° is measured at one point: the ceiling right above the figure, the wall on the floor. The averages kept as backups; slant and basis written to the CSV. |
+| 1.5 | A ceiling or wall drawn with its thickness (a band at least 2 mm deep, often hatched) is measured at its face towards the figure: the underside of the slab, the inner face of the wall. `ceiling_thick`, `wall_thick` and the thicknesses written to the CSV. |

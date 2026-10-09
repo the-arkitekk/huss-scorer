@@ -540,3 +540,20 @@ test('S18: floor band printed askew to the corner marks -> aligned automatically
   near(m.comp.est_vertical_m, t.est_vertical_m, t.est_vertical_m * TOL.est_rel, 'S18 est vertical');
   near(m.comp.est_horizontal_m, t.est_horizontal_m, t.est_horizontal_m * TOL.est_rel, 'S18 est horizontal');
 });
+
+test('S21: slab and wall drawn thick and hatched -> the underside and the inner face are measured (rules 1.5)', () => {
+  const r = run('S21'), a = r.a, t = r.t;
+  checkCommon('S21', r);
+  checkRedFigure('S21', a, t);
+  near(a.suggestions.ceiling_y, t.ceiling_y, 0.2, 'S21 ceiling underside');
+  near(a.suggestions.wall_x, t.wall_x, 0.2, 'S21 wall inner face');
+  const rec = HUSS.measure.record.buildRecord(acceptedState(a));
+  assert.equal(rec.ceiling_thick, true); assert.equal(rec.wall_thick, true);
+  assert.ok(rec.ceiling_thickness_mm >= 2 && rec.wall_thickness_mm >= 2, rec.ceiling_thickness_mm + ' / ' + rec.wall_thickness_mm);
+  assert.equal(rec.ceiling_basis, 'average'); assert.equal(rec.wall_basis, 'average');
+  near(rec.est_vertical_m, t.est_vertical_m, TOL.est_rel * t.est_vertical_m * 2, 'S21 est vertical');
+  near(rec.est_horizontal_m, t.est_horizontal_m, TOL.est_rel * t.est_horizontal_m * 2, 'S21 est horizontal');
+  // plain lines are not thick
+  const s1 = HUSS.measure.record.buildRecord(acceptedState(run('S1').a));
+  assert.equal(s1.ceiling_thick, false); assert.equal(s1.wall_thick, false);
+});
